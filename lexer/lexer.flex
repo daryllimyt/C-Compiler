@@ -27,7 +27,7 @@ DECIMAL_INTEGER [1-9]{DEC}*{INTSUFFIX}?
 OCTAL_INTEGER 0[OCT]*{INTSUFFIX}?
 HEXA_INTEGER 0[xX]{HEX}*{INTSUFFIX}?
 
-INTEGER_CONSTANT (BINARY_INTEGER|DECIMAL_INTEGER|OCTAL_INTEGER|HEXA_INTEGER)
+// INTEGER_CONSTANT (BINARY_INTEGER|DECIMAL_INTEGER|OCTAL_INTEGER|HEXA_INTEGER)
 FLOAT_CONSTANT ({DEC}+{EXPO}{FLOATSUFFIX}?|{DEC}*"."{DEC}+({EXPO})?{FLOATSUFFIX}?|{DEC}+"."{DEC}*({EXPO})?{FLOATSUFFIX}?)
 
 IDENTIFIER [_a-zA-Z][_a-zA-Z0-9]*
@@ -48,8 +48,6 @@ void
 %}
 
 %%
-"/*"			{ comment(); }
-
 "auto"			{ return AUTO; }
 "break"			{ return BREAK; }
 "case"			{ return CASE; }
@@ -83,6 +81,23 @@ void
 "while"			{ return WHILE; }
 
 
+"&"			{ return AND; }
+"!"			{ return NOT; }
+"~"			{ return INVERT; }
+"-"			{ return MINUS }
+"+"			{ return PLUS }
+"*"			{ return MULT }
+"/"			{ return DIV }
+"%"			{ return MOD; }
+"<"			{ return LT; }
+">"			{ return GT; }
+"^"			{ return XOR; }
+"|"			{ return OR; }
+"?"			{ return QUESTION; }
+"."			{ return DOT; }
+
+
+
 "..."			{ return ELLIPSIS; }
 ">>="			{ return RSHIFT_ASSIGN; }
 "<<="			{ return LSHIFT_ASSIGN; }
@@ -112,30 +127,24 @@ void
 
 
 ";"			{ return SEMICOLON; }
-("{"|"<%")		{ return L_BRACE; }
-("}"|"%>")		{ return R_BRACE; }
 ","			{ return COMMA; }
 ":"			{ return COLON; }
+("{"|"<%")		{ return L_BRACE; }
+("}"|"%>")		{ return R_BRACE; }
 "("			{ return L_PARATHENSIS; }
 ")"			{ return R_PARATHENSIS; }
 ("["|"<:")		{ return L_BRACKET; }
 ("]"|":>")		{ return R_BRACKET; }
 
+BINARY_INTEGER {yylval.number = std::stoi(yytext, nullptr, 2); return INT_CONST;}
+OCTAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 8); return INT_CONST;}
+DECIMAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 10); return INT_CONST;}
+HEXA_INTEGER {yylval.number = std::stoi(yytext, nullptr, 16); return INT_CONST;}
 
-"."			{ return DOT; }
-"&"			{ return AND; }
-"!"			{ return NOT; }
-"~"			{ return INVERT; }
-"-"			{ return MINUS }
-"+"			{ return PLUS }
-"*"			{ return MULT }
-"/"			{ return DIV }
-"%"			{ return MOD; }
-"<"			{ return LT; }
-">"			{ return GT; }
-"^"			{ return XOR; }
-"|"			{ return OR; }
-"?"			{ return QUESTION; }
+FLOAT_CONSTANT {yylval = std::stod(yytext); return FLOAT_CONST}
+
+
+
 .			{ }
 
 %%
