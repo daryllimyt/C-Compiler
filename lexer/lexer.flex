@@ -20,7 +20,9 @@ EXPO			[Ee][+-]?{D}+
 
 // Float and integer suffixes
 FLOATSUFFIX			(f|F|l|L)
-INTSUFFIXS			(u|U|l|L)*
+INTSUFFIX			(u|U|l|L)*
+
+ESC    [abfnrtv\'\"\?\\]
 
 BINARY_INTEGER 0[bB]{BIN}*{INTSUFFIX}?
 DECIMAL_INTEGER [1-9]{DEC}*{INTSUFFIX}?
@@ -29,6 +31,10 @@ HEXA_INTEGER 0[xX]{HEX}*{INTSUFFIX}?
 
 // INTEGER_CONSTANT (BINARY_INTEGER|DECIMAL_INTEGER|OCTAL_INTEGER|HEXA_INTEGER)
 FLOAT_CONSTANT ({DEC}+{EXPO}{FLOATSUFFIX}?|{DEC}*"."{DEC}+({EXPO})?{FLOATSUFFIX}?|{DEC}+"."{DEC}*({EXPO})?{FLOATSUFFIX}?)
+
+CHAR_CONSTANT  [L]?\'(?:\\({ESC}|{O}{1,3}|x{HEX}+)|[^\\'])+\'
+STRING_CONSTANT [L]?\"(?:\\({ESC}|{OCT}{1,3}|x[{DEC}|{LET}]+)|[^\\"])*\"
+
 
 IDENTIFIER [_a-zA-Z][_a-zA-Z0-9]*
 
@@ -95,10 +101,11 @@ void
 "|"			{ return OR; }
 "?"			{ return QUESTION; }
 "."			{ return DOT; }
-
-
-
 "..."			{ return ELLIPSIS; }
+
+
+
+
 ">>="			{ return RSHIFT_ASSIGN; }
 "<<="			{ return LSHIFT_ASSIGN; }
 "+="			{ return ADD_ASSIGN; }
@@ -141,9 +148,15 @@ OCTAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 8); return INT_CONST;}
 DECIMAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 10); return INT_CONST;}
 HEXA_INTEGER {yylval.number = std::stoi(yytext, nullptr, 16); return INT_CONST;}
 
-FLOAT_CONSTANT {yylval = std::stod(yytext); return FLOAT_CONST}
+FLOAT_CONSTANT {yylval.number = std::atof(yytext); return FLOAT_CONST}
+
+CHAR_CONSTANT {yylval.text = new std::string(yytext); return CHAR_CONSTANT};
+STRING_CONSTANT {yylval.text = new std::string(yytext); return STRING_CONSTANT};
 
 
+IDENTIFIER {yyval.text = new std::string(yytext); return IDENTIFIER}
+
+NEW_LINE {line_number++;}
 
 .			{ }
 
@@ -152,60 +165,4 @@ FLOAT_CONSTANT {yylval = std::stod(yytext); return FLOAT_CONST}
 yywrap()
 {
 	return(1);
-}
-
-
-comment()
-{
-	char c, c1;
-
-loop:
-	while ((c = input()) != '*' && c != 0)
-		putchar(c);
-
-	if ((c1 = input()) != '/' && c != 0)
-	{
-		unput(c1);
-		goto loop;
-	}
-
-	if (c != 0)
-		putchar(c1);
-}
-
-
-int column = 0;
-
-void count()
-{
-	int i;
-
-	for (i = 0; yytext[i] != '\0'; i++)
-		if (yytext[i] == '\n')
-			column = 0;
-		else if (yytext[i] == '\t')
-			column += 8 - (column % 8);
-		else
-			column++;
-
-	ECHO;
-}
-
-
-int check_type()
-{
-/*
-* pseudo code --- this is what it should check
-*
-*	if (yytext == type_name)
-*		return(TYPE_NAME);
-*
-*	return(IDENTIFIER);
-*/
-
-/*
-*	it actually will only return IDENTIFIER
-*/
-
-	return(IDENTIFIER);
 }
