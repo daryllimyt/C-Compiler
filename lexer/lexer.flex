@@ -54,107 +54,107 @@ void
 %}
 
 %%
-"auto"			{ return AUTO; }
-"break"			{ return BREAK; }
-"case"			{ return CASE; }
-"char"			{ return CHAR; }
-"const"			{ return CONST; }
-"continue"		{ return CONTINUE; }
-"default"		{ return DEFAULT; }
-"do"			{ return DO; }
-"double"		{ return DOUBLE; }
-"else"			{ return ELSE; }
-"enum"			{ return ENUM; }
-"extern"		{ return EXTERN; }
-"float"			{ return FLOAT; }
-"for"			{ return FOR; }
-"goto"			{ return GOTO; }
-"if"			{ return IF; }
-"int"			{ return INT; }
-"long"			{ return LONG; }
-"register"		{ return REGISTER; }
-"return"		{ return RETURN; }
-"short"			{ return SHORT; }
-"signed"		{ return SIGNED; }
-"sizeof"		{ return SIZEOF; }
-"static"		{ return STATIC; }
-"struct"		{ return STRUCT; }
-"switch"		{ return SWITCH; }
-"typedef"		{ return TYPEDEF; }
-"union"			{ return UNION; }
-"unsigned"		{ return UNSIGNED; }
-"void"			{ return VOID; }
-"while"			{ return WHILE; }
+"auto"			{ return T_AUTO; }
+"break"			{ return T_BREAK; }
+"case"			{ return T_CASE; }
+"char"			{ return T_CHAR; }
+"const"			{ return T_CONST; }
+"continue"		{ return T_CONTINUE; }
+"default"		{ return T_DEFAULT; }
+"do"			{ return T_DO; }
+"double"		{ return T_DOUBLE; }
+"else"			{ return T_ELSE; }
+"enum"			{ return T_ENUM; }
+"extern"		{ return T_EXTERN; }
+"float"			{ return T_FLOAT; }
+"for"			{ return T_FOR; }
+"goto"			{ return T_GOTO; }
+"if"			{ return T_IF; }
+"int"			{ return T_INT; }
+"long"			{ return T_LONG; }
+"register"		{ return T_REGISTER; }
+"return"		{ return T_RETURN; }
+"short"			{ return T_SHORT; }
+"signed"		{ return T_SIGNED; }
+"sizeof"		{ return T_SIZEOF; }
+"static"		{ return T_STATIC; }
+"struct"		{ return T_STRUCT; }
+"switch"		{ return T_SWITCH; }
+"typedef"		{ return T_TYPEDEF; }
+"union"			{ return T_UNION; }
+"unsigned"		{ return T_UNSIGNED; }
+"void"			{ return T_VOID; }
+"while"			{ return T_WHILE; }
 
 
-"&"			{ return AND; }
-"!"			{ return NOT; }
-"~"			{ return INVERT; }
-"-"			{ return MINUS }
-"+"			{ return PLUS }
-"*"			{ return MULT }
-"/"			{ return DIV }
-"%"			{ return MOD; }
-"<"			{ return LT; }
-">"			{ return GT; }
-"^"			{ return XOR; }
-"|"			{ return OR; }
-"?"			{ return QUESTION; }
-"."			{ return DOT; }
-"..."			{ return ELLIPSIS; }
-
-
-
-
-">>="			{ return RSHIFT_ASSIGN; }
-"<<="			{ return LSHIFT_ASSIGN; }
-"+="			{ return ADD_ASSIGN; }
-"-="			{ return SUB_ASSIGN; }
-"*="			{ return MUL_ASSIGN; }
-"/="			{ return DIV_ASSIGN; }
-"%="			{ return MOD_ASSIGN; }
-"&="			{ return AND_ASSIGN; }
-"^="			{ return XOR_ASSIGN; }
-"|="			{ return OR_ASSIGN; }
-"="			{ return EQ_ASSIGN; }
+"&"			{ return T_AND; }
+"!"			{ return T_NOT; }
+"~"			{ return T_INVERT; }
+"-"			{ return T_MINUS }
+"+"			{ return T_PLUS }
+"*"			{ return T_MULT }
+"/"			{ return T_DIV }
+"%"			{ return T_MOD; }
+"<"			{ return T_LT; }
+">"			{ return T_GT; }
+"^"			{ return T_XOR; }
+"|"			{ return T_OR; }
+"?"			{ return T_QUESTION; }
+"."			{ return T_DOT; }
+"..."			{ return T_ELLIPSIS; }
 
 
 
-">>"			{ return RSHIFT_OP; }
-"<<"			{ return LSHIFT_OP; }
-"++"			{ return INC_OP; }
-"--"			{ return DEC_OP; }
-"->"			{ return PTR_OP; }
-"&&"			{ return AND_OP; }
-"||"			{ return OR_OP; }
-"<="			{ return LE_OP; }
-">="			{ return GE_OP; }
-"=="			{ return EQ_OP; }
-"!="			{ return NE_OP; }
+
+">>="			{ return T_RSHIFT_ASSIGN; }
+"<<="			{ return T_LSHIFT_ASSIGN; }
+"+="			{ return T_ADD_ASSIGN; }
+"-="			{ return T_SUB_ASSIGN; }
+"*="			{ return T_MUL_ASSIGN; }
+"/="			{ return T_DIV_ASSIGN; }
+"%="			{ return T_MOD_ASSIGN; }
+"&="			{ return T_AND_ASSIGN; }
+"^="			{ return T_XOR_ASSIGN; }
+"|="			{ return T_OR_ASSIGN; }
+"="			{ return T_EQ_ASSIGN; }
 
 
-";"			{ return SEMICOLON; }
-","			{ return COMMA; }
-":"			{ return COLON; }
-("{"|"<%")		{ return L_BRACE; }
-("}"|"%>")		{ return R_BRACE; }
-"("			{ return L_PARATHENSIS; }
-")"			{ return R_PARATHENSIS; }
-("["|"<:")		{ return L_BRACKET; }
-("]"|":>")		{ return R_BRACKET; }
 
-BINARY_INTEGER {yylval.number = std::stoi(yytext, nullptr, 2); return INT_CONST;}
-OCTAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 8); return INT_CONST;}
-DECIMAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 10); return INT_CONST;}
-HEXA_INTEGER {yylval.number = std::stoi(yytext, nullptr, 16); return INT_CONST;}
-
-FLOAT_CONSTANT {yylval.number = std::atof(yytext); return FLOAT_CONST}
-
-CHAR_CONSTANT {yylval.text = new std::string(yytext); return CHAR_CONSTANT};
-STRING_CONSTANT {yylval.text = new std::string(yytext); return STRING_CONSTANT};
+">>"			{ return T_RSHIFT_OP; }
+"<<"			{ return T_LSHIFT_OP; }
+"++"			{ return T_INC_OP; }
+"--"			{ return T_DEC_OP; }
+"->"			{ return T_PTR_OP; }
+"&&"			{ return T_AND_OP; }
+"||"			{ return T_OR_OP; }
+"<="			{ return T_LE_OP; }
+">="			{ return T_GE_OP; }
+"=="			{ return T_EQ_OP; }
+"!="			{ return T_NE_OP; }
 
 
-IDENTIFIER {yyval.text = new std::string(yytext); return IDENTIFIER}
+";"			{ return T_SEMICOLON; }
+","			{ return T_COMMA; }
+":"			{ return T_COLON; }
+("{"|"<%")		{ return T_L_BRACE; }
+("}"|"%>")		{ return T_R_BRACE; }
+"("			{ return T_L_PARATHENSIS; }
+")"			{ return T_R_PARATHENSIS; }
+("["|"<:")		{ return T_L_BRACKET; }
+("]"|":>")		{ return T_R_BRACKET; }
+
+BINARY_INTEGER {yylval.number = std::stoi(yytext, nullptr, 2); return T_INT_CONST;}
+OCTAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 8); return T_INT_CONST;}
+DECIMAL_INTEGER {yylval.number = std::stoi(yytext, nullptr, 10); return T_INT_CONST;}
+HEXA_INTEGER {yylval.number = std::stoi(yytext, nullptr, 16); return T_INT_CONST;}
+
+FLOAT_CONSTANT {yylval.number = std::atof(yytext); return T_FLOAT_CONST}
+
+CHAR_CONSTANT {yylval.text = new std::string(yytext); return T_CHAR_CONST};
+STRING_CONSTANT {yylval.text = new std::string(yytext); return T_STRING_CONST};
+
+
+IDENTIFIER {yyval.text = new std::string(yytext); return T_IDENTIFIER}
 
 NEW_LINE {line_number++;}
 
