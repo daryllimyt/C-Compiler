@@ -233,15 +233,15 @@ STORAGE_CLASS_SPECIFIER
 	;
 
 TYPE_SPECIFIER
-	: T_VOID
-	| T_CHAR
-	| T_SHORT
-	| T_INT
-	| T_LONG
-	| T_FLOAT
-	| T_DOUBLE
-	| T_SIGNED
-	| T_UNSIGNED
+  : T_VOID     { $$ = new std::string("void"); }
+	| T_CHAR     { $$ = new std::string("char"); }
+	| T_SHORT    { $$ = new std::string("short"); }
+	| T_INT      { $$ = new std::string("int"); }
+	| T_LONG     { $$ = new std::string("long"); }
+	| T_FLOAT    { $$ = new std::string("float"); }
+	| T_DOUBLE   { $$ = new std::string("double"); }
+	| T_SIGNED   { $$ = new std::string("signed int"); }
+	| T_UNSIGNED { $$ = new std::string("unsigned int"); }
 	| STRUCT_OR_UNION_SPECIFIER
 	| ENUM_SPECIFIER
 	| TYPE_NAME
@@ -307,13 +307,13 @@ TYPE_QUALIFIER
 	;
 
 DECLARATOR
-	: POINTER DIRECT_DECLARATOR
-	| DIRECT_DECLARATOR
+	: POINTER DIRECT_DECLARATOR  { $$ = new Variable(*$2, "pointer", nullptr); delete $2; }
+	| DIRECT_DECLARATOR          { $$ = $1; }
 	;
 
 DIRECT_DECLARATOR
-	: T_IDENTIFIER
-	| T_L_PARATHENSIS DECLARATOR T_R_PARATHENSIS
+	: T_IDENTIFIER                                 { $$ = new Variable( *$1, "normal", nullptr); delete $1; }
+	| T_L_PARATHENSIS DECLARATOR T_R_PARATHENSIS   { $$ = new Variable( *$2, "normal", $3 ); delete $1; }
 	| DIRECT_DECLARATOR T_L_BRACKET CONSTANT_EXPRESSION T_R_BRACKET
 	| DIRECT_DECLARATOR T_L_BRACKET T_R_BRACKET
 	| DIRECT_DECLARATOR T_L_PARATHENSIS PARAMETER_TYPE_LIST T_R_PARATHENSIS
@@ -322,7 +322,7 @@ DIRECT_DECLARATOR
 	;
 
 POINTER
-	: T_MULT
+	: T_MULT                     { $$ = $1; }
 	| T_MULT TYPE_QUALIFIER_LIST
 	| T_MULT POINTER
 	| T_MULT TYPE_QUALIFIER_LIST POINTER
@@ -441,10 +441,10 @@ ITERATION_STATEMENT
 
 JUMP_STATEMENT
 	: T_GOTO T_IDENTIFIER T_SEMICOLON
-	| T_CONTINUE T_SEMICOLON
-	| T_BREAK T_SEMICOLON
-	| T_RETURN T_SEMICOLON
-	| T_RETURN EXPRESSION T_SEMICOLON
+	| T_CONTINUE T_SEMICOLON           { $$ = new ContinueStatement(); }
+	| T_BREAK T_SEMICOLON              { $$ = new BreakStatement(); }
+	| T_RETURN T_SEMICOLON             { $$ = new ReturnStatement(nullptr); }
+	| T_RETURN EXPRESSION T_SEMICOLON  { $$ = new ReturnStatement($2); }
 	;
 
 TRANSLATION_UNIT
