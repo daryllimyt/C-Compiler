@@ -1,3 +1,5 @@
+// Main driver of the compiler. Parses and compiles the AST
+
 #include ""
 int main()
 {
