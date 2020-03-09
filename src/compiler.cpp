@@ -1,6 +1,7 @@
 #include ""
 int main()
 {
+    // Original stuff
     const Program *ast=parseAST();
     std::cout << "<?xml version=\"1.0\"?>" << '\n';
     std::cout << "<Program>" << '\n';
@@ -8,11 +9,8 @@ int main()
     std::cout << "</Program>" << '\n';
     std::cout<<std::endl;
 
-    return 0;
-}
 
-int compile(const std::string& source_file_name,
-            const std::string& destination_file_name) {
+  // Fabio's stuff
   FILE* file_in;
   if (!(file_in = fopen(source_file_name.c_str(), "r"))) {
     std::cerr << "Cannot open source file: '" << source_file_name << "'." << std::endl;

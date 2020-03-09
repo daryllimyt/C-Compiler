@@ -1,5 +1,5 @@
-#ifndef ast_hpp
-#define ast_hpp
+#ifndef AST_HPP
+#define AST_HPP
 
 // Include headers in ast that contains the classes for the tree nodes.
 #include "ast/ast_node.hpp"
