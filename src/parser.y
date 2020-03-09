@@ -178,17 +178,17 @@ ASSIGNMENT_EXPRESSION
 	;
 
 ASSIGNMENT_OPERATOR
-	: T_EQ_ASSIGN
-	| T_MUL_ASSIGN
-	| T_DIV_ASSIGN
-	| T_MOD_ASSIGN
-	| T_ADD_ASSIGN
-	| T_SUB_ASSIGN
-	| T_LEFT_ASSIGN
-	| T_RIGHT_ASSIGN
-	| T_AND_ASSIGN
-	| T_XOR_ASSIGN
-	| T_OR_ASSIGN
+	: T_EQ_ASSIGN    { $$ = new std::string("="); }
+	| T_MUL_ASSIGN   { $$ = new std::string("*="); }
+	| T_DIV_ASSIGN   { $$ = new std::string("/="); }
+	| T_MOD_ASSIGN   { $$ = new std::string("%="); }
+	| T_ADD_ASSIGN   { $$ = new std::string("+="); }
+	| T_SUB_ASSIGN   { $$ = new std::string("-="); }
+	| T_LEFT_ASSIGN  { $$ = new std::string("<<="); }
+	| T_RIGHT_ASSIGN { $$ = new std::string(">>="); }
+	| T_AND_ASSIGN   { $$ = new std::string("&="); }
+	| T_XOR_ASSIGN   { $$ = new std::string("^="); }
+	| T_OR_ASSIGN    { $$ = new std::string("|="); }
 	;
 
 EXPRESSION
