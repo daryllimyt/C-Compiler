@@ -87,21 +87,21 @@ ARGUMENT_EXPRESSION_LIST
 	;
 
 UNARY_EXPRESSION
-	: POSTFIX_EXPRESSION { $$ = $1; }
-	| T_INC_OP UNARY_EXPRESSION { $$ = new UnaryExpression("++", $2); }
-	| T_DEC_OP UNARY_EXPRESSION { $$ = new UnaryExpression("--", $2); }
-	| UNARY_OPERATOR CAST_EXPRESSION { $$ = new UnaryExpression(*$1, $2); delete $1; }
-	| T_SIZEOF UNARY_EXPRESSION { $$ = new UnaryExprression( "sizeof", $2 ); }
+	: POSTFIX_EXPRESSION               { $$ = $1; }
+	| T_INC_OP UNARY_EXPRESSION        { $$ = new UnaryExpression("++", $2); }
+	| T_DEC_OP UNARY_EXPRESSION        { $$ = new UnaryExpression("--", $2); }
+	| UNARY_OPERATOR CAST_EXPRESSION   { $$ = new UnaryExpression(*$1, $2); delete $1; }
+	| T_SIZEOF UNARY_EXPRESSION        { $$ = new UnaryExprression( "sizeof", $2 ); }
 	| T_SIZEOF T_L_PARATHENSIS TYPE_NAME T_R_PARATHENSIS { $$ = new UnaryExprression( "sizeof", $3 ); }
 	;
 
 UNARY_OPERATOR
-	: T_AND { $$ = new std::string("&_"); }
-	| T_MULT { $$ = new std::string("*_"); }
-	| T_PLUS { $$ = new std::string("+_"); }
-	| T_MINUS { $$ = new std::string("-_"); }
+	: T_AND    { $$ = new std::string("&_"); }
+	| T_MULT   { $$ = new std::string("*_"); }
+	| T_PLUS   { $$ = new std::string("+_"); }
+	| T_MINUS  { $$ = new std::string("-_"); }
 	| T_INVERT { $$ = new std::string("~_"); }
-	| T_NOT { $$ = new std::string("!"); }
+	| T_NOT    { $$ = new std::string("!"); }
 	;
 
 CAST_EXPRESSION
@@ -405,20 +405,20 @@ LABELED_STATEMENT
 	;
 
 COMPOUND_STATEMENT
-	: T_L_BRACE T_R_BRACE
-	| T_L_BRACE STATEMENT_LIST T_R_BRACE
-	| T_L_BRACE DECLARATION_LIST T_R_BRACE
-	| T_L_BRACE DECLARATION_LIST STATEMENT_LIST T_R_BRACE
+	: T_L_BRACE T_R_BRACE                   { $$ = new CompoundStatement(nullptr); }
+	| T_L_BRACE STATEMENT_LIST T_R_BRACE    { $$ = new CompoundStatement($2); }
+	// | T_L_BRACE DECLARATION_LIST T_R_BRACE
+	// | T_L_BRACE DECLARATION_LIST STATEMENT_LIST T_R_BRACE
 	;
 
-DECLARATION_LIST
-	: DECLARATION
-	| DECLARATION_LIST DECLARATION
-	;
+// DECLARATION_LIST
+// 	: DECLARATION
+// 	| DECLARATION_LIST DECLARATION
+// 	;
 
 STATEMENT_LIST
-	: STATEMENT
-	| STATEMENT_LIST STATEMENT
+	: STATEMENT                { $$ = new StatementListNode($1, nullptr); }
+	| STATEMENT STATEMENT_LIST { $$ = new StatementListNode($1, $2); }
 	;
 
 EXPRESSION_STATEMENT
@@ -448,13 +448,13 @@ JUMP_STATEMENT
 	;
 
 TRANSLATION_UNIT
-	: EXTERNAL_DECLARATION
-	| TRANSLATION_UNIT EXTERNAL_DECLARATION
+	: EXTERNAL_DECLARATION                   { ast_roots.push_back($1); }
+	| TRANSLATION_UNIT EXTERNAL_DECLARATION  { ast_roots.push_back($2); }
 	;
 
 EXTERNAL_DECLARATION
-	: FUNCTION_DEFINITION
-	| DECLARATION
+	: FUNCTION_DEFINITION    { $$ = $1; }
+	| DECLARATION            { $$ = $1; }
 	;
 
 FUNCTION_DEFINITION
