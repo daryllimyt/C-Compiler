@@ -1,6 +1,5 @@
 %code requires{
   #include "ast.hpp"
-
   #include <cassert>
 
   extern const Expression *g_root; // A way of getting the AST out
