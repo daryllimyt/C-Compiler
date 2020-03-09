@@ -61,11 +61,23 @@ FUNCTION_DEFINITION
 %start translation_unit
 %%
 
-ROOT  : PROGRAM { g_root = new RootNode( $1 ); }
+ROOT
+  : PROGRAM { g_root = new RootNode($1); }
+  | ROOT PROGRAM {g_root = new RootNode($2); }
+  ;
+
+
+
+PROGRAM
+  : FUNCTION_DEFINITION { $$ = $1; }
+  | DECLARATION         { $$ = $1; }
+
+
+
 
 PRIMARY_EXPRESSION
 	: T_IDENTIFIER
-	| T_INT_CONST     { $$ = new IntegerConstant( $1 ); }
+	| T_INT_CONST     { $$ = new IntegerConstant($1); }
 	| T_FLOAT_CONST
   | T_CHAR_CONST
   | T_STRING_CONST
@@ -441,16 +453,6 @@ JUMP_STATEMENT
 	| T_BREAK T_SEMICOLON              { $$ = new BreakStatement(); }
 	| T_RETURN T_SEMICOLON             { $$ = new ReturnStatement(nullptr); }
 	| T_RETURN EXPRESSION T_SEMICOLON  { $$ = new ReturnStatement($2); }
-	;
-
-TRANSLATION_UNIT
-	: EXTERNAL_DECLARATION                   { ast_roots.push_back($1); }
-	| TRANSLATION_UNIT EXTERNAL_DECLARATION  { ast_roots.push_back($2); }
-	;
-
-EXTERNAL_DECLARATION
-	: FUNCTION_DEFINITION    { $$ = $1; }
-	| DECLARATION            { $$ = $1; }
 	;
 
 FUNCTION_DEFINITION
