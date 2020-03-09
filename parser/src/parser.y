@@ -76,18 +76,18 @@ UNARY_EXPRESSION
 	: POSTFIX_EXPRESSION
 	| T_INC_OP UNARY_EXPRESSION
 	| T_DEC_OP UNARY_EXPRESSION
-	| UNARY_OPERATOR CAST_EXPRESSION
+	| UNARY_OPERATOR CAST_EXPRESSION { $$ = new UnaryExprNode( $1, $2 ); }
 	| T_SIZEOF UNARY_EXPRESSION
 	| T_SIZEOF T_L_PARATHENSIS TYPE_NAME T_R_PARATHENSIS
 	;
 
 UNARY_OPERATOR
-	: T_AND
-	| T_MULT
-	| T_PLUS
-	| T_MINUS
-	| T_INVERT
-	| T_NOT
+	: T_AND { $$ = new std::string("&_"); }
+	| T_MULT { $$ = new std::string("*_"); }
+	| T_PLUS { $$ = new std::string("+_"); }
+	| T_MINUS { $$ = new std::string("-_"); }
+	| T_INVERT { $$ = new std::string("~_"); }
+	| T_NOT { $$ = new std::string("!"); }
 	;
 
 CAST_EXPRESSION
