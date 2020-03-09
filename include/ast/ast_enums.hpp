@@ -1,5 +1,5 @@
-#ifndef AST_STATEMENTS_HPP
-#define AST_STATEMENTS_HPP
+#ifndef AST_ENUMS_HPP
+#define AST_ENUMS_HPP
 
 #include <string>
 #include <iostream>

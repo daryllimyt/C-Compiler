@@ -6,7 +6,10 @@
 
 #include "ast_node.hpp"
 
-class Statement : public Node {
+class ReturnStatement : public Node {
+    protected:
+    public:
+    private:
 
 };
 

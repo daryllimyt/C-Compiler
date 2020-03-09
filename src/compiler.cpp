@@ -1,20 +1,22 @@
 // Main driver of the compiler. Parses and compiles the AST
+// Creates an AST by calling parseAST
+// Traverses the AST by calling
 
 #include ""
 int main()
 {
-    // Original stuff
-    const Program *ast=parseAST();
-    std::cout << "<?xml version=\"1.0\"?>" << '\n';
-    std::cout << "<Program>" << '\n';
-    ast->print();
-    std::cout << "</Program>" << '\n';
-    std::cout<<std::endl;
-
+  // Original stuff
+  const Program *ast = parseAST();
+  std::cout << "<?xml version=\"1.0\"?>" << '\n';
+  std::cout << "<Program>" << '\n';
+  ast->print();
+  std::cout << "</Program>" << '\n';
+  std::cout << std::endl;
 
   // Fabio's stuff
-  FILE* file_in;
-  if (!(file_in = fopen(source_file_name.c_str(), "r"))) {
+  FILE *file_in;
+  if (!(file_in = fopen(source_file_name.c_str(), "r")))
+  {
     std::cerr << "Cannot open source file: '" << source_file_name << "'." << std::endl;
     return 1;
   }
@@ -28,7 +30,7 @@ int main()
   // Prepare register allocator.
   RegisterAllocator register_allocator;
   // Compile.
-  std::vector<const Node*> ast_roots = parseAST();
+  std::vector<const Node *> ast_roots = parseAST();
   compileAst(asm_out, ast_roots, register_allocator);
 
   // Close the files.

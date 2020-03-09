@@ -25,13 +25,18 @@ protected:
 public:
     virtual ~Node() {}
 
+    // Not sure if this needs to be virtual
     virtual const std::string &getType() const
     {
         return type_;
     };
 
+
     // Tell and node to print itself to the given stream.
     virtual std::ostream &print(std::ostream &destination, std::string indent) const = 0;
+
+
+    // Node class contains virtual functions for all types of nodes
 };
 
 #endif
