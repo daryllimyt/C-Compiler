@@ -1,63 +1,21 @@
-#ifndef ast_primitives_hpp
-#define ast_primitives_hpp
+#ifndef AST_PRIMITIVES_HPP
+#define AST_PRIMITIVES_HPP
 
 #include <string>
 #include <iostream>
 
-class Variable
-    : public Expression
-{
-private:
-    std::string id;
-public:
-    Variable(const std::string &_id)
-        : id(_id)
-    {}
+#include "ast_node.hpp"
 
-    const std::string getId() const
-    { return id; }
-
-    virtual void print(std::ostream &dst) const override
-    {
-        dst<<id;
-    }
-
-    virtual double evaluate(
-        const std::map<std::string,double> &bindings
-    ) const override
-    {
-        // TODO-B : Run bin/eval_expr with a variable binding to make sure you understand how this works.
-        // If the binding does not exist, this will throw an error
-        return bindings.at(id);
-    }    
+class Variable : public Node {
+    protected:
+    public:
+    private:
 };
 
-class Number
-    : public Expression
-{
-private:
-    double value;
-public:
-    Number(double _value)
-        : value(_value)
-    {}
-
-    double getValue() const
-    { return value; }
-
-    virtual void print(std::ostream &dst) const override
-    {
-        dst<<value;
-    }
-
-    virtual double evaluate(
-        const std::map<std::string,double> &bindings
-    ) const override
-    {
-        // TODO-A : Run bin/eval_expr with a numeric expression to make sure you understand how this works.
-        return value;
-    }
+class IntegerConstant : public Node {
+    protected:
+    public:
+    private:
 };
-
 
 #endif

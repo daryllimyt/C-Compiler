@@ -1,31 +1,13 @@
-#ifndef ast_expressions_hpp
-#define ast_expressions_hpp
+#ifndef AST_EXPRESSIONS_HPP
+#define AST_EXPRESSIONS_HPP
 
 #include <string>
 #include <iostream>
-#include <map>
 
-#include <memory>
+#include "ast_node.hpp"
 
-class Expression;
+class Expression : public Node {
 
-typedef const Expression *ExpressionPtr;
-
-class Expression
-{
-public:
-    virtual ~Expression()
-    {}
-
-    //! Tell and expression to print itself to the given stream
-    virtual void print(std::ostream &dst) const =0;
-
-    //! Evaluate the tree using the given mapping of variables to numbers
-    virtual double evaluate(
-        const std::map<std::string,double> &bindings
-    ) const
-    { throw std::runtime_error("Not implemented."); }
 };
-
 
 #endif
