@@ -1,5 +1,5 @@
-#ifndef ast_node_hpp
-#define ast_node_hpp
+#ifndef AST_NODE_HPP
+#define AST_NODE_HPP
 
 #include <string>
 #include <iostream>
@@ -16,6 +16,7 @@ class Node {
     protected:
     public:
     private:
+
 }
 
 

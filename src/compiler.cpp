@@ -1,0 +1,38 @@
+#include ""
+int main()
+{
+    const Program *ast=parseAST();
+    std::cout << "<?xml version=\"1.0\"?>" << '\n';
+    std::cout << "<Program>" << '\n';
+    ast->print();
+    std::cout << "</Program>" << '\n';
+    std::cout<<std::endl;
+
+    return 0;
+}
+
+int compile(const std::string& source_file_name,
+            const std::string& destination_file_name) {
+  FILE* file_in;
+  if (!(file_in = fopen(source_file_name.c_str(), "r"))) {
+    std::cerr << "Cannot open source file: '" << source_file_name << "'." << std::endl;
+    return 1;
+  }
+  // Set file Flex and Yacc will read from.
+  yyset_in(file_in);
+
+  // Prepare asm output file.
+  std::ofstream asm_out;
+  asm_out.open(destination_file_name);
+
+  // Prepare register allocator.
+  RegisterAllocator register_allocator;
+  // Compile.
+  std::vector<const Node*> ast_roots = parseAST();
+  compileAst(asm_out, ast_roots, register_allocator);
+
+  // Close the files.
+  fclose(file_in);
+  asm_out.close();
+  return 0;
+}
