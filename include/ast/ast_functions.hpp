@@ -6,8 +6,56 @@
 
 #include "ast_node.hpp"
 
-class Statement : public Node {
+class FunctionDefinition : public Node
+{
+protected:
+    NodePtr specifiers_;
+    NodePtr identifier_;
+    NodePtr statements_;
 
+public:
+    FunctionDefinition(NodePtr specifiers, NodePtr identifier, NodePtr statements)
+    {
+        type_ = "function definition";
+        specifiers_ = specifiers;
+        identifier_ = identifier;
+        statements_ = statements;
+    }
+    NodePtr getSpecifiers() const
+    {
+        return specifiers_;
+    }
+    NodePtr getIdentifier() const
+    {
+        return identifier_;
+    }
+    NodePtr getStatements() const
+    {
+        return statements_;
+    }
+};
+
+class FunctionDeclaration : public Node
+{
+protected:
+    NodePtr left_;
+    NodePtr right_; // Parameter
+
+public:
+    FunctionDeclaration(const std::string &specifier, NodePtr left, NodePtr right) : 
+    {
+        type_ = "function declaration";
+        left_ = left;
+        right_ = right;
+    }
+    NodePtr getLeft() const
+    {
+        return left_;
+    }
+    NodePtr getRight() const
+    {
+        return right_;
+    }
 };
 
 #endif

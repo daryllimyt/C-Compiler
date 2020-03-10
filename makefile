@@ -1,13 +1,13 @@
 CPPFLAGS += -std=c++11 -W -Wall -g -Wno-unused-parameter -Wno-reorder -w 
 CPPFLAGS += -I include
 
-all : clean bin/yuck 
+all : clean bin/piledriver 
 
 parser : src/parser.tab.cpp src/parser.tab.hpp
 
 lexer : src/lexer.yy.cpp
 
-yuck : bin/yuck
+piledriver : bin/piledriver
 
 src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
 	bison -v --report=all -d src/parser.y -o src/parser.tab.cpp -g
@@ -15,7 +15,7 @@ src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
 src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
 	flex -o src/lexer.yy.cpp  src/lexer.flex
 
-bin/yuck : src/parser.tab.o src/lexer.yy.o include/ast/ast_translator.o include/ast/codegen/ast_compiler.o src/c_compiler.o 
+bin/piledriver : src/parser.tab.o src/lexer.yy.o include/ast/ast_translator.o include/ast/codegen/ast_compiler.o src/c_compiler.o 
 	mkdir -p bin
 	g++ $(CPPFLAGS) -o bin/c_compiler $^
 

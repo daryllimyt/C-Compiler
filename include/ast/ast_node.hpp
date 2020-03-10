@@ -3,14 +3,6 @@
 
 #include <string>
 #include <iostream>
-#include <memory>
-#include <initializer_list>
-#include <map>
-#include <vector>
-#include <cmath>
-#include <regex>
-#include <fstream>
-#include <stdexcept>
 
 typedef const Node *NodePtr; // Pointer to Node
 
@@ -52,7 +44,7 @@ public:
     virtual NodePtr getStatements() const {}
     virtual NodePtr getDeclarator() const {}
     virtual const std::string getId() const {}
-    virtual const double getValue() const {}
+    virtual const int64_t getValue() const {}
     virtual const std::string getEllipsis() const {}
 };
 
@@ -73,18 +65,18 @@ public:
     }
 };
 
-class ProgramNode : public Node
+class GlobalFrame : public Node
 {
 protected:
     NodePtr left_;
     NodePtr right_;
 
 public:
-    ProgramNode(NodePtr left, NodePtr right)
+    GlobalFrame(NodePtr left, NodePtr right)
     {
-        type_ = "program";
-        left_ = left;
-        right_ = right;
+        type_ = "global frame";
+        left_ = left; // Pointer to previous program
+        right_ = right; // Pointer to current program
     }
     NodePtr getLeft() const
     {

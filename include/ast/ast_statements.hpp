@@ -6,13 +6,13 @@
 
 #include "ast_node.hpp"
 
-class JumpNode : public Node
+class JumpStatement : public Node
 {
 protected:
     NodePtr res_;
 
 public:
-    JumpNode(const std::string &type, NodePtr res)
+    JumpStatement(const std::string &type, NodePtr res)
     {
         type_ = type;
         res_ = res;

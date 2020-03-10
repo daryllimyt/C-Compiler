@@ -363,9 +363,8 @@ TYPE_SPECIFIER
 %%
 
 // Definition of variable (to match declaration earlier).
-std::vector<const Node*> ast_roots;
-
-std::vector<const Node*> parseAST() {
+const Node *g_root;
+const Node *parseAST() {
   yyparse();
-  return ast_roots;
+  return g_root;
 }
