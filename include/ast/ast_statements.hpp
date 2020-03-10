@@ -6,7 +6,7 @@
 
 #include "ast_node.hpp"
 
-class JumpStatement : public Node
+class JumpNode : public Node
 {
 protected:
     NodePtr res_;
