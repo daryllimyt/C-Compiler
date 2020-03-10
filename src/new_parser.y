@@ -68,29 +68,30 @@ enum_declaration_list_node function_declaration
 %%
 
 ROOT
-  : PROGRAM       { g_root = new RootNode($1); }
-  | ROOT PROGRAM  { g_root = new RootNode($2); }
+  : GLOBAL       { g_root = new RootNode($1); }
+
+GLOBAL
+  : FUNCTION_DEFINITION                    { $$ = $1; }
+  | FUNCTION_DECLARATION                   { $$ = $1; }
+  | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
+  | PROGRAM FUNCTION_DEFINITION            { $$ = new GlobalFrame( $1, $2 ); }
+  | PROGRAM FUNCTION_DECLARATION           { $$ = new GlobalFrame( $1, $2 ); }
+  | PROGRAM VARIABLE_DECLARATION T_COLON   { $$ = new GlobalFrame( $1, $2 ); }
+  // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
-PROGRAM
-  : FUNCTION_DEFINITION                                               { $$ = $1; }
-  | FUNCTION_DECLARATION                                              { $$ = $1; }
-  | DECLARATION_EXPRESSION_LIST T_COLON                               { $$ = $1; }
-  | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
-  ;
-
-ENUMATOR_LIST
-  : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
-  | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, nullptr); }
-  ;
-
-ENUMERATOR //need revision
-  : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, nullptr); delete $1; }
-  | T_IDENTIFIER T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
-  ;
+// ENUMATOR_LIST
+//   : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
+//   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, nullptr); }
+//   ;
+//
+// ENUMERATOR //need revision
+//   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, nullptr); delete $1; }
+//   | T_IDENTIFIER T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
+//   ;
 
 FUNCTION_DECLARATION //int foo(int i, string j);
-  : TYPE_SPECIFIER DECLARATOR ARGUMENTS ';'  { $$ = new FunctionDeclaration(*$1, $2, $3); delete $1; }
+  : TYPE_SPECIFIER DECLARATOR ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration(*$1, $2, $3); delete $1; }
   ;
 
 FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
@@ -98,13 +99,13 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
   ;
 
 ARGUMENTS //(int i, string j) or ()
-  : T_L_PARATHENSIS MULTIPLE_ARGUMENTS T_L_PARATHENSIS      { $$ = $2; }
-  | T_L_PARATHENSIS T_R_PARATHENSIS                     { $$ = new ArgumentNode(nullptr, nullptr); }
+  : T_L_PARATHENSIS MULTIPLE_ARGUMENTS T_L_PARATHENSIS  { $$ = $2; }
+  | T_L_PARATHENSIS T_R_PARATHENSIS                     { $$ = new Arguments(nullptr, nullptr); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
-  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS { $$ = new ArgumentListNode($1, $3); }
-  | SINGLE_ARGUMENT                        { $$ = new ArgumentListNode($1, nullptr); }
+  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new Argument($1, $3); }
+  | SINGLE_ARGUMENT                             { $$ = new Argument($1, nullptr); }
   ;
 
 SINGLE_ARGUMENT //int i
@@ -115,7 +116,7 @@ SINGLE_ARGUMENT //int i
   ;
 
 COMPOUND_STATEMENT //scope {do smth;}
-  : T_L_BRACE STATEMENT_LIST T_R_BRACE { $$ = new CompoundStatement($2); }
+  : T_L_BRACE MULTI_STATEMENTS T_R_BRACE { $$ = new CompoundStatement($2); }
   | T_L_BRACE T_R_BRACE                { $$ = new CompoundStatement(nullptr); }
   ;
 
