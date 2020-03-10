@@ -6,11 +6,21 @@
 
 #include "ast_node.hpp"
 
-class ReturnStatement : public Node {
-    protected:
-    public:
-    private:
+class JumpStatement : public Node
+{
+protected:
+    NodePtr res_;
 
+public:
+    JumpNode(const std::string &type, NodePtr res)
+    {
+        type_ = type;
+        res_ = res;
+    }
+    NodePtr getResult() const
+    {
+        return res_;
+    }
 };
 
 #endif

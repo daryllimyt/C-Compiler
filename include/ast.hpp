@@ -9,9 +9,7 @@
 #include "ast/ast_statements.hpp"
 #include "ast/ast_enums.hpp"
 
-#include <vector>
-
-extern std::vector<const Node*> parseAST();
+extern const Node *parseAST();
 extern void yyset_in(FILE* fd);
 
 #endif

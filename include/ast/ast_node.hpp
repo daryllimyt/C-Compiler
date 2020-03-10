@@ -12,9 +12,7 @@
 #include <fstream>
 #include <stdexcept>
 
-
 typedef const Node *NodePtr; // Pointer to Node
-
 
 // Abstract Node class
 class Node
@@ -26,72 +24,75 @@ public:
     virtual ~Node() {}
 
     // Not sure if this needs to be virtual
-    std::string &getType() const
+    const std::string &getType() const
     {
         return type_;
     };
 
-
-    // Tell and node to print itself to the given stream.
-    virtual std::ostream &print(std::ostream &destination, std::string indent) const = 0;
-
+    // Print node to the given stream
+    virtual std::ostream &print(std::ostream &dest, std::string indent) const = 0;
 
     // Virtual functions for all types of nodes
-    virtual NodePtr getLeft() const{ return NULL; }
-    virtual NodePtr getRight() const{ return NULL; }
-    virtual NodePtr getNext() const{ return NULL; }
-    virtual NodePtr getPointer() const{ return NULL; }
-    virtual NodePtr getIdentifier() const{ return NULL; }
-    virtual NodePtr getArguments() const{ return NULL; }
-    virtual NodePtr getCondition() const{ return NULL; }
-    virtual NodePtr getConditionOne() const{ return NULL; }
-    virtual NodePtr getConditionTwo() const{ return NULL; }
-    virtual NodePtr getConditionThree() const{ return NULL; }
-    virtual NodePtr getTruePath() const{ return NULL; }
-    virtual NodePtr getFalsePath() const{ return NULL; }
-    virtual NodePtr getReturnValue() const{ return NULL; }
-    virtual NodePtr getIndex() const{ return NULL; }
-    virtual NodePtr getSpecifiers() const{ return NULL; }
-    virtual NodePtr getQualifiers() const{ return NULL; }
-    virtual NodePtr getStatements() const{ return NULL; }
-    virtual NodePtr getDeclarator() const{ return NULL; }
-    virtual const std::string getId() const{}
-    virtual const double getValue() const{}
-    virtual const std::string getEllipsis() const{}
+    virtual NodePtr getLeft() const {}
+    virtual NodePtr getRight() const {}
+    virtual NodePtr getNext() const {}
+    virtual NodePtr getPointer() const {}
+    virtual NodePtr getIdentifier() const {}
+    virtual NodePtr getArguments() const {}
+    virtual NodePtr getCondition() const {}
+    virtual NodePtr getConditionOne() const {}
+    virtual NodePtr getConditionTwo() const {}
+    virtual NodePtr getConditionThree() const {}
+    virtual NodePtr getTruePath() const {}
+    virtual NodePtr getFalsePath() const {}
+    virtual NodePtr getResult() const {} // Used to be getReturnValue
+    virtual NodePtr getIndex() const {}
+    virtual NodePtr getSpecifiers() const {}
+    virtual NodePtr getQualifiers() const {}
+    virtual NodePtr getStatements() const {}
+    virtual NodePtr getDeclarator() const {}
+    virtual const std::string getId() const {}
+    virtual const double getValue() const {}
+    virtual const std::string getEllipsis() const {}
 };
 
-class RootNode : public Tree
+class RootNode : public Node
 {
-    protected:
-    NodePtr next;
+protected:
+    NodePtr next_;
 
-    public:
-    RootNode(NodePtr _next){
-        type = "root";
-        next = _next;
+public:
+    RootNode(NodePtr next)
+    {
+        type_ = "root";
+        next_ = next;
     }
-    NodePtr GetNext() const{
-        return next;
+    NodePtr getNext() const
+    {
+        return next_;
     }
 };
 
-class ProgramNode : public Tree
+class ProgramNode : public Node
 {
-    protected:
-    NodePtr left;
-    NodePtr right;
+protected:
+    NodePtr left_;
+    NodePtr right_;
 
-    public:
-    ProgramNode(NodePtr _left, NodePtr _right){
-        type = "program";
-        left = _left;
-        right = _right;
+public:
+    ProgramNode(NodePtr left, NodePtr right)
+    {
+        type_ = "program";
+        left_ = left;
+        right_ = right;
     }
-    NodePtr GetLeft() const{
-        return left;
+    NodePtr getLeft() const
+    {
+        return left_;
     }
-    NodePtr GetRight() const{
-        return right;
+    NodePtr getRight() const
+    {
+        return right_;
     }
 };
 
