@@ -68,15 +68,15 @@ enum_declaration_list_node function_declaration
 %%
 
 ROOT
-  : GLOBAL       { g_root = new RootNode($1); }
+  : FRAME       { g_root = new RootNode($1); }
 
-GLOBAL
+FRAME
   : FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
   | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
-  | PROGRAM FUNCTION_DEFINITION            { $$ = new GlobalFrame( $1, $2 ); }
-  | PROGRAM FUNCTION_DECLARATION           { $$ = new GlobalFrame( $1, $2 ); }
-  | PROGRAM VARIABLE_DECLARATION T_COLON   { $$ = new GlobalFrame( $1, $2 ); }
+  | PROGRAM FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
+  | PROGRAM FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
+  | PROGRAM VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
@@ -98,14 +98,14 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
   : TYPE_SPECIFIER DECLARATOR ARGUMENTS COMPOUND_STATEMENT { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
   ;
 
-ARGUMENTS //(int i, string j) or ()
+ARGUMENTS_IN_PARANTHESIS //(int i, string j) or ()
   : T_L_PARATHENSIS MULTIPLE_ARGUMENTS T_L_PARATHENSIS  { $$ = $2; }
   | T_L_PARATHENSIS T_R_PARATHENSIS                     { $$ = new Arguments(nullptr, nullptr); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
-  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new Argument($1, $3); }
-  | SINGLE_ARGUMENT                             { $$ = new Argument($1, nullptr); }
+  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
+  | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, nullptr); }
   ;
 
 SINGLE_ARGUMENT //int i
