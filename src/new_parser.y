@@ -68,16 +68,15 @@ enum_declaration_list_node function_declaration
 %%
 
 ROOT
-  : SCOPE                   { g_root = new RootNode($1); }
-  | translation_unit SCOPE  { g_root = new RootNode($2); }
+  : PROGRAM       { g_root = new RootNode($1); }
+  | ROOT PROGRAM  { g_root = new RootNode($2); }
   ;
 
-/* [OK] A single top level declaration. */
-SCOPE
-  : FUNCTION_DEFINITION                                                          { $$ = $1; }
-  | FUNCTION_DECLARATION                                                         { $$ = $1; }
-  | DECLARATION_EXPRESSION_LIST T_COLON                                          { $$ = $1; }
-  | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }  //CHECK
+PROGRAM
+  : FUNCTION_DEFINITION                                               { $$ = $1; }
+  | FUNCTION_DECLARATION                                              { $$ = $1; }
+  | DECLARATION_EXPRESSION_LIST T_COLON                               { $$ = $1; }
+  | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
 ENUMATOR_LIST
@@ -85,91 +84,87 @@ ENUMATOR_LIST
   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, nullptr); }
   ;
 
-ENUMERATOR
+ENUMERATOR //need revision
   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, nullptr); delete $1; }
-  | T_IDENTIFIER '=' logical_or_arithmetic_expression  { $$ = new EnumDeclaration(*$1, $3); delete $1; }
+  | T_IDENTIFIER T_EQ_ASSIGN logical_or_arithmetic_expression  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
   ;
 
-function_declaration
-  : type_specifier declarator arguments_list ';'  { $$ = new FunctionDeclaration(*$1, $2, $3); delete $1; }
+FUNCTION_DECLARATION //int foo(int i, string j);
+  : TYPE_SPECIFIER DECLARATOR ARGUMENTS ';'  { $$ = new FunctionDeclaration(*$1, $2, $3); delete $1; }
   ;
 
-function_definition
-  : type_specifier declarator arguments_list compound_statement { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
+FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
+  : TYPE_SPECIFIER DECLARATOR ARGUMENTS COMPOUND_STATEMENT { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
   ;
 
-/* Only accept no arguments. */
-arguments_list
-  : '(' ')'                     { $$ = new ArgumentListNode(nullptr, nullptr); }
-  | '(' function_arguments ')'  { $$ = $2; }
+ARGUMENTS //(int i, string j) or ()
+  : T_L_PARATHENSIS MULTIPLE_ARGUMENTS T_L_PARATHENSIS      { $$ = $2; }
+  | T_L_PARATHENSIS T_R_PARATHENSIS                     { $$ = new ArgumentNode(nullptr, nullptr); }
   ;
 
-function_arguments
-  : function_argument ',' function_arguments { $$ = new ArgumentListNode($1, $3); }
-  | function_argument                        { $$ = new ArgumentListNode($1, nullptr); }
+MULTIPLE_ARGUMENTS //int i, string j, or more...
+  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS { $$ = new ArgumentListNode($1, $3); }
+  | SINGLE_ARGUMENT                        { $$ = new ArgumentListNode($1, nullptr); }
   ;
 
-function_argument
-  : type_specifier declarator         { DeclarationExpressionListNode* node =
+SINGLE_ARGUMENT //int i
+  : TYPE_SPECIFIER DECLARATOR         { DeclarationExpressionListNode* node =
                                         new DeclarationExpressionListNode($2, nullptr, nullptr);
                                         $$ = new DeclarationExpressionList(*$1, node);
-                                        delete $1; }
+                                        delete $1; } //check later
   ;
 
-/* Sequence of statements. */
-compound_statement
-  : '{' statement_list '}' { $$ = new CompoundStatement($2); }
-  | '{' '}'                { $$ = new CompoundStatement(nullptr); }
+COMPOUND_STATEMENT //scope {do smth;}
+  : T_L_BRACE STATEMENT_LIST T_R_BRACE { $$ = new CompoundStatement($2); }
+  | T_L_BRACE T_R_BRACE                { $$ = new CompoundStatement(nullptr); }
   ;
 
-/* [OK] One or more statements. */
-statement_list
-  : statement statement_list { $$ = new StatementListNode($1, $2); }
-  | statement                { $$ = new StatementListNode($1, nullptr); }
+MULTI_STATEMENTS //each line inside a scope
+  : SINGLE_STATEMENT MULTI_STATEMENTS { $$ = new StatementListNode($1, $2); }
+  | SINGLE_STATEMENT                { $$ = new StatementListNode($1, nullptr); }
   ;
 
 /* Possible statements. */
-statement
-  : compound_statement   { $$ = $1; }
-  | expression_statement { $$ = $1; }
-  | jump_statement       { $$ = $1; }
-  | iteration_statement  { $$ = $1; }
-  | selection_statement  { $$ = $1; }
+SINGLE_STATEMENT
+  : COMPOUND_STATEMENT   { $$ = $1; }
+  | EXPRESSION_STATEMENT { $$ = $1; }
+  | JUMP_STATEMENT       { $$ = $1; }
+  | ITERATION_STATEMENT  { $$ = $1; }
+  | SELECTION_STATEMENT  { $$ = $1; }
   ;
 
-/* Note. This creates a shift reduce conflict, but since Yacc resolves the confilct
- * by matching the longest subsequence, hence we have the desired behaviour. */
-selection_statement
-  : IF '(' expression ')' statement                   { $$ = new IfStatement($3, $5, nullptr); }
-  | IF '(' expression ')' statement ELSE statement    { $$ = new IfStatement($3, $5, $7); }
-  | SWITCH '(' expression ')' compound_case_statement { $$ = new SwitchStatement($3, $5); }
+SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
+  : IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, nullptr); }
+  | IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT ELSE SINGLE_STATEMENT    { $$ = new IfStatement($3, $5, $7); }
+  | SWITCH T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 
-case_or_default_statement_list
-  : case_statement case_or_default_statement_list   { $$ = new CaseStatementListNode($1, $2); }
-  | default_statement case_statement_list           { $$ = new CaseStatementListNode($1, $2); }
-  | default_statement                               { $$ = new CaseStatementListNode($1, nullptr); }
+CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
+  : T_L_BRACE MULTIPLE_CASE_DEFAULT T_R_BRACE          { $$ = $2; }
+  | T_L_BRACE MULTIPLE_CASE_STATEMENTS T_R_BRACE                { $$ = $2; }
+  | T_L_BRACE T_R_BRACE                                         { $$ = new CaseStatementListNode(nullptr, nullptr); }
   ;
 
-case_statement_list
-  : case_statement case_statement_list              { $$ = new CaseStatementListNode($1, $2); }
-  | case_statement                                  { $$ = new CaseStatementListNode($1, nullptr); }
+MULIPLE_CASE_DEFAULT //default can happen in any order
+  : SINGLE_CASE_STATEMENT MULIPLE_CASE_DEFAULT  { $$ = new CaseStatementListNode($1, $2); }
+  | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new CaseStatementListNode($1, $2); }
+  | DEFAULT_STATEMENT                           { $$ = new CaseStatementListNode($1, nullptr); }
   ;
 
-compound_case_statement
-  : '{' case_or_default_statement_list '}'          { $$ = $2; }
-  | '{' case_statement_list '}'                     { $$ = $2; }
-  | '{' '}'                                         { $$ = new CaseStatementListNode(nullptr, nullptr); }
+MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_STATEMENTS { $$ = new CaseStatementListNode($1, $2); }
+  | SINGLE_CASE_STATEMENT                          { $$ = new CaseStatementListNode($1, nullptr); }
   ;
 
-case_statement
-  : CASE expression ':' statement_list              { $$ = new CaseStatement($2, $4); }
-  | CASE expression ':'                             { $$ = new CaseStatement($2, nullptr); }
+
+SINGLE_CASE_STATEMENT //case x: do smth;
+  : CASE EXPRESSION T_COLON MULTI_STATEMENTS      { $$ = new CaseStatement($2, $4); }
+  | CASE EXPRESSION T_COLON                       { $$ = new CaseStatement($2, nullptr); }
   ;
 
-default_statement
-  : DEFAULT ':' statement_list                      { $$ = new DefaultStatement($3); }
-  | DEFAULT ':'                                     { $$ = new DefaultStatement(nullptr); }
+DEFAULT_STATEMENT //default: {do smth;}
+  : DEFAULT T_COLON MULTIPLE_STATEMENTS           { $$ = new DefaultStatement($3); }
+  | DEFAULT T_COLON                               { $$ = new DefaultStatement(nullptr); }
   ;
 
 iteration_statement

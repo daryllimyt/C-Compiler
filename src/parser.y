@@ -62,8 +62,8 @@ FUNCTION_DEFINITION
 %%
 
 ROOT
-  : PROGRAM { g_root = new RootNode($1); }
-  | ROOT PROGRAM {g_root = new RootNode($2); }
+  : SCOPE       { g_root = new RootNode($1); }
+  | ROOT SCOPE  { g_root = new RootNode($2); }
   ;
 
 
@@ -71,7 +71,7 @@ ROOT
 PROGRAM
   : FUNCTION_DEFINITION { $$ = $1; }
   | DECLARATION         { $$ = $1; }
-
+;
 
 
 
