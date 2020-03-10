@@ -138,8 +138,8 @@ void
 ":"			{ return T_COLON; }
 ("{"|"<%")		{ return T_L_BRACE; }
 ("}"|"%>")		{ return T_R_BRACE; }
-"("			{ return T_L_PARATHENSIS; }
-")"			{ return T_R_PARATHENSIS; }
+"("			{ return T_L_PARENTHENSIS; }
+")"			{ return T_R_PARENTHENSIS; }
 ("["|"<:")		{ return T_L_BRACKET; }
 ("]"|":>")		{ return T_R_BRACKET; }
 

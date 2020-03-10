@@ -22,7 +22,7 @@
 
 %type <node> external_declaration function_definition declaration_expression_list
 declaration_expression_list_node declarator direct_declarator arguments_list
-compound_statement statement statement_list expression_statement jump_statement
+SCOPE statement statement_list expression_statement jump_statement
 iteration_statement selection_statement function_argument function_arguments
 function_call_parameters_list parameters_list logical_or_arithmetic_expression
 conditional_expression logical_or_expression logical_and_expression
@@ -58,7 +58,7 @@ enum_declaration_list_node function_declaration
 
 //miscelleneous
 %token T_SEMICOLON T_COMMA T_COLON T_L_BRACE T_R_BRACE
-%token T_L_PARATHENSIS T_R_PARATHENSIS T_L_BRACKET T_R_BRACKET
+%token T_L_PARENTHESIS T_R_PARENTHESIS T_L_BRACKET T_R_BRACKET
 
 //T_IDENTIFIERs and constant expressions
 %token T_T_IDENTIFIER T_INT_CONST T_FLOAT_CONST T_CHAR_CONST T_STRING_CONST
@@ -82,11 +82,11 @@ FRAME
 
 // ENUMATOR_LIST
 //   : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
-//   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, nullptr); }
+//   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, NULL); }
 //   ;
 //
 // ENUMERATOR //need revision
-//   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, nullptr); delete $1; }
+//   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, NULL); delete $1; }
 //   | T_IDENTIFIER T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
 //   ;
 
@@ -95,84 +95,82 @@ FUNCTION_DECLARATION //int foo(int i, string j);
   ;
 
 FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
-  : TYPE_SPECIFIER DECLARATOR ARGUMENTS COMPOUND_STATEMENT { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
+  : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
   ;
 
-ARGUMENTS_IN_PARANTHESIS //(int i, string j) or ()
-  : T_L_PARATHENSIS MULTIPLE_ARGUMENTS T_L_PARATHENSIS  { $$ = $2; }
-  | T_L_PARATHENSIS T_R_PARATHENSIS                     { $$ = new Arguments(nullptr, nullptr); }
+WRAPPED_ARGUMENTS //(int i, string j) or ()
+  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
+  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
   : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
-  | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, nullptr); }
+  | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
   ;
 
 SINGLE_ARGUMENT //int i
   : TYPE_SPECIFIER DECLARATOR         { DeclarationExpressionListNode* node =
-                                        new DeclarationExpressionListNode($2, nullptr, nullptr);
+                                        new DeclarationExpressionListNode($2, NULL, NULL);
                                         $$ = new DeclarationExpressionList(*$1, node);
                                         delete $1; } //check later
+
+SCOPE //scope {do smth;}
+  : T_L_BRACE MULTI_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
+  | T_L_BRACE T_R_BRACE                { $$ = new Scope(NULL); }
   ;
 
-COMPOUND_STATEMENT //scope {do smth;}
-  : T_L_BRACE MULTI_STATEMENTS T_R_BRACE { $$ = new CompoundStatement($2); }
-  | T_L_BRACE T_R_BRACE                { $$ = new CompoundStatement(nullptr); }
+MULTI_STATEMENTS //multiple lines inside a scope
+  : SINGLE_STATEMENT MULTI_STATEMENTS { $$ = new MultipleStatements($1, $2); }
+  | SINGLE_STATEMENT                { $$ = new MultipleStatements($1, NULL); }
   ;
 
-MULTI_STATEMENTS //each line inside a scope
-  : SINGLE_STATEMENT MULTI_STATEMENTS { $$ = new StatementListNode($1, $2); }
-  | SINGLE_STATEMENT                { $$ = new StatementListNode($1, nullptr); }
-  ;
-
-/* Possible statements. */
-SINGLE_STATEMENT
-  : COMPOUND_STATEMENT   { $$ = $1; }
-  | EXPRESSION_STATEMENT { $$ = $1; }
-  | JUMP_STATEMENT       { $$ = $1; }
-  | ITERATION_STATEMENT  { $$ = $1; }
-  | SELECTION_STATEMENT  { $$ = $1; }
+SINGLE_STATEMENT//each line inside a scope
+  : SCOPE                 { $$ = $1; }
+  | EXPRESSION_STATEMENT  { $$ = $1; }
+  | JUMP_STATEMENT        { $$ = $1; }
+  | ITERATION_STATEMENT   { $$ = $1; }
+  | SELECTION_STATEMENT   { $$ = $1; }
   ;
 
 SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
-  : T_IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, nullptr); }
-  | T_IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT    { $$ = new IfStatement($3, $5, $7); }
-  | T_SWITCH T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
+  : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, NULL); }
+  | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT  { $$ = new IfStatement($3, $5, $7); }
+  | T_SWITCH T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS WRAPPED_CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 
-CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
+WRAPPED_CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
   : T_L_BRACE MULTIPLE_CASE_DEFAULT T_R_BRACE          { $$ = $2; }
-  | T_L_BRACE MULTIPLE_CASE_STATEMENTS T_R_BRACE                { $$ = $2; }
-  | T_L_BRACE T_R_BRACE                                         { $$ = new CaseStatementListNode(nullptr, nullptr); }
+  | T_L_BRACE MULTIPLE_CASE_STATEMENTS T_R_BRACE       { $$ = $2; }
+  | T_L_BRACE T_R_BRACE                                { $$ = new MultipleCaseStatement(NULL, NULL); }
   ;
 
 MULTIPLE_CASE_DEFAULT //default can happen in any order
-  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_DEFAULT  { $$ = new CaseStatementListNode($1, $2); }
-  | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new CaseStatementListNode($1, $2); }
-  | DEFAULT_STATEMENT                           { $$ = new CaseStatementListNode($1, nullptr); }
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_DEFAULT  { $$ = new MultipleCaseStatements($1, $2); }
+  | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new MultipleCaseStatements($1, $2); }
+  | DEFAULT_STATEMENT                           { $$ = new MultipleCaseStatements($1, NULL); }
   ;
 
 MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
-  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_STATEMENTS { $$ = new CaseStatementListNode($1, $2); }
-  | SINGLE_CASE_STATEMENT                          { $$ = new CaseStatementListNode($1, nullptr); }
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_STATEMENTS { $$ = new MultipleCaseStatements($1, $2); }
+  | SINGLE_CASE_STATEMENT                          { $$ = new MultipleCaseStatements($1, NULL); }
   ;
 
 
 SINGLE_CASE_STATEMENT //case x: do smth;
   : T_CASE EXPRESSION T_COLON MULTI_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
-  | T_CASE EXPRESSION T_COLON                       { $$ = new CaseStatement($2, nullptr); }
+  | T_CASE EXPRESSION T_COLON                       { $$ = new SingleCaseStatement($2, NULL); }
   ;
 
 DEFAULT_STATEMENT //default: {do smth;}
   : T_DEFAULT T_COLON MULTIPLE_STATEMENTS           { $$ = new DefaultStatement($3); }
-  | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(nullptr); }
+  | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(NULL); }
   ;
 
-//started here today
+//finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
-  : T_WHILE T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                                             { $$ = new WhileStatement($3, $5); }
-  | T_FOR T_L_PARATHENSIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT  { $$ = new ForStatement($3, $4, $5, $7); }
-  | T_FOR T_L_PARATHENSIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARATHENSIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, nullptr, $6); }
+  : T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileStatement($3, $5); }
+  | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForStatement($3, $4, $5, $7); }
+  | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
   ;
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
@@ -215,7 +213,7 @@ ASSIGNMENT_OPERATOR
  *                  /                   \
  *           TYPE_SPECIFIER             ASSIGNMENT_STATEMENT
  *                                      /          |           \
- *                               Variable      Rhs(nullptr)    Nextnode(nullptr)
+ *                               Variable      Rhs(NULL)    Nextnode(NULL)
  */
 
 VARIABLE_DECLARATION //int a = 2, b = 5
@@ -224,9 +222,9 @@ VARIABLE_DECLARATION //int a = 2, b = 5
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 ;
   : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
-  | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, nullptr, $3); }
-  | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, nullptr); }
-  | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, nullptr, nullptr); }
+  | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
+  | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
+  | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, NULL, NULL); }
   ;
 
 
@@ -333,17 +331,17 @@ CONDITIONAL_EXPRESSION
 
 function_call_parameters_list // (int i = 5, double j)
   : '(' parameters_list ')'  { $$ = $2; }
-	| '(' ')'                  { $$ = new ParametersListNode(nullptr, nullptr); }
+	| '(' ')'                  { $$ = new ParametersListNode(NULL, NULL); }
   ;
 
 parameters_list //int i = 5, double j
   : MATH_OR_BITWISE_EXPRESSION ',' parameters_list { $$ = new ParametersListNode($1, $3); }
-  | MATH_OR_BITWISE_EXPRESSION                     { $$ = new ParametersListNode($1, nullptr); }
+  | MATH_OR_BITWISE_EXPRESSION                     { $$ = new ParametersListNode($1, NULL); }
   ;
 
 DECLARATOR //a || *a || a[1]
-  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", nullptr); delete $1; }
-  | '*' T_IDENTIFIER                                                 { $$ = new Variable(*$2, "pointer", nullptr); delete $2; }
+  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", NULL); delete $1; }
+  | '*' T_IDENTIFIER                                                 { $$ = new Variable(*$2, "pointer", NULL); delete $2; }
   | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "array", $3 ); delete $1; }
   ;
 
