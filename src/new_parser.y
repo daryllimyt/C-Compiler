@@ -86,7 +86,7 @@ ENUMATOR_LIST
 
 ENUMERATOR //need revision
   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, nullptr); delete $1; }
-  | T_IDENTIFIER T_EQ_ASSIGN logical_or_arithmetic_expression  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
+  | T_IDENTIFIER T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
   ;
 
 FUNCTION_DECLARATION //int foo(int i, string j);
@@ -210,158 +210,153 @@ ASSIGNMENT_OPERATOR
   ;
 
 /* Declaration expressions are like
- *                  VARIABLE_ASSIGNMENT
+ *                  VARIABLE_DECLARATION
  *                  /                   \
- *           TYPE_SPECIFIER             DECLARATIVE_EXPRESSION
+ *           TYPE_SPECIFIER             ASSIGNMENT_STATEMENT
  *                                      /          |           \
  *                               Variable      Rhs(nullptr)    Nextnode(nullptr)
  */
 
-VARIABLE_ASSIGNMENT //int a = 2, b = 5
-  : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new DeclarationExpressionList(*$1, $2); delete $1; }
+VARIABLE_DECLARATION //int a = 2, b = 5
+  : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration(*$1, $2); delete $1; }
   ;
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 ;
-  : DECLARATOR '=' LOGICAL_OR_ARITHMETIC_EXPRESSION ',' ASSIGNMENT_STATEMENT    { $$ = new DeclarationExpressionListNode($1, $3, $5); }
-  | DECLARATOR ',' ASSIGNMENT_EXPRESSION                                         { $$ = new DeclarationExpressionListNode($1, nullptr, $3); }
-  | DECLARATOR '=' LOGICAL_OR_ARITHMETIC_EXPRESSION                              { $$ = new DeclarationExpressionListNode($1, $3, nullptr); }
-  | DECLARATOR                                                                   { $$ = new DeclarationExpressionListNode($1, nullptr, nullptr); }
+  : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
+  | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, nullptr, $3); }
+  | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, nullptr); }
+  | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, nullptr, nullptr); }
   ;
 
-/* Logical or arithmetic expressions are like
- * var_name +
- */
-logical_or_arithmetic_expression
-  : conditional_expression  { $$ = $1; }
-  | declarator assignment_operator logical_or_arithmetic_expression { $$ = new AssignmentExpression($1, *$2, $3); }
+
+MATH_OR_BITWISE_EXPRESSION
+  : CONDITIONAL_EXPRESSION  { $$ = $1; }
+  | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, *$2, $3); }
   ;
 
-/* ============== BEGIN Arithmetic and logical expressions ordereing */
-primary_expression
-  : declarator                                { $$ = $1; }
+PRIMARY_EXPRESSION //a || 1 || a+1
+  : DECLARATOR                                { $$ = $1; }
   | INTEGER_CONSTANT                          { $$ = new IntegerConstant( $1 ); }
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
   | STRING_CONSTANT */
-  | '(' logical_or_arithmetic_expression ')'  { $$ = $2; }
-  | T_IDENTIFIER function_call_parameters_list  { $$ = new FunctionCall(*$1, $2); delete $1; }
+  | '(' MATH_OR_BITWISE_EXPRESSION ')'  { $$ = $2; }
+  | T_IDENTIFIER function_call_parameters_list  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
   ;
 
-postfix_expression
-  : primary_expression         { $$ = $1; }
-  | postfix_expression INC_OP  { $$ = new PostfixExpression($1, "++"); }
-  | postfix_expression DEC_OP  { $$ = new PostfixExpression($1, "--"); }
+POSTFIX_EXPRESSION // a++
+  : PRIMARY_EXPRESSION         { $$ = $1; }
+  | POSTFIX_EXPRESSION T_INC_OP  { $$ = new PostfixExpression($1, "++"); }
+  | POSTFIX_EXPRESSION T_DEC_OP  { $$ = new PostfixExpression($1, "--"); }
   ;
 
-unary_expression
-  : postfix_expression               { $$ = $1; }
-  | INC_OP unary_expression          { $$ = new UnaryExpression("++", $2); }
-  | DEC_OP unary_expression          { $$ = new UnaryExpression("--", $2); }
-  | unary_operator unary_expression  { $$ = new UnaryExpression(*$1, $2); delete $1; }
+UNARY_EXPRESSION //++a
+  : POSTFIX_EXPRESSION               { $$ = $1; }
+  | T_INC_OP UNARY_EXPRESSION          { $$ = new UnaryExpression("++", $2); }
+  | T_DEC_OP UNARY_EXPRESSION          { $$ = new UnaryExpression("--", $2); }
+  | UNARY_OPERATOR UNARY_EXPRESSION  { $$ = new UnaryExpression(*$1, $2); delete $1; }
   ;
 
-unary_operator
-  : '&'  { $$ = new std::string("&"); }
-  | '+'  { $$ = new std::string("+"); }
-  | '-'  { $$ = new std::string("-"); }
-  | '~'  { $$ = new std::string("~"); }
-  | '!'  { $$ = new std::string("!"); }
+UNARY_OPERATOR
+  : T_AND_OP  { $$ = new std::string("&"); }
+  | T_PLUS  { $$ = new std::string("+"); }
+  | T_MINUS  { $$ = new std::string("-"); }
+  | T_XOR  { $$ = new std::string("~"); }
+  | T_NOT  { $$ = new std::string("!"); }
   ;
 
-multiplicative_expression
-  : unary_expression                                { $$ = $1; }
-  | multiplicative_expression '*' unary_expression  { $$ = new MultiplicativeExpression($1, "*", $3); }
-  | multiplicative_expression '/' unary_expression  { $$ = new MultiplicativeExpression($1, "/", $3); }
-  | multiplicative_expression '%' unary_expression  { $$ = new MultiplicativeExpression($1, "%", $3); }
+MULTIPLICATIVE_EXPRESSION //a * b || a / b || a % b
+  : UNARY_EXPRESSION                                { $$ = $1; }
+  | MULTIPLICATIVE_EXPRESSION T_MULT UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "*", $3); }
+  | MULTIPLICATIVE_EXPRESSION T_DIV UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "/", $3); }
+  | MULTIPLICATIVE_EXPRESSION T_MOD UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "%", $3); }
   ;
 
-additive_expression
-  : multiplicative_expression                          { $$ = $1; }
-  | additive_expression '+' multiplicative_expression  { $$ = new AdditiveExpression($1, "+", $3); }
-  | additive_expression '-' multiplicative_expression  { $$ = new AdditiveExpression($1, "-", $3); }
+ADDITIVE_EXPRESSION //a + b || a - b
+  : MULTIPLICATIVE_EXPRESSION                          { $$ = $1; }
+  | ADDITIVE_EXPRESSION T_PLUS MULTIPLICATIVE_EXPRESSION  { $$ = new AdditiveExpression($1, "+", $3); }
+  | ADDITIVE_EXPRESSION T_MINUS MULTIPLICATIVE_EXPRESSION  { $$ = new AdditiveExpression($1, "-", $3); }
   ;
 
-shift_expression
-  : additive_expression                            { $$ = $1; }
-  | shift_expression LEFT_OP additive_expression   { $$ = new ShiftExpression($1, "<<", $3); }
-  | shift_expression RIGHT_OP additive_expression  { $$ = new ShiftExpression($1, ">>", $3); }
+SHIFT_EXPRESSION //a < 5 || b > 5
+  : ADDITIVE_EXPRESSION                            { $$ = $1; }
+  | SHIFT_EXPRESSION T_LSHIFT_OP ADDITIVE_EXPRESSION   { $$ = new ShiftExpression($1, "<<", $3); }
+  | SHIFT_EXPRESSION T_RSHIFT_OP ADDITIVE_EXPRESSION  { $$ = new ShiftExpression($1, ">>", $3); }
   ;
 
-relational_expression
-  : shift_expression                              { $$ = $1; }
-  | relational_expression '<' shift_expression    { $$ = new RelationalExpression($1, "<", $3); }
-  | relational_expression '>' shift_expression    { $$ = new RelationalExpression($1, ">", $3); }
-  | relational_expression LE_OP shift_expression  { $$ = new RelationalExpression($1, "<=", $3); }
-  | relational_expression GE_OP shift_expression  { $$ = new RelationalExpression($1, ">=", $3); }
+RELATIONAL_EXPRESSION
+  : SHIFT_EXPRESSION                              { $$ = $1; }
+  | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, "<", $3); }
+  | RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, ">", $3); }
+  | RELATIONAL_EXPRESSION T_LE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, "<=", $3); }
+  | RELATIONAL_EXPRESSION T_GE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, ">=", $3); }
   ;
 
-equality_expression
-  : relational_expression                            { $$ = $1; }
-  | equality_expression EQ_OP relational_expression  { $$ = new EqualityExpression($1, "==", $3); }
-  | equality_expression NE_OP relational_expression  { $$ = new EqualityExpression($1, "!=", $3); }
+EQUALITY_EXPRESSION
+  : RELATIONAL_EXPRESSION                            { $$ = $1; }
+  | EQUALITY_EXPRESSION T_EQ_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "==", $3); }
+  | EQUALITY_EXPRESSION T_NE_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "!=", $3); }
   ;
 
-and_expression
-  : equality_expression                     { $$ = $1; }
-  | and_expression '&' equality_expression  { $$ = new AndExpression($1, $3); }
+BITWISE_AND_EXPRESSION
+  : EQUALITY_EXPRESSION                     { $$ = $1; }
+  | BITWISE_AND_EXPRESSION T_AND EQUALITY_EXPRESSION  { $$ = new AndExpression($1, $3); }
   ;
 
-exclusive_or_expression
-  : and_expression                              { $$ = $1; }
-  | exclusive_or_expression '^' and_expression  { $$ = new ExclusiveOrExpression($1, $3); }
+BITWISE_XOR_EXPRESSION
+  : BITWISE_AND_EXPRESSION                              { $$ = $1; }
+  | BITWISE_XOR_EXPRESSION T_XOR BITWISE_AND_EXPRESSION  { $$ = new ExclusiveOrExpression($1, $3); }
   ;
 
-inclusive_or_expression
-  : exclusive_or_expression                              { $$ = $1; }
-  | inclusive_or_expression '|' exclusive_or_expression  { $$ = new InclusiveOrExpression($1, $3); }
+BITWISE_OR_EXPRESSION
+  : BITWISE_XOR_EXPRESSION                              { $$ = $1; }
+  | BITWISE_OR_EXPRESSION T_OR_OP BITWISE_OR_EXPRESSION  { $$ = new InclusiveOrExpression($1, $3); }
   ;
 
-logical_and_expression
-  : inclusive_or_expression                                { $$ = $1; }
-  | logical_and_expression AND_OP inclusive_or_expression  { $$ = new LogicalAndExpression($1, $3); }
+BOOLEAN_AND_EXPRESSION
+  : BITWISE_OR_EXPRESSION                                { $$ = $1; }
+  | BOOLEAN_AND_EXPRESSION T_AND_OP BITWISE_OR_EXPRESSION  { $$ = new LogicalAndExpression($1, $3); }
   ;
 
-logical_or_expression
-  : logical_and_expression                              { $$ = $1; }
-  | logical_or_expression OR_OP logical_and_expression  { $$ = new LogicalOrExpression($1, $3); }
+BOOLEAN_OR_EXPRESSION
+  : BOOLEAN_AND_EXPRESSION                              { $$ = $1; }
+  | BOOLEAN_OR_EXPRESSION T_OR_OP BOOLEAN_AND_EXPRESSION  { $$ = new LogicalOrExpression($1, $3); }
   ;
 
-conditional_expression
-  : logical_or_expression                                            { $$ = $1; }
-  | logical_or_expression '?' expression ':' conditional_expression  { $$ = new ConditionalExpression($1, $3, $5); }
+CONDITIONAL_EXPRESSION
+  : BOOLEAN_OR_EXPRESSION                                            { $$ = $1; }
+  | BOOLEAN_OR_EXPRESSION T_QUESTION EXPRESSION T_COLON CONDITIONAL_EXPRESSION  { $$ = new ConditionalExpression($1, $3, $5); }
 	;
 
 /* ============== END Arithmetic and logical expressions ordering */
 
-function_call_parameters_list
+function_call_parameters_list // (int i = 5, double j)
   : '(' parameters_list ')'  { $$ = $2; }
 	| '(' ')'                  { $$ = new ParametersListNode(nullptr, nullptr); }
   ;
 
-parameters_list
-  : logical_or_arithmetic_expression ',' parameters_list { $$ = new ParametersListNode($1, $3); }
-  | logical_or_arithmetic_expression                     { $$ = new ParametersListNode($1, nullptr); }
+parameters_list //int i = 5, double j
+  : MATH_OR_BITWISE_EXPRESSION ',' parameters_list { $$ = new ParametersListNode($1, $3); }
+  | MATH_OR_BITWISE_EXPRESSION                     { $$ = new ParametersListNode($1, nullptr); }
   ;
 
-/* Declarator for a variable. Only direct name allowed, no pointers.*/
-declarator
-  : direct_declarator { $$ = $1; }
-  | '*' T_IDENTIFIER    {$$ = new Variable(*$2, "pointer", nullptr); delete $2; }
+DECLARATOR //a || *a || a[1]
+  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", nullptr); delete $1; }
+  | '*' T_IDENTIFIER                                                 { $$ = new Variable(*$2, "pointer", nullptr); delete $2; }
+  | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "array", $3 ); delete $1; }
   ;
 
-/* Only simple types allowed, e.g. int, float or defined types.
- * No arrays or struct allowed. */
-direct_declarator
-  : T_IDENTIFIER                                           { $$ = new Variable( *$1, "normal", nullptr); delete $1; }
-  | T_IDENTIFIER '[' logical_or_arithmetic_expression ']'  { $$ = new Variable( *$1, "array", $3 ); delete $1; }
-  ;
 
-/* Only INT allowed for now. */
-type_specifier
-  : INT           { $$ = new std::string("int"); }
-  | UNSIGNED      { $$ = new std::string("int"); }
-  | UNSIGNED INT  { $$ = new std::string("int"); }
-  | VOID          { $$ = new std::string("void"); }
+TYPE_SPECIFIER
+  : T_VOID     { $$ = new std::string("void"); }
+	| T_CHAR     { $$ = new std::string("char"); }
+	| T_SHORT    { $$ = new std::string("short"); }
+	| T_INT      { $$ = new std::string("int"); }
+	| T_LONG     { $$ = new std::string("long"); }
+	| T_FLOAT    { $$ = new std::string("float"); }
+	| T_DOUBLE   { $$ = new std::string("double"); }
+	| T_SIGNED   { $$ = new std::string("signed int"); }
+	| T_UNSIGNED { $$ = new std::string("unsigned int"); }
   ;
 
 %%
