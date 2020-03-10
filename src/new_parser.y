@@ -134,9 +134,9 @@ SINGLE_STATEMENT
   ;
 
 SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
-  : IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, nullptr); }
-  | IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT ELSE SINGLE_STATEMENT    { $$ = new IfStatement($3, $5, $7); }
-  | SWITCH T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
+  : T_IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, nullptr); }
+  | T_IF T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT    { $$ = new IfStatement($3, $5, $7); }
+  | T_SWITCH T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 
 CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
@@ -145,8 +145,8 @@ CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
   | T_L_BRACE T_R_BRACE                                         { $$ = new CaseStatementListNode(nullptr, nullptr); }
   ;
 
-MULIPLE_CASE_DEFAULT //default can happen in any order
-  : SINGLE_CASE_STATEMENT MULIPLE_CASE_DEFAULT  { $$ = new CaseStatementListNode($1, $2); }
+MULTIPLE_CASE_DEFAULT //default can happen in any order
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_DEFAULT  { $$ = new CaseStatementListNode($1, $2); }
   | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new CaseStatementListNode($1, $2); }
   | DEFAULT_STATEMENT                           { $$ = new CaseStatementListNode($1, nullptr); }
   ;
@@ -158,74 +158,74 @@ MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
 
 
 SINGLE_CASE_STATEMENT //case x: do smth;
-  : CASE EXPRESSION T_COLON MULTI_STATEMENTS      { $$ = new CaseStatement($2, $4); }
-  | CASE EXPRESSION T_COLON                       { $$ = new CaseStatement($2, nullptr); }
+  : T_CASE EXPRESSION T_COLON MULTI_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
+  | T_CASE EXPRESSION T_COLON                       { $$ = new CaseStatement($2, nullptr); }
   ;
 
 DEFAULT_STATEMENT //default: {do smth;}
-  : DEFAULT T_COLON MULTIPLE_STATEMENTS           { $$ = new DefaultStatement($3); }
-  | DEFAULT T_COLON                               { $$ = new DefaultStatement(nullptr); }
+  : T_DEFAULT T_COLON MULTIPLE_STATEMENTS           { $$ = new DefaultStatement($3); }
+  | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(nullptr); }
   ;
 
-iteration_statement
-  : WHILE '(' expression ')' statement                                          { $$ = new WhileStatement($3, $5); }
-  | FOR '(' expression_statement  expression_statement expression ')' statement { $$ = new ForStatement($3, $4, $5, $7); }
-  | FOR '(' expression_statement  expression_statement ')' statement            { $$ = new ForStatement($3, $4, nullptr, $6); }
+//started here today
+ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
+  : T_WHILE T_L_PARATHENSIS EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT                                             { $$ = new WhileStatement($3, $5); }
+  | T_FOR T_L_PARATHENSIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT EXPRESSION T_R_PARATHENSIS SINGLE_STATEMENT  { $$ = new ForStatement($3, $4, $5, $7); }
+  | T_FOR T_L_PARATHENSIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARATHENSIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, nullptr, $6); }
   ;
 
-jump_statement
-  : RETURN ';'            { $$ = new ReturnStatement(nullptr); }
-  | RETURN expression ';' { $$ = new ReturnStatement($2); }
-  | BREAK ';'             { $$ = new BreakStatement(); }
-  | CONTINUE ';'          { $$ = new ContinueStatement(); }
+JUMP_STATEMENT //return; || return x; || break; || continue;
+  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
+  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
+  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
+  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
   ;
 
-/* [OK] Expression. */
-expression_statement
-  : ';'            { $$ = new EmptyExpression(); }
-  | expression ';' { $$ = $1; }
+EXPRESSION_STATEMENT
+  : T_SEMICOLON            { $$ = new EmptyExpression(); }
+  | EXPRESSION T_SEMICOLON { $$ = $1; }
   ;
 
 /* Every simple expression. Could be an assignment, a declaration, a function call
  * etc..
  * Only assignment and declaration for now. */
-expression
-  : declaration_expression_list       { $$ = $1; }
+EXPRESSION
+  : VARIABLE_ASSIGNMENT       { $$ = $1; }
   | logical_or_arithmetic_expression  { $$ = $1; }
   ;
 
 
-assignment_operator
-  : '='          { $$ = new std::string("="); }
-  | MUL_ASSIGN   { $$ = new std::string("*="); }
-  | DIV_ASSIGN   { $$ = new std::string("/="); }
-  | MOD_ASSIGN   { $$ = new std::string("%="); }
-  | ADD_ASSIGN   { $$ = new std::string("+="); }
-  | SUB_ASSIGN   { $$ = new std::string("-="); }
-  | LEFT_ASSIGN  { $$ = new std::string("<<="); }
-  | RIGHT_ASSIGN { $$ = new std::string(">>="); }
-  | AND_ASSIGN   { $$ = new std::string("&="); }
-  | XOR_ASSIGN   { $$ = new std::string("^="); }
-  | OR_ASSIGN    { $$ = new std::string("|="); }
+ASSIGNMENT_OPERATOR
+  : T_EQ_ASSIGN    { $$ = new std::string("="); }
+  | T_MUL_ASSIGN   { $$ = new std::string("*="); }
+  | T_DIV_ASSIGN   { $$ = new std::string("/="); }
+  | T_MOD_ASSIGN   { $$ = new std::string("%="); }
+  | T_ADD_ASSIGN   { $$ = new std::string("+="); }
+  | T_SUB_ASSIGN   { $$ = new std::string("-="); }
+  | T_LEFT_ASSIGN  { $$ = new std::string("<<="); }
+  | T_RIGHT_ASSIGN { $$ = new std::string(">>="); }
+  | T_AND_ASSIGN   { $$ = new std::string("&="); }
+  | T_XOR_ASSIGN   { $$ = new std::string("^="); }
+  | T_OR_ASSIGN    { $$ = new std::string("|="); }
   ;
 
 /* Declaration expressions are like
- *              DeclarationExpressionList
- *                  /                 \
- *           TypeSpecifier          DeclarationExpressionListNode
+ *                  VARIABLE_ASSIGNMENT
+ *                  /                   \
+ *           TYPE_SPECIFIER             DECLARATIVE_EXPRESSION
  *                                      /          |           \
  *                               Variable      Rhs(nullptr)    Nextnode(nullptr)
  */
 
-declaration_expression_list
-  : type_specifier declaration_expression_list_node         { $$ = new DeclarationExpressionList(*$1, $2); delete $1; }
+VARIABLE_ASSIGNMENT //int a = 2, b = 5
+  : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new DeclarationExpressionList(*$1, $2); delete $1; }
   ;
 
-declaration_expression_list_node
-  : declarator '=' logical_or_arithmetic_expression ',' declaration_expression_list_node    { $$ = new DeclarationExpressionListNode($1, $3, $5); }
-  | declarator ',' declaration_expression_list_node                                         { $$ = new DeclarationExpressionListNode($1, nullptr, $3); }
-  | declarator '=' logical_or_arithmetic_expression                                         { $$ = new DeclarationExpressionListNode($1, $3, nullptr); }
-  | declarator                                                                              { $$ = new DeclarationExpressionListNode($1, nullptr, nullptr); }
+ASSIGNMENT_STATEMENT //a = 2, b = 5 ;
+  : DECLARATOR '=' LOGICAL_OR_ARITHMETIC_EXPRESSION ',' ASSIGNMENT_STATEMENT    { $$ = new DeclarationExpressionListNode($1, $3, $5); }
+  | DECLARATOR ',' ASSIGNMENT_EXPRESSION                                         { $$ = new DeclarationExpressionListNode($1, nullptr, $3); }
+  | DECLARATOR '=' LOGICAL_OR_ARITHMETIC_EXPRESSION                              { $$ = new DeclarationExpressionListNode($1, $3, nullptr); }
+  | DECLARATOR                                                                   { $$ = new DeclarationExpressionListNode($1, nullptr, nullptr); }
   ;
 
 /* Logical or arithmetic expressions are like
