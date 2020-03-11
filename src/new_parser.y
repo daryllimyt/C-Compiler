@@ -91,11 +91,11 @@ FRAME
 //   ;
 
 FUNCTION_DECLARATION //int foo(int i, string j);
-  : TYPE_SPECIFIER DECLARATOR ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration(*$1, $2, $3); delete $1; }
+  : TYPE_SPECIFIER DECLARATOR ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration($1, $2, $3);; }
   ;
 
 FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
-  : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE { $$ = new FunctionDefinition(*$1, $2, $3, $4); delete $1; }
+  : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE { $$ = new FunctionDefinition($1, $2, $3, $4);; }
   ;
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
@@ -217,7 +217,7 @@ ASSIGNMENT_OPERATOR
  */
 
 VARIABLE_DECLARATION //int a = 2, b = 5
-  : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration(*$1, $2); delete $1; }
+  : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
   ;
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 ;
@@ -347,15 +347,15 @@ DECLARATOR //a || *a || a[1]
 
 
 TYPE_SPECIFIER
-  : T_VOID     { $$ = new std::string("void"); }
-	| T_CHAR     { $$ = new std::string("char"); }
-	| T_SHORT    { $$ = new std::string("short"); }
-	| T_INT      { $$ = new std::string("int"); }
-	| T_LONG     { $$ = new std::string("long"); }
-	| T_FLOAT    { $$ = new std::string("float"); }
-	| T_DOUBLE   { $$ = new std::string("double"); }
-	| T_SIGNED   { $$ = new std::string("signed int"); }
-	| T_UNSIGNED { $$ = new std::string("unsigned int"); }
+  : T_VOID     { $$ = new TypeSpecifier("void"); }
+	| T_CHAR     { $$ = new TypeSpecifier("char"); }
+	| T_SHORT    { $$ = new TypeSpecifier("short"); }
+	| T_INT      { $$ = new TypeSpecifier("int"); }
+	| T_LONG     { $$ = new TypeSpecifier("long"); }
+	| T_FLOAT    { $$ = new TypeSpecifier("float"); }
+	| T_DOUBLE   { $$ = new TypeSpecifier("double"); }
+	| T_SIGNED   { $$ = new TypeSpecifier("signed int"); }
+	| T_UNSIGNED { $$ = new TypeSpecifier("unsigned int"); }
   ;
 
 %%
