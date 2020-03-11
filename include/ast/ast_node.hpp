@@ -85,7 +85,7 @@ public:
     Frame(NodePtr left, NodePtr right)
     {
         type_ = "FRAME";
-        left_ = left; // Pointer to previous frame
+        left_ = left;   // Pointer to previous frame
         right_ = right; // Pointer to current frame
     }
     NodePtr getLeft() const
@@ -97,25 +97,5 @@ public:
         return right_;
     }
 };
-
-struct ProgramContext
-{
-    // General
-    std::vector<int> parameters;
-
-    // Contextual information for MIPS code generator
-    int frameIndex = 0; // Frame index of current function/scope
-    int scope = 0;
-    std::vector<std::string> totalVars; // List of variable keys
-    std::string identifier;
-    std::string specifier;
-    std::string qualifier;
-
-    // Contextual information for Python translator
-};
-
-int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNode);
-void Compile(std::ostream *output, ProgramContext &contxt, NodePtr astNode);
-
 
 #endif

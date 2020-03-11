@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
   {
     std::string flag = argv[1];
     FILE* infile;
-    yyset_in(infile);
+    yyset_in(infile); // Sets the file for flex and bison to read
 
     // Identify flag
     if (flag == "-S") // C to MIPS compilation

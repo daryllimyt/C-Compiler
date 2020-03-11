@@ -10,18 +10,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode)
     }
     else if (astNode->getType() == "ROOT")
     {
-        // Calculate number of global variables for actual number, use CountGlobalVars(astNode->GetNext())
+        // Calculate number of global variables for actual number, use CountGlobalVars(astNode->getNext())
         // Push stack from by space needed for global variables
         // Set end label of astNode
-        // Some flag for qemu
-         Compile(output, context, astNode->GetNext());
+        // Output some flag for qemu
+         Compile(output, context, astNode->getNext());
     }
     else if(astNode->getType() == "FRAME")
     {
-        Compile(output, context, astNode->GetLeft());
-        Compile(output, context, astNode->GetRight());
+        Compile(output, context, astNode->getLeft());
+        Compile(output, context, astNode->getRight());
     }
-    else if(astNode->GetType() == "INT")
+    else if(astNode->getType() == "INT")
     {
         context.specifier = "INT";
     }
@@ -31,8 +31,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode)
     }
     else if(astNode->getType() == "FUNCTION_DECLARATION") 
     {
-        Compile(output, context, astNode->GetLeft()); // Get function identifier from left branch
-
+        context.variableAssignmentState = "FUNCTION_DECLARATION";
+        Compile(output, context, astNode->getLeft());
+        
     }
     
     else
