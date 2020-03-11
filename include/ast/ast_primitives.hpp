@@ -32,7 +32,7 @@ private:
 public:
     IntegerConstant(int64_t val)
     {
-        type_ = "integer constant"; 
+        type_ = "integer constant";
         val_ = val;
     }
     const int64_t getVal() const
@@ -40,5 +40,14 @@ public:
         return val_;
     }
 };
+
+class TypeSpecifier : public Node
+{
+public:
+    TypeSpecifier(const std::string &type)
+    {
+        type_ = type;
+    }
+}
 
 #endif

@@ -14,24 +14,21 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode)
         // Push stack from by space needed for global variables
         // Set end label of astNode
         // Output some flag for qemu
-         Compile(output, context, astNode->getNext());
+         Compile(output, context, astNode->getNext()); // First frame
     }
     else if(astNode->getType() == "FRAME")
     {
-        Compile(output, context, astNode->getLeft());
-        Compile(output, context, astNode->getRight());
+        Compile(output, context, astNode->getLeft()); // Previous frame
+        Compile(output, context, astNode->getRight()); // Current frame
     }
     else if(astNode->getType() == "INT")
     {
-        context.specifier = "INT";
+        context.typeSpecifier = "INT";
     }
     else if(astNode->getType() == "FUNCTION_DEFINITION") 
     {
         // If function definition has no statements then it is a function declaration
-        if (astNode->getStatements() == NULL)
-        {
-            /* code */
-        }
+    
         
         
 

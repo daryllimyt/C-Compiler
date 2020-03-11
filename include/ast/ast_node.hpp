@@ -49,9 +49,9 @@ public:
     virtual NodePtr getFalsePath() const { return NULL; }
     virtual NodePtr getResult() const { return NULL; }
     virtual NodePtr getIndex() const { return NULL; }
-    virtual NodePtr getSpecifiers() const { return NULL; }
+    virtual NodePtr getTypeSpecifier() const { return NULL; }
     virtual NodePtr getQualifiers() const { return NULL; }
-    virtual NodePtr getStatements() const { return NULL; }
+    virtual NodePtr getArgs() const { return NULL; }
     virtual NodePtr getDeclarator() const { return NULL; }
     virtual const std::string getId() const { return NULL; }
     virtual const int64_t getValue() const { return NULL; }

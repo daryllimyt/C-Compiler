@@ -9,23 +9,23 @@
 class FunctionDefinition : public Node
 {
 protected:
-    NodePtr specifiers_;
+    NodePtr typeSpecifier_;
     NodePtr identifier_;
     NodePtr args_;
     NodePtr scope_;
 
 public:
-    FunctionDefinition(NodePtr specifiers, NodePtr identifier, NodePtr args, NodePtr scope)
+    FunctionDefinition(NodePtr typeSpecifier, NodePtr identifier, NodePtr args, NodePtr scope)
     {
         type_ = "FUNCTION_DEFINITION";
-        specifiers_ = specifiers;
+        typeSpecifier_ = typeSpecifier;
         identifier_ = identifier;
         args_ = args;
-        statements_ = statements;
+        scope_ = scope;
     }
     NodePtr getSpecifier() const
     {
-        return specifiers_; // type specifiers
+        return typeSpecifier_; // type specifier
     }
     NodePtr getIdentifier() const
     {
@@ -44,30 +44,31 @@ public:
 class FunctionDeclaration : public Node
 {
 protected:
-    NodePtr specifiers_;
-    NodePtr left_;
-    NodePtr right_; // Parameter(s)
+    NodePtr typeSpecifier_;
+    NodePtr identifier_;
+    NodePtr args_;
 
 public:
-    FunctionDeclaration(const std::string &specifiers, NodePtr left, NodePtr right) : 
+    FunctionDeclaration(NodePtr typeSpecifier, NodePtr identifier, NodePtr args)
     {
         type_ = "FUNCTION_DECLARATION";
-        specifiers_ = specifiers;
-        left_ = left;
-        right_ = right;
+        typeSpecifier_ = typeSpecifier;
+        identifier_ = identifier;
+        args_ = args;
     }
     NodePtr getSpecifier() const
     {
-        return specifiers_; // type specifiers
+        return typeSpecifier_; // type specifier
     }
-    NodePtr getLeft() const
+    NodePtr getIdentifier() const
     {
-        return left_; // declarator
+        return identifier_; // variable name
     }
-    NodePtr getRight() const
+    NodePtr getArgs() const
     {
-        return right_; // arguments
+        return args_;
     }
+
 };
 
 #endif

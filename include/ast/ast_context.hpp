@@ -7,23 +7,29 @@
 
 struct VariableContext
 {
-    int address;
-    int scope;
-    std::string type;
-}
+    // Unique to each variable, create a new VariableContext for each variable
+    int address; // Address in memory of where the variable is located
+    int scope; // Scope in which the variable was defined
+    std::string type; // Type specifier
+};
 
 struct ProgramContext
 {
     // General
     std::vector<int> parameters;
 
-    // Contextual information for MIPS code generator
+    /* Contextual information for MIPS code generator */
+    // Frame
     int frameIndex = 0; // Frame index of current function/scope
-    int scope = 0;
-    std::string identifier;
-    std::string specifier;
-    std::string qualifier;
+    std::string frameStart;
+    std::string frameEnd;
+    std::vector<int> frameSizes; // Tracks requred space for each frame (index)
+    std::vector<int> variableCount; // Tracks # of vars in each frame (index)
 
+    // Variables
+    std::string identifier;
+    std::string typeSpecifier;
+    std::string typeQualifier;
     /* Variable assignment states (for variable nodes)
     None: NO_ASSIGN
     Variable declaration: VAR_DECLARATION
@@ -36,6 +42,9 @@ struct ProgramContext
     std::string variableAssignmentState = "NO_ASSIGN";
 
     // Contextual information for Python translator
+
+    // Others
+    int scope = 0;
 };
 
 #endif
