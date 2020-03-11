@@ -1,12 +1,18 @@
 %option noyywrap
+%option yylineno
 
 %{
+#include "parser.tab.hpp"
+#include <stdlib.h>
+#include <stdio.h>		
+#include <string>
+#include <iostream>
 
 
 // Avoid error "error: `fileno' was not declared in this scope"
 extern "C" int fileno(FILE *stream);
+int line_number = 1; // for debugging
 
-#include "parser.tab.hpp"
 %}
 
 %%
@@ -162,7 +168,14 @@ NEW_LINE {line_number++;}
 
 %%
 
-yywrap()
+void yyerror (char const *s)
 {
-	return(1);
+   /* if s is unrecognised, print error */
+  fprintf (stderr, "Parse error : %s\n", s);
+  std::cerr << " Syntax/lex error found at line: " << line_number << std::endl;
+  std::cerr << "Last accepted token: " << yytext << std::endl;
+	
+  exit(1);
 }
+
+
