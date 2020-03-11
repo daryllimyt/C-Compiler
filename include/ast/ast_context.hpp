@@ -40,6 +40,7 @@ struct ProgramContext {
     std::string variableAssignmentState = "NO_ASSIGN";
 
     // Contextual information for Python translator
+    std::unordered_set<std::string> globalVariables;
 
     // Others
     int scope = 0;

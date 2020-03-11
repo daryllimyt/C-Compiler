@@ -11,6 +11,7 @@
 #include <regex>
 #include <fstream>
 #include <stdexcept>
+#include <unordered_set>
 
 class Node;
 
@@ -38,7 +39,7 @@ class Node {
     virtual NodePtr getNext() const { return NULL; }
     virtual NodePtr getPointer() const { return NULL; }
     virtual NodePtr getIdentifier() const { return NULL; }
-    virtual NodePtr getArguments() const { return NULL; }
+    virtual NodePtr getArgs() const { return NULL; }
     virtual NodePtr getCondition() const { return NULL; }
     virtual NodePtr getConditionOne() const { return NULL; }
     virtual NodePtr getConditionTwo() const { return NULL; }
@@ -49,7 +50,7 @@ class Node {
     virtual NodePtr getIndex() const { return NULL; }
     virtual NodePtr getTypeSpecifier() const { return NULL; }
     virtual NodePtr getQualifiers() const { return NULL; }
-    virtual NodePtr getArgs() const { return NULL; }
+    virtual NodePtr getStatements() const { return NULL; }
     virtual NodePtr getDeclarator() const { return NULL; }
     virtual const std::string getId() const { return NULL; }
     virtual const int64_t getValue() const { return NULL; }

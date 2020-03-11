@@ -17,10 +17,10 @@ class AssignmentStatement : public Node {
         left_ = left;
         right_ = right;
     }
-    NodePtr GetLeft() const {
+    NodePtr getLeft() const {
         return left_;
     }
-    NodePtr GetRight() const {
+    NodePtr getRight() const {
         return right_;
     }
 };

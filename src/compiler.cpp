@@ -6,10 +6,13 @@
 
 int main(int argc, char *argv[]) {
     if (argc >= 3) {
+        
         std::string flag = argv[1];
+        std::string src = argv[2];
         FILE *infile;
-        if (!(file_in = fopen(infile.c_str(), "r"))) {
-            std::cerr << "Cannot open source file: '" << source_file_name << "'." << std::endl;
+
+        if (!(infile = fopen(src.c_str(), "r"))) {
+            std::cerr << "Cannot open source file: '" << src << "'." << std::endl;
             return 1;
         }
         yyset_in(infile);  // Sets the file for flex and bison to read
