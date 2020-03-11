@@ -1,5 +1,5 @@
-#ifndef AST_HPP
-#define AST_HPP
+#ifndef AST_HPP_
+#define AST_HPP_
 
 // Include headers in ast that contains the classes for the tree nodes.
 #include "ast/ast_node.hpp"
@@ -11,11 +11,9 @@
 #include "ast/ast_context.hpp"
 
 extern const Node *parseAST();
-extern void yyset_in(FILE* fd);
+extern void yyset_in(FILE *fd);
 
 int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNode);
 void Compile(std::ostream *output, ProgramContext &contxt, NodePtr astNode);
-
-
 
 #endif

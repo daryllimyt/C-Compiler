@@ -1,5 +1,5 @@
-#ifndef AST_ENUMS_HPP
-#define AST_ENUMS_HPP
+#ifndef AST_ENUMS_HPP_
+#define AST_ENUMS_HPP_
 
 #include <string>
 #include <iostream>

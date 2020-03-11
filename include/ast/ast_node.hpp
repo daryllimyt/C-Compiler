@@ -1,5 +1,5 @@
-#ifndef AST_NODE_HPP
-#define AST_NODE_HPP
+#ifndef AST_NODE_HPP_
+#define AST_NODE_HPP_
 
 #include <string>
 #include <iostream>
@@ -14,20 +14,18 @@
 
 class Node;
 
-typedef const Node *NodePtr; // Pointer to Node
+typedef const Node *NodePtr;  // Pointer to Node
 
 // Abstract Node class
-class Node
-{
-protected:
+class Node {
+   protected:
     std::string type_;
 
-public:
+   public:
     virtual ~Node() {}
 
     // Not sure if this needs to be virtual
-    const std::string &getType() const
-    {
+    const std::string &getType() const {
         return type_;
     };
 
@@ -58,42 +56,35 @@ public:
     virtual const std::string getEllipsis() const { return NULL; }
 };
 
-class RootNode : public Node
-{
-protected:
+class RootNode : public Node {
+   protected:
     NodePtr next_;
 
-public:
-    RootNode(NodePtr next)
-    {
+   public:
+    RootNode(NodePtr next) {
         type_ = "ROOT";
         next_ = next;
     }
-    NodePtr getNext() const
-    {
+    NodePtr getNext() const {
         return next_;
     }
 };
 
-class Frame : public Node
-{
-protected:
+class Frame : public Node {
+   protected:
     NodePtr left_;
     NodePtr right_;
 
-public:
-    Frame(NodePtr left, NodePtr right)
-    {
+   public:
+    Frame(NodePtr left, NodePtr right) {
         type_ = "FRAME";
-        left_ = left;   // Pointer to previous frame
-        right_ = right; // Pointer to current frame
+        left_ = left;    // Pointer to previous frame
+        right_ = right;  // Pointer to current frame
     }
-    NodePtr getLeft() const
-    {
+    NodePtr getLeft() const {
         return left_;
     }
-    NodePtr getRight() const
-    {
+    NodePtr getRight() const {
         return right_;
     }
 };

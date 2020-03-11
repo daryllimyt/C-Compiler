@@ -1,5 +1,5 @@
-#ifndef AST_OPERATORS_HPP
-#define AST_OPERATORS_HPP
+#ifndef AST_OPERATORS_HPP_
+#define AST_OPERATORS_HPP_
 
 #include <string>
 #include <iostream>

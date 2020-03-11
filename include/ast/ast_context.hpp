@@ -1,30 +1,28 @@
-#ifndef AST_CONTEXT_HPP
-#define AST_CONTEXT_HPP
+#ifndef AST_CONTEXT_HPP_
+#define AST_CONTEXT_HPP_
 
 #include <string>
 #include <iostream>
 #include <vector>
 
-struct VariableContext
-{
+struct VariableContext {
     // Unique to each variable, create a new VariableContext for each variable
-    int address; // Address in memory of where the variable is located
-    int scope; // Scope in which the variable was defined
-    std::string type; // Type specifier
+    int address;       // Address in memory of where the variable is located
+    int scope;         // Scope in which the variable was defined
+    std::string type;  // Type specifier
 };
 
-struct ProgramContext
-{
+struct ProgramContext {
     // General
     std::vector<int> parameters;
 
     /* Contextual information for MIPS code generator */
     // Frame
-    int frameIndex = 0; // Frame index of current function/scope
+    int frameIndex = 0;  // Frame index of current function/scope
     std::string frameStart;
     std::string frameEnd;
-    std::vector<int> frameSizes; // Tracks requred space for each frame (index)
-    std::vector<int> variableCount; // Tracks # of vars in each frame (index)
+    std::vector<int> frameSizes;     // Tracks requred space for each frame (index)
+    std::vector<int> variableCount;  // Tracks # of vars in each frame (index)
 
     // Variables
     std::string identifier;
