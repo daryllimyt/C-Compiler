@@ -5,6 +5,13 @@
 #include <iostream>
 #include <vector>
 
+struct VariableContext
+{
+    int address;
+    int scope;
+    std::string type;
+}
+
 struct ProgramContext
 {
     // General
@@ -13,7 +20,6 @@ struct ProgramContext
     // Contextual information for MIPS code generator
     int frameIndex = 0; // Frame index of current function/scope
     int scope = 0;
-    std::vector<std::string> totalVars; // List of variable keys
     std::string identifier;
     std::string specifier;
     std::string qualifier;
@@ -33,5 +39,3 @@ struct ProgramContext
 };
 
 #endif
-
-

@@ -27,6 +27,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode)
     }
     else if(astNode->getType() == "FUNCTION_DEFINITION") 
     {
+        // If function definition has no statements then it is a function declaration
+        if (astNode->getStatements() == NULL)
+        {
+            /* code */
+        }
+        
+        
 
     }
     else if(astNode->getType() == "FUNCTION_DECLARATION") 
