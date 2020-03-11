@@ -109,9 +109,9 @@ MULTIPLE_ARGUMENTS //int i, string j, or more...
   ;
 
 SINGLE_ARGUMENT //int i
-  : TYPE_SPECIFIER DECLARATOR         { DeclarationExpressionListNode* node =
-                                        new DeclarationExpressionListNode($2, NULL, NULL);
-                                        $$ = new DeclarationExpressionList(*$1, node);
+  : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
+                                        new AssignmentStatement($2, NULL, NULL);
+                                        $$ = new VariableDeclaration(*$1, node);
                                         delete $1; } //check later
 
 SCOPE //scope {do smth;}
@@ -220,7 +220,7 @@ VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
   ;
 
-ASSIGNMENT_STATEMENT //a = 2, b = 5 ;
+ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
   : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
   | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
   | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
