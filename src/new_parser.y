@@ -174,10 +174,10 @@ ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   ;
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
-  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
-  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
-  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
-  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
+  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("RETURN", NULL); }
+  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("RETURN", $2); }
+  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("BREAK", NULL); }
+  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("CONTINUE", NULL); }
   ;
 
 EXPRESSION_STATEMENT

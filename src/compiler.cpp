@@ -1,49 +1,93 @@
-// Main driver of the compiler. Parses and compiles the AST
+// Main DRIVER of the compiler. Parses and compiles the AST
 // Creates an AST by calling parseAST()
 // Traverses the AST by calling compile()
 
 #include "include/ast.hpp"
 
 int main(int argc, char *argv[]) {
+    /*
+    Command line args:
+    1: mode flag
+    2: source file
+    3: compilation flag (second flag)
+    4: destination file
+    
+    */
     if (argc >= 3) {
-        std::string flag = argv[1];
-        std::string src = argv[2];
+        std::string MODE_FLAG = argv[1];
+        std::string SRC_FILE = argv[2];
         FILE *infile;
 
-        if (!(infile = fopen(src.c_str(), "r"))) {
-            std::cerr << "Cannot open source file: '" << src << "'." << std::endl;
-            return 1;
+        if (!(infile = fopen(SRC_FILE.c_str(), "r"))) {
+            std::cerr << "Error: Cannot open source file '" << SRC_FILE << "'.\n";
+            return -1;
         }
         yyset_in(infile);  // Sets the file for flex and bison to read
 
-        // Identify flag
-        if (flag == "-S") {
-            // C to MIPS compilation
-            const NodePtr astRoot = parseAST();
-            std::ostream *output;  // Output stream
-            std::ofstream file;    // Output file
+        const NodePtr astRoot = parseAST();
+        std::ostream *output;   // Output stream
+        std::ofstream outfile;  // Output file
+        ProgramContext context;
 
-            ProgramContext context;
+        // Set driver
+        std::string DRIVER;
+        if (MODE_FLAG == "-S") {
+            DRIVER = "compiler";
+        } else if (MODE_FLAG == "--translate") {
+            DRIVER = "translator";
+        } else {
+            // Unidentified MODE_FLAG, abort
+            std::cerr << "Error: Unidentified mode flag " << MODE_FLAG << ", unable to set driver.\n";
+            return -1;
+        }
+        std::cerr << "Info: Driver set to " << DRIVER << "\n";
+
+        // Set output destination
+        if (argc == 3) {
+            std::cerr << "Warning: No destination file specified\nRedirecting " << DRIVER << " output to command line...\n";
+            output = &std::cout;
+        } else {
+            std::string SECOND_FLAG = argv[3];
+            if (SECOND_FLAG == "-o") {
+                std::string destFilename = argv[4];
+                {
+                    std::ifstream test_out;
+                    test_out.open(destFilename);
+                    if (!test_out.is_open()) {
+                        std::cerr << "Warning: Output file \"" << destFilename << "\" was not found\n";
+                        std::cerr << "Creating new file \"" << destFilename << "\"" << std::endl;
+                    } else {
+                        test_out.close();
+                    }
+                }
+                output = &outfile;
+                outfile.open(destFilename);
+
+                // Checking for extension .py
+                if (destFilename[destFilename.size() - 2] != 'p' && destFilename[destFilename.size() - 1] != 'y') {
+                    std::cerr << "Warning: Output file is not of type .py\n";
+                }
+            } else {
+                std::cerr << "Warning: Unidentified flag \"" << SECOND_FLAG << "\"\n";
+                std::cerr << "Redirecting " << DRIVER << " output to command line...\n";
+                output = &std::cout;
+            }
+        }
+
+        // Identify driver
+        if (DRIVER == "compiler") {  // C to MIPS compilation
             Compile(output, context, astRoot);
-        } else if (flag == "--translate") {
-            // C to Python translation
-            const NodePtr astRoot = parseAST();
-            std::ostream *output;  // Output stream
-            std::ofstream file;    // Output file
 
-            ProgramContext context;
+        } else if (DRIVER == "translator") {  // C to Python translation
             context.scope = 0;
             PyTranslate(output, context, astRoot);
-
             *output << "\nif __name__ == \"__main__\":";
             *output << "\n\timport sys";
             *output << "\n\tret=main()";
             *output << "\n\tsys.exit(ret)\n";
-
-        } else {
-            // Unidentified flag
-            std::cerr << "Error: Unidentified flag " << flag << "\n";
-            return -1;
-        }
+        } 
+        return 0; // Successful execution
     }
+    std::cerr << "Error: Received " << argc << " arguments when minimum required is 3.\n";
+    return -1;
 }

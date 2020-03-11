@@ -34,7 +34,7 @@ class JumpStatement : public Node {
         type_ = type;                // return, continue, break
         returnValue_ = returnValue;  // return value or NULL
     }
-    NodePtr getResult() const {
+    NodePtr getReturnValue() const {
         return returnValue_;
     }
 };

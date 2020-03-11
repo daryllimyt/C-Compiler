@@ -46,7 +46,7 @@ class Node {
     virtual NodePtr getConditionThree() const { return NULL; }
     virtual NodePtr getTruePath() const { return NULL; }
     virtual NodePtr getFalsePath() const { return NULL; }
-    virtual NodePtr getResult() const { return NULL; }
+    virtual NodePtr getReturnValue() const { return NULL; }
     virtual NodePtr getIndex() const { return NULL; }
     virtual NodePtr getTypeSpecifier() const { return NULL; }
     virtual NodePtr getQualifiers() const { return NULL; }
