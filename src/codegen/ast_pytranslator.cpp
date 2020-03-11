@@ -1,7 +1,8 @@
 #include "include/ast.hpp"
 
 void indent(std::ostream *output, ProgramContext &context);
-void addToGlobal(ProgramContext &context, std::string id);
+void addToGlobal(ProgramContext &context, const std::string &id);
+void addToScope(ProgramContext &context, const std::string &id);
 
 int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     if (astNode == NULL) {
@@ -33,7 +34,15 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             *output << "\n";
             indent(output, context);
         }
-    } 
+    } else if (astNode->getType() == "VARIABLE") {
+        *output << astNode->getId();  // Write variable name to output
+        if (context.scope == 0) addToGlobal(context, astNode->getId());
+        addToScope(context, astNode->getId());  // Add to variable list of current scope
+    } else if (astNode->getType() == "INTEGER_CONSTANT") {
+        *output << astNode->getVal();
+    } else if (astNode->getType() == "STRING_LITERAL") {
+        *output << "\"" << astNode->getId() << "\"";
+    }
 }
 
 void indent(std::ostream *output, ProgramContext &context) {
@@ -42,8 +51,14 @@ void indent(std::ostream *output, ProgramContext &context) {
     }
 }
 
-void addToGlobal(ProgramContext &context, std::string id) {
+void addToGlobal(ProgramContext &context, const std::string &id) {
     if (!context.globalVariables.count(id)) {
         context.globalVariables.insert(id);
+    }
+}
+
+void addToScope(ProgramContext &context, const std::string &id) {
+    if (!context.scopeVariables.count(id)) {
+        context.scopeVariables.insert(id);
     }
 }

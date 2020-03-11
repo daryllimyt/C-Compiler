@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[]) {
     if (argc >= 3) {
-        
         std::string flag = argv[1];
         std::string src = argv[2];
         FILE *infile;
@@ -33,11 +32,18 @@ int main(int argc, char *argv[]) {
             std::ofstream file;    // Output file
 
             ProgramContext context;
+            context.scope = 0;
             PyTranslate(output, context, astRoot);
+
+            *output << "\nif __name__ == \"__main__\":";
+            *output << "\n\timport sys";
+            *output << "\n\tret=main()";
+            *output << "\n\tsys.exit(ret)\n";
+
         } else {
-          // Unidentified flag
+            // Unidentified flag
             std::cerr << "Error: Unidentified flag " << flag << "\n";
             return -1;
-        } 
+        }
     }
 }
