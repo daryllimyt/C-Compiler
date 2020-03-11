@@ -16,7 +16,7 @@ protected:
 public:
     FunctionDefinition(NodePtr specifiers, NodePtr identifier, NodePtr statements)
     {
-        type_ = "function definition";
+        type_ = "FUNCTION_DEFINITION";
         specifiers_ = specifiers;
         identifier_ = identifier;
         statements_ = statements;
@@ -39,12 +39,12 @@ class FunctionDeclaration : public Node
 {
 protected:
     NodePtr left_;
-    NodePtr right_; // Parameter
+    NodePtr right_; // Parameter(s)
 
 public:
     FunctionDeclaration(const std::string &specifier, NodePtr left, NodePtr right) : 
     {
-        type_ = "function declaration";
+        type_ = "FUNCTION_DECLARATION";
         left_ = left;
         right_ = right;
     }

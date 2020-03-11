@@ -2,33 +2,42 @@
 
 #include "include/ast.hpp"
 
-void Compile(std::ostream *output, InterpretContext &context, NodePtr program)
+void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode)
 {
-    if (program == NULL)
+    if (astNode == NULL)
     {
         throw std::runtime_error("Invalid AST node.\n");
     }
-    else if (program->getType() == "root")
+    else if (astNode->getType() == "ROOT")
     {
-        /* code */
+        // Calculate number of global variables for actual number, use CountGlobalVars(astNode->GetNext())
+        // Push stack from by space needed for global variables
+        // Set end label of astNode
+        // Some flag for qemu
+         Compile(output, context, astNode->GetNext());
     }
-    else if(program->getType() == "program")
+    else if(astNode->getType() == "FRAME")
     {
-        Compile(output, context, program->GetLeft());
-        Compile(output, context, program->GetRight());
+        Compile(output, context, astNode->GetLeft());
+        Compile(output, context, astNode->GetRight());
     }
-    else if(program->GetType() == "int")
+    else if(astNode->GetType() == "INT")
     {
-        context.specifier = "int";
+        context.specifier = "INT";
     }
-    else if(program->getType() == "function declaration") 
+    else if(astNode->getType() == "FUNCTION_DEFINITION") 
     {
-        
+
+    }
+    else if(astNode->getType() == "FUNCTION_DECLARATION") 
+    {
+        Compile(output, context, astNode->GetLeft()); // Get function identifier from left branch
+
     }
     
     else
     {
-        throw std::runtime_error("Unknown ast type: \"" + program->getType() + "\"\n");
+        throw std::runtime_error("Unknown ast type: \"" + astNode->getType() + "\"\n");
     }
 }
 // The name of the register to put the result in

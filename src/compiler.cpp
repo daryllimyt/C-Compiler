@@ -8,17 +8,27 @@ int main(int argc, char *argv[])
   if (argc >= 3)
   {
     std::string flag = argv[1];
+    FILE* infile;
+    yyset_in(infile);
 
     // Identify flag
     if (flag == "-S") // C to MIPS compilation
     {
-      const NodePtr ast_compiler = parseAST(argv[2], argv[4]);
+      const NodePtr astRoot = parseAST();
       std::ostream *output; // Output stream
       std::ofstream file;   // Output file
+
+      ProgramContext context;
+      Compile(output, context, astRoot);
     }
     else if (flag == "--translate") // C to Python translation
     {
-      return 0;
+      const NodePtr astRoot = parseAST();
+      std::ostream *output; // Output stream
+      std::ofstream file;   // Output file
+
+      ProgramContext context;
+      PyTranslate(output, context, astRoot);
     }
     else // Unidentified flag
     {
