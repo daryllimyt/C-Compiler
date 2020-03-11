@@ -76,15 +76,19 @@ int main(int argc, char *argv[]) {
 
         // Identify driver
         if (DRIVER == "compiler") {  // C to MIPS compilation
+            std::cerr << "Info: Compilation in progress...\n";
             Compile(output, context, astRoot);
+            std::cerr << "Info: Compilation complete\n";
 
         } else if (DRIVER == "translator") {  // C to Python translation
+            std::cerr << "Info: Translation in progress...\n";
             context.scope = 0;
             PyTranslate(output, context, astRoot);
             *output << "\nif __name__ == \"__main__\":";
             *output << "\n\timport sys";
             *output << "\n\tret=main()";
             *output << "\n\tsys.exit(ret)\n";
+            std::cerr << "Info: Translation complete\n";
         } 
         return 0; // Successful execution
     }
