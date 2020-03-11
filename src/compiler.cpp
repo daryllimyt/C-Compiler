@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 3) {
         std::string flag = argv[1];
         FILE *infile;
-        if (!(file_in = fopen(source_file_name.c_str(), "r"))) {
+        if (!(file_in = fopen(infile.c_str(), "r"))) {
             std::cerr << "Cannot open source file: '" << source_file_name << "'." << std::endl;
             return 1;
         }
