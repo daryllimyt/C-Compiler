@@ -30,13 +30,6 @@ clean :
 	rm -f src/*.tab.hpp
 	rm -f include/ast/*.o
 	rm -f include/ast/codegen/*.o
-	rm -f tmp/formative/*
-	rm -f test/translator/outputs/*
-	rm -f test/a_compiler/outputs/*
-	rm -f test/a_compiler/returns/*
-	rm -f test/b_compiler/assembly/*
-	rm -f test/b_compiler/objects/*
-	rm -f test/b_compiler/outputs/*
-	rm -f test_deliverable/outputs/*
+	
 
 bin/c_compiler: all

@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
         std::ofstream outfile;  // Output file
         ProgramContext context;
 
-        // Set driver
+        // Select driver
         std::string DRIVER;
         if (MODE_FLAG == "-S") {
             DRIVER = "compiler";
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
             DRIVER = "translator";
         } else {
             // Unidentified MODE_FLAG, abort
-            std::cerr << "Error: Unidentified mode flag " << MODE_FLAG << ", unable to set driver.\n";
+            std::cerr << "Error: Unidentified flag " << MODE_FLAG << ", unable to set driver.\n";
             return -1;
         }
         std::cerr << "Info: Driver set to " << DRIVER << "\n";
@@ -51,13 +51,13 @@ int main(int argc, char *argv[]) {
             if (SECOND_FLAG == "-o") {
                 std::string destFilename = argv[4];
                 {
-                    std::ifstream test_out;
-                    test_out.open(destFilename);
-                    if (!test_out.is_open()) {
+                    std::ifstream tempOut;
+                    tempOut.open(destFilename);
+                    if (!tempOut.is_open()) {
                         std::cerr << "Warning: Output file \"" << destFilename << "\" was not found\n";
                         std::cerr << "Creating new file \"" << destFilename << "\"" << std::endl;
                     } else {
-                        test_out.close();
+                        tempOut.close();
                     }
                 }
                 output = &outfile;
@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
             *output << "\n\tret=main()";
             *output << "\n\tsys.exit(ret)\n";
             std::cerr << "Info: Translation complete\n";
-        } 
-        return 0; // Successful execution
+        }
+        return 0;  // Successful execution
     }
     std::cerr << "Error: Received " << argc << " arguments when minimum required is 3.\n";
     return -1;
