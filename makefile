@@ -1,3 +1,6 @@
+# Makefile for Piledriver compiler & translator
+
+CC=g++
 CPPFLAGS += -std=c++11 -W -Wall -g -Wno-unused-parameter -Wno-reorder -w 
 CPPFLAGS += -I include
 
@@ -17,7 +20,7 @@ src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
 
 bin/piledriver : src/parser.tab.o src/lexer.yy.o include/ast/ast_translator.o include/ast/codegen/ast_compiler.o src/c_compiler.o 
 	mkdir -p bin
-	g++ $(CPPFLAGS) -o bin/c_compiler $^
+	$(CC) $(CPPFLAGS) -o bin/c_compiler $^
 
 
 clean :
