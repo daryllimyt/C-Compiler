@@ -39,4 +39,23 @@ class JumpStatement : public Node {
     }
 };
 
+class WrappedArguments : public Node {
+   protected:
+    NodePtr left_;
+    NodePtr right_;
+
+   public:
+    Frame(NodePtr left, NodePtr right) {
+        type_ = "WRAPPED_ARGUMENTS";
+        left_ = left;    
+        right_ = right;  
+    }
+    NodePtr getLeft() const {
+        return left_;
+    }
+    NodePtr getRight() const {
+        return right_;
+    }
+}
+
 #endif
