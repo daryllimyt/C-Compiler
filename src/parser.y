@@ -28,7 +28,7 @@ EXPRESSION_STATEMENT EXPRESSION ASSIGNMENT_OPERATOR VARIABLE_DECLARATION ASSIGNM
 MATH_OR_BITWISE_EXPRESSION PRIMARY_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION UNARY_OPERATOR
 MULTIPLICATIVE_EXPRESSION ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION EQUALITY_EXPRESSION
 BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION
-CONDITIONAL_EXPRESSION WRAPPED_PARAMETERS PARAMETER_LIST DECLARATOR TYPE_SPECIFIER
+CONDITIONAL_EXPRESSION WRAPPED_PARAMETERS PARAMETER_LIST DECLARATOR TYPE_SPECIFIER SINGLE_ARGUMENT
 
 %type <string> T_IDENTIFIER
 %type <integer_constant> T_INT_CONST
@@ -193,17 +193,17 @@ EXPRESSION
 
 
 ASSIGNMENT_OPERATOR
-  : T_EQ_ASSIGN    { $$ = new std::string("="); }
-  | T_MUL_ASSIGN   { $$ = new std::string("*="); }
-  | T_DIV_ASSIGN   { $$ = new std::string("/="); }
-  | T_MOD_ASSIGN   { $$ = new std::string("%="); }
-  | T_ADD_ASSIGN   { $$ = new std::string("+="); }
-  | T_SUB_ASSIGN   { $$ = new std::string("-="); }
-  | T_LSHIFT_ASSIGN  { $$ = new std::string("<<="); }
-  | T_RSHIFT_ASSIGN { $$ = new std::string(">>="); }
-  | T_AND_ASSIGN   { $$ = new std::string("&="); }
-  | T_XOR_ASSIGN   { $$ = new std::string("^="); }
-  | T_OR_ASSIGN    { $$ = new std::string("|="); }
+  : T_EQ_ASSIGN         { $$ = new AssignmentOperator("="); }
+  | T_MUL_ASSIGN        { $$ = new AssignmentOperator("*="); }
+  | T_DIV_ASSIGN        { $$ = new AssignmentOperator("/="); }
+  | T_MOD_ASSIGN        { $$ = new AssignmentOperator("%="); }
+  | T_ADD_ASSIGN        { $$ = new AssignmentOperator("+="); }
+  | T_SUB_ASSIGN        { $$ = new AssignmentOperator("-="); }
+  | T_LSHIFT_ASSIGN     { $$ = new AssignmentOperator("<<="); }
+  | T_RSHIFT_ASSIGN     { $$ = new AssignmentOperator(">>="); }
+  | T_AND_ASSIGN        { $$ = new AssignmentOperator("&="); }
+  | T_XOR_ASSIGN        { $$ = new AssignmentOperator("^="); }
+  | T_OR_ASSIGN         { $$ = new AssignmentOperator("|="); }
   ;
 
 /* Declaration expressions are like
@@ -228,7 +228,7 @@ ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
 
 MATH_OR_BITWISE_EXPRESSION
   : CONDITIONAL_EXPRESSION  { $$ = $1; }
-  | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, *$2, $3); }
+  | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, $2, $3); }
   ;
 
 PRIMARY_EXPRESSION //a || 1 || a+1
@@ -251,15 +251,15 @@ UNARY_EXPRESSION //++a
   : POSTFIX_EXPRESSION               { $$ = $1; }
   | T_INC_OP UNARY_EXPRESSION          { $$ = new UnaryExpression("++", $2); }
   | T_DEC_OP UNARY_EXPRESSION          { $$ = new UnaryExpression("--", $2); }
-  | UNARY_OPERATOR UNARY_EXPRESSION  { $$ = new UnaryExpression(*$1, $2); delete $1; }
+  | UNARY_OPERATOR UNARY_EXPRESSION  { $$ = new UnaryExpression($1, $2); }
   ;
 
 UNARY_OPERATOR
-  : T_AND_OP  { $$ = new std::string("&"); }
-  | T_PLUS  { $$ = new std::string("+"); }
-  | T_MINUS  { $$ = new std::string("-"); }
-  | T_XOR  { $$ = new std::string("~"); }
-  | T_NOT  { $$ = new std::string("!"); }
+  : T_AND_OP    { $$ = new UnaryOperator("&"); }
+  | T_PLUS      { $$ = new UnaryOperator("+"); }
+  | T_MINUS     { $$ = new UnaryOperator("-"); }
+  | T_XOR       { $$ = new UnaryOperator("~"); }
+  | T_NOT       { $$ = new UnaryOperator("!"); }
   ;
 
 MULTIPLICATIVE_EXPRESSION //a * b || a / b || a % b
