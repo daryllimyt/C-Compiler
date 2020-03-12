@@ -6,21 +6,26 @@
 CC=g++
 CPPFLAGS += -std=c++11 -W -Wall -g -Wno-unused-parameter -Wno-reorder -w 
 CPPFLAGS += -I include
+BISON = bison -v --report=all -d
 
 all : clean bin/piledriver 
 
-parser : src/parser.tab.cpp src/parser.tab.hpp
+# parser : src/parser.tab.cpp src/parser.tab.hpp
 
-#lexer : src/lexer.yy.cpp
+# lexer : src/lexer.yy.cpp
 
 piledriver : bin/piledriver
 
-src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
-	bison -v --report=all -d src/parser.y -o src/parser.tab.cpp -g
+#builds lexer and parser
+lexer_and_parser : src/lexer.yy.cpp
 
-# builds lexer and parser
+# builds parser
+src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
+	$(BISON) $< -o src/parser.tab.cpp -g
+
+# builds lexer
 src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
-	flex -o src/lexer.yy.cpp  src/lexer.flex
+	flex -o $@ $<
 
 # # builds the lexer (standalone)
 # src/lexer.yy.cpp : src/lexer.flex
