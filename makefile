@@ -2,6 +2,10 @@
 
 # Target : dependencies
 #			flags target dependency1 dependency 2 ...
+# $@ is a macro that refers to the target
+# $< is a macro that refers to the first dependency
+# $^ is a macro that refers to all dependencies
+# % is a macro to make a pattern that we want to watch in both the target and the dependency
 
 CC=g++
 CPPFLAGS += -std=c++11 -W -Wall -g -Wno-unused-parameter -Wno-reorder -w 
