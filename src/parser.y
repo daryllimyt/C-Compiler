@@ -234,9 +234,9 @@ MATH_OR_BITWISE_EXPRESSION
   | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, $2, $3); }
   ;
 */
-// PRIMARY_EXPRESSION //a || 1 || a+1
-//   : DECLARATOR                                { $$ = $1; }
-//   | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+PRIMARY_EXPRESSION //a || 1 || a+1
+  : DECLARATOR                                { $$ = $1; }
+  | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
   | STRING_CONSTANT
