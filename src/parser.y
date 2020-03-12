@@ -92,11 +92,10 @@ FRAME
 FUNCTION_DECLARATION //int foo(int i, string j);
   : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration($1, $2, $3);; }
 
-  ;
 
 FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
   : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE { $$ = new FunctionDefinition($1, $2, $3, $4); }
-  ;
+
 
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
