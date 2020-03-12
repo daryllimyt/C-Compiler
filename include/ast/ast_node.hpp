@@ -52,6 +52,7 @@ class Node {
     virtual NodePtr getQualifiers() const { return NULL; }
     virtual NodePtr getStatements() const { return NULL; }
     virtual NodePtr getDeclarator() const { return NULL; }
+    virtual NodePtr getScope() const { return NULL; }
     virtual const std::string getId() const { return NULL; }
     virtual const int64_t getVal() const { return NULL; }
     virtual const std::string getEllipsis() const { return NULL; }

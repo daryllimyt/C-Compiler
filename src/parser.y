@@ -20,7 +20,7 @@
   long long int integer_constant;
   std::string *string;
 }
-%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER SCOPE 
+%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER SCOPE JUMP_STATEMENT MULTI_STATEMENTS SINGLE_STATEMENT
 
 // %type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
 // SCOPE MULTI_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
@@ -115,22 +115,22 @@ WRAPPED_ARGUMENTS //(int i, string j) or ()
 //                                         delete $1; } //check later
 
 SCOPE //scope {do smth;}
-  // : T_L_BRACE MULTI_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
-  : T_L_BRACE T_R_BRACE                { $$ = new Scope(NULL); }
+  : T_L_BRACE MULTI_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
+  | T_L_BRACE T_R_BRACE                { $$ = new Scope(NULL); }
   ;
 
-// MULTI_STATEMENTS //multiple lines inside a scope
-//   : SINGLE_STATEMENT MULTI_STATEMENTS { $$ = new MultipleStatements($1, $2); }
-//   | SINGLE_STATEMENT                { $$ = new MultipleStatements($1, NULL); }
-//   ;
+MULTI_STATEMENTS //multiple lines inside a scope
+  : SINGLE_STATEMENT MULTI_STATEMENTS { $$ = new MultipleStatements($1, $2); }
+  | SINGLE_STATEMENT                { $$ = new MultipleStatements($1, NULL); }
+  ;
 
-// SINGLE_STATEMENT//each line inside a scope
-//   : SCOPE                 { $$ = $1; }
-//   | EXPRESSION_STATEMENT  { $$ = $1; }
-//   | JUMP_STATEMENT        { $$ = $1; }
-//   | ITERATION_STATEMENT   { $$ = $1; }
-//   | SELECTION_STATEMENT   { $$ = $1; }
-//   ;
+SINGLE_STATEMENT//each line inside a scope
+  : SCOPE                 { $$ = $1; }
+  // | EXPRESSION_STATEMENT  { $$ = $1; }
+  | JUMP_STATEMENT        { $$ = $1; }
+  // | ITERATION_STATEMENT   { $$ = $1; }
+  // | SELECTION_STATEMENT   { $$ = $1; }
+  ;
 
 // SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
 //   : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, NULL); }
@@ -173,12 +173,12 @@ SCOPE //scope {do smth;}
 //   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
 //   ;
 
-// JUMP_STATEMENT //return; || return x; || break; || continue;
-//   : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
-//   | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
-//   | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
-//   | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
-//   ;
+JUMP_STATEMENT //return; || return x; || break; || continue;
+  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
+  // | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
+  // | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
+  // | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
+  ;
 
 // EXPRESSION_STATEMENT
 //   : T_SEMICOLON            { $$ = new EmptyExpression(); }

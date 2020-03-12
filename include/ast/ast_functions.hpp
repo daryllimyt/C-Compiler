@@ -25,7 +25,7 @@ class FunctionDefinition : public Node {
         return typeSpecifier_;  // type specifier
     }
     NodePtr getIdentifier() const {
-        return identifier_;  // variable name
+        return identifier_;  // variable name / declarator
     }
     NodePtr getArgs() const {
         return args_;

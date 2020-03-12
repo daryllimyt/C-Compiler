@@ -20,6 +20,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             context.scope += 1;
             *output << "def ";
             PyTranslate(output, context, astNode->getIdentifier());
+            PyTranslate(output, context, astNode->getArgs());
             *output << ":\n";
             indent(output, context);
 
@@ -27,12 +28,31 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                 *output << "global " << it << "\n";
                 indent(output, context);
             }
-            PyTranslate(output, context, astNode->getArgs());
+            PyTranslate(output, context, astNode->getScope()); // Scope of the function
             context.scope -= 1;
             *output << "\n";
             indent(output, context);
         }
-    } else if (astNode->getType() == "RETURN") {
+    }  else if (astNode->getType() == "WRAPPED_ARGUMENTS") {
+        *output << "(";
+        if (astNode->getLeft())
+        {
+            PyTranslate(output, context, astNode->getLeft());
+        }
+        if (astNode->getRight())
+        {
+            PyTranslate(output, context, astNode->getRight());
+        }
+        *output << ")";
+    } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
+        PyTranslate(output, context, astNode->getLeft());
+        if(astNode->getRight()){
+            PyTranslate(output, context, astNode->getRight());
+        }
+        else{
+            *output<<"pass";
+        }
+    } else if (astNode->getType() == "return") {
         *output << "return ";
         // Returning a value
         if (astNode->getReturnValue()) {
@@ -50,6 +70,8 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         *output << astNode->getVal();
     } else if (astNode->getType() == "STRING_LITERAL") {
         *output << "\"" << astNode->getId() << "\"";
+    } else {
+        std::cerr << "Error: Unknown type of " << astNode->getType() << "\n";
     }
 }
 

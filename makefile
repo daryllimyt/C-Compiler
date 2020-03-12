@@ -53,6 +53,7 @@ clean :
 	rm -f src/*.tab.hpp
 	rm -f include/ast/*.o
 	rm -f include/ast/codegen/*.o
+	rm -f translator_tests/output/*
 	
 
 bin/c_compiler: all

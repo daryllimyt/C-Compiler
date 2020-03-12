@@ -6,6 +6,20 @@
 
 #include "ast_node.hpp"
 
+class Scope : public Node {
+   protected:
+    NodePtr next_;
+
+   public:
+    Scope(NodePtr next) {
+        type_ = "SCOPE";
+        next_ = next;
+    }
+    NodePtr getNext() const {
+        return next_;
+    }
+};
+
 class AssignmentStatement : public Node {
    protected:
     NodePtr left_;   // Target
@@ -47,8 +61,8 @@ class WrappedArguments : public Node {
    public:
     WrappedArguments(NodePtr left, NodePtr right) {
         type_ = "WRAPPED_ARGUMENTS";
-        left_ = left;    
-        right_ = right;  
+        left_ = left;
+        right_ = right;
     }
     NodePtr getLeft() const {
         return left_;
@@ -58,20 +72,23 @@ class WrappedArguments : public Node {
     }
 };
 
-class Scope : public Node {
+class MultipleStatements : public Node {
    protected:
-    NodePtr next_;
+    NodePtr left_;
+    NodePtr right_;
 
    public:
-    Scope(NodePtr next) {
-        type_ = "SCOPE";
-        next_ = next;    
+    MultipleStatements(NodePtr left, NodePtr right) {
+        type_ = "MULTIPLE_STATEMENTS";
+        left_ = left;
+        right_ = right;
     }
-    NodePtr getNext() const {
-        return next_;
+    NodePtr getLeft() const {
+        return left_; // Current statement
+    }
+    NodePtr getRight() const {
+        return right_; // Next statement
     }
 };
-
-
 
 #endif
