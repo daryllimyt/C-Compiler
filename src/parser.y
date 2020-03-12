@@ -71,9 +71,9 @@ FRAME
   : FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
   | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
-  | PROGRAM FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
-  | PROGRAM FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
-  | PROGRAM VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
+  | FRAME FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
+  | FRAME FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
+  | FRAME VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
@@ -88,7 +88,7 @@ FRAME
 //   ;
 
 FUNCTION_DECLARATION //int foo(int i, string j);
-  : TYPE_SPECIFIER DECLARATOR ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration($1, $2, $3);; }
+  : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON  { $$ = new FunctionDeclaration($1, $2, $3);; }
   ;
 
 FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
@@ -154,12 +154,12 @@ MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
 
 
 SINGLE_CASE_STATEMENT //case x: do smth;
-  : T_CASE EXPRESSION T_COLON MULTI_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
+  : T_CASE EXPRESSION T_COLON MULTIPLE_CASE_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
   | T_CASE EXPRESSION T_COLON                       { $$ = new SingleCaseStatement($2, NULL); }
   ;
 
 DEFAULT_STATEMENT //default: {do smth;}
-  : T_DEFAULT T_COLON MULTIPLE_STATEMENTS           { $$ = new DefaultStatement($3); }
+  : T_DEFAULT T_COLON MULTIPLE_CASE_STATEMENTS           { $$ = new DefaultStatement($3); }
   | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(NULL); }
   ;
 
@@ -187,7 +187,7 @@ EXPRESSION_STATEMENT
  * Only assignment and declaration for now. */
 EXPRESSION
   : VARIABLE_ASSIGNMENT       { $$ = $1; }
-  | logical_or_arithmetic_expression  { $$ = $1; }
+  | MATH_OR_BITWISE_EXPRESSION  { $$ = $1; }
   ;
 
 
@@ -198,8 +198,8 @@ ASSIGNMENT_OPERATOR
   | T_MOD_ASSIGN   { $$ = new std::string("%="); }
   | T_ADD_ASSIGN   { $$ = new std::string("+="); }
   | T_SUB_ASSIGN   { $$ = new std::string("-="); }
-  | T_LEFT_ASSIGN  { $$ = new std::string("<<="); }
-  | T_RIGHT_ASSIGN { $$ = new std::string(">>="); }
+  | T_LSHIFT_ASSIGN  { $$ = new std::string("<<="); }
+  | T_RSHIFT_ASSIGN { $$ = new std::string(">>="); }
   | T_AND_ASSIGN   { $$ = new std::string("&="); }
   | T_XOR_ASSIGN   { $$ = new std::string("^="); }
   | T_OR_ASSIGN    { $$ = new std::string("|="); }
@@ -215,7 +215,7 @@ ASSIGNMENT_OPERATOR
 
 VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
-  ;
+
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
   : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
