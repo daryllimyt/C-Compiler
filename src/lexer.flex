@@ -21,7 +21,7 @@ OCT 		[0-7]
 DEC			[0-9]
 LET			[a-zA-Z_]
 HEX			[a-fA-F0-9]
-EXPO		[Ee][+-]?{D}+
+EXPO		[Ee][+-]?{DEC}+
 
 FLOATSUFFIX		(f|F|l|L)
 INTSUFFIX			(u|U|l|L)*
@@ -36,7 +36,7 @@ HEXA_INTEGER 		0[xX]{HEX}*{INTSUFFIX}?
 INTEGER_CONSTANT 	(BINARY_INTEGER|DECIMAL_INTEGER|OCTAL_INTEGER|HEXA_INTEGER)
 FLOAT_CONSTANT 		({DEC}+{EXPO}{FLOATSUFFIX}?|{DEC}*"."{DEC}+({EXPO})?{FLOATSUFFIX}?|{DEC}+"."{DEC}*({EXPO})?{FLOATSUFFIX}?)
 
-CHAR_CONSTANT  	[L]?\'(?:\\({ESC}|{O}{1,3}|x{HEX}+)|[^\\'])+\'
+CHAR_CONSTANT  	[L]?\'(?:\\({ESC}|{OCT}{1,3}|x{HEX}+)|[^\\'])+\'
 STRING_CONSTANT [L]?\"(?:\\({ESC}|{OCT}{1,3}|x[{DEC}|{LET}]+)|[^\\"])*\"
 
 
