@@ -72,7 +72,7 @@ ROOT
 FRAME
   : FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
-  // | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
+  | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
   | FRAME FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
   | FRAME FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
   // | FRAME VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
@@ -175,7 +175,7 @@ SINGLE_STATEMENT//each line inside a scope
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
   : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
-  // | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
+  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
   // | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
   // | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
   ;
@@ -188,11 +188,11 @@ JUMP_STATEMENT //return; || return x; || break; || continue;
 /* Every simple expression. Could be an assignment, a declaration, a function call
  * etc..
  * Only assignment and declaration for now. */
-// EXPRESSION
-//   : VARIABLE_DECLARATION       { $$ = $1; }
-//   | ASSIGNMENT_STATEMENT        { $$ = $1; }
+EXPRESSION
+  : VARIABLE_DECLARATION       { $$ = $1; }
+  | ASSIGNMENT_STATEMENT        { $$ = $1; }
   // | MATH_OR_BITWISE_EXPRESSION  { $$ = $1; }
-  // ;
+  ;
 
 
 // ASSIGNMENT_OPERATOR
