@@ -1,0 +1,494 @@
+Terminals unused in grammar
+
+    T_AUTO
+    T_BREAK
+    T_CASE
+    T_CONST
+    T_CONTINUE
+    T_DEFAULT
+    T_DO
+    T_ELSE
+    T_ENUM
+    T_EXTERN
+    T_FOR
+    T_GOTO
+    T_IF
+    T_REGISTER
+    T_RETURN
+    T_SIZEOF
+    T_STATIC
+    T_STRUCT
+    T_SWITCH
+    T_TYPEDEF
+    T_UNION
+    T_WHILE
+    T_AND
+    T_NOT
+    T_INVERT
+    T_MINUS
+    T_PLUS
+    T_DIV
+    T_MOD
+    T_LT
+    T_GT
+    T_XOR
+    T_OR
+    T_QUESTION
+    T_DOT
+    T_ELLIPSIS
+    T_RSHIFT_ASSIGN
+    T_LSHIFT_ASSIGN
+    T_ADD_ASSIGN
+    T_SUB_ASSIGN
+    T_MUL_ASSIGN
+    T_DIV_ASSIGN
+    T_MOD_ASSIGN
+    T_AND_ASSIGN
+    T_XOR_ASSIGN
+    T_OR_ASSIGN
+    T_EQ_ASSIGN
+    T_RSHIFT_OP
+    T_LSHIFT_OP
+    T_INC_OP
+    T_DEC_OP
+    T_PTR_OP
+    T_AND_OP
+    T_OR_OP
+    T_LE_OP
+    T_GE_OP
+    T_EQ_OP
+    T_NE_OP
+    T_COMMA
+    T_COLON
+    T_L_BRACKET
+    T_R_BRACKET
+    T_INT_CONST
+    T_FLOAT_CONST
+    T_CHAR_CONST
+    T_STRING_CONST
+
+
+Grammar
+
+    0 $accept: ROOT $end
+
+    1 ROOT: FRAME
+
+    2 FRAME: FUNCTION_DEFINITION
+    3      | FUNCTION_DECLARATION
+    4      | FRAME FUNCTION_DEFINITION
+    5      | FRAME FUNCTION_DECLARATION
+
+    6 FUNCTION_DECLARATION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
+
+    7 FUNCTION_DEFINITION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE
+
+    8 WRAPPED_ARGUMENTS: T_L_PARENTHESIS T_R_PARENTHESIS
+
+    9 SCOPE: T_L_BRACE T_R_BRACE
+
+   10 DECLARATOR: T_IDENTIFIER
+   11           | T_MULT T_IDENTIFIER
+
+   12 TYPE_SPECIFIER: T_VOID
+   13               | T_CHAR
+   14               | T_SHORT
+   15               | T_INT
+   16               | T_LONG
+   17               | T_FLOAT
+   18               | T_DOUBLE
+   19               | T_SIGNED
+   20               | T_UNSIGNED
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    T_AUTO (258)
+    T_BREAK (259)
+    T_CASE (260)
+    T_CHAR (261) 13
+    T_CONST (262)
+    T_CONTINUE (263)
+    T_DEFAULT (264)
+    T_DO (265)
+    T_DOUBLE (266) 18
+    T_ELSE (267)
+    T_ENUM (268)
+    T_EXTERN (269)
+    T_FLOAT (270) 17
+    T_FOR (271)
+    T_GOTO (272)
+    T_IF (273)
+    T_INT (274) 15
+    T_LONG (275) 16
+    T_REGISTER (276)
+    T_RETURN (277)
+    T_SHORT (278) 14
+    T_SIGNED (279) 19
+    T_SIZEOF (280)
+    T_STATIC (281)
+    T_STRUCT (282)
+    T_SWITCH (283)
+    T_TYPEDEF (284)
+    T_UNION (285)
+    T_UNSIGNED (286) 20
+    T_VOID (287) 12
+    T_WHILE (288)
+    T_AND (289)
+    T_NOT (290)
+    T_INVERT (291)
+    T_MINUS (292)
+    T_PLUS (293)
+    T_MULT (294) 11
+    T_DIV (295)
+    T_MOD (296)
+    T_LT (297)
+    T_GT (298)
+    T_XOR (299)
+    T_OR (300)
+    T_QUESTION (301)
+    T_DOT (302)
+    T_ELLIPSIS (303)
+    T_RSHIFT_ASSIGN (304)
+    T_LSHIFT_ASSIGN (305)
+    T_ADD_ASSIGN (306)
+    T_SUB_ASSIGN (307)
+    T_MUL_ASSIGN (308)
+    T_DIV_ASSIGN (309)
+    T_MOD_ASSIGN (310)
+    T_AND_ASSIGN (311)
+    T_XOR_ASSIGN (312)
+    T_OR_ASSIGN (313)
+    T_EQ_ASSIGN (314)
+    T_RSHIFT_OP (315)
+    T_LSHIFT_OP (316)
+    T_INC_OP (317)
+    T_DEC_OP (318)
+    T_PTR_OP (319)
+    T_AND_OP (320)
+    T_OR_OP (321)
+    T_LE_OP (322)
+    T_GE_OP (323)
+    T_EQ_OP (324)
+    T_NE_OP (325)
+    T_SEMICOLON (326) 6
+    T_COMMA (327)
+    T_COLON (328)
+    T_L_BRACE (329) 9
+    T_R_BRACE (330) 9
+    T_L_PARENTHESIS (331) 8
+    T_R_PARENTHESIS (332) 8
+    T_L_BRACKET (333)
+    T_R_BRACKET (334)
+    T_IDENTIFIER <string> (335) 10 11
+    T_INT_CONST <integer_constant> (336)
+    T_FLOAT_CONST <float_constant> (337)
+    T_CHAR_CONST <string> (338)
+    T_STRING_CONST <string> (339)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (85)
+        on left: 0
+    ROOT <node> (86)
+        on left: 1
+        on right: 0
+    FRAME <node> (87)
+        on left: 2 3 4 5
+        on right: 1 4 5
+    FUNCTION_DECLARATION <node> (88)
+        on left: 6
+        on right: 3 5
+    FUNCTION_DEFINITION <node> (89)
+        on left: 7
+        on right: 2 4
+    WRAPPED_ARGUMENTS <node> (90)
+        on left: 8
+        on right: 6 7
+    SCOPE <node> (91)
+        on left: 9
+        on right: 7
+    DECLARATOR <node> (92)
+        on left: 10 11
+        on right: 6 7
+    TYPE_SPECIFIER <node> (93)
+        on left: 12 13 14 15 16 17 18 19 20
+        on right: 6 7
+
+
+State 0
+
+    0 $accept: . ROOT $end
+    1 ROOT: . FRAME
+    2 FRAME: . FUNCTION_DEFINITION
+    3      | . FUNCTION_DECLARATION
+    4      | . FRAME FUNCTION_DEFINITION
+    5      | . FRAME FUNCTION_DECLARATION
+    6 FUNCTION_DECLARATION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
+    7 FUNCTION_DEFINITION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE
+   12 TYPE_SPECIFIER: . T_VOID
+   13               | . T_CHAR
+   14               | . T_SHORT
+   15               | . T_INT
+   16               | . T_LONG
+   17               | . T_FLOAT
+   18               | . T_DOUBLE
+   19               | . T_SIGNED
+   20               | . T_UNSIGNED
+
+    T_CHAR      shift, and go to state 1
+    T_DOUBLE    shift, and go to state 2
+    T_FLOAT     shift, and go to state 3
+    T_INT       shift, and go to state 4
+    T_LONG      shift, and go to state 5
+    T_SHORT     shift, and go to state 6
+    T_SIGNED    shift, and go to state 7
+    T_UNSIGNED  shift, and go to state 8
+    T_VOID      shift, and go to state 9
+
+    ROOT                  go to state 10
+    FRAME                 go to state 11
+    FUNCTION_DECLARATION  go to state 12
+    FUNCTION_DEFINITION   go to state 13
+    TYPE_SPECIFIER        go to state 14
+
+
+State 1
+
+   13 TYPE_SPECIFIER: T_CHAR .
+
+    $default  reduce using rule 13 (TYPE_SPECIFIER)
+
+
+State 2
+
+   18 TYPE_SPECIFIER: T_DOUBLE .
+
+    $default  reduce using rule 18 (TYPE_SPECIFIER)
+
+
+State 3
+
+   17 TYPE_SPECIFIER: T_FLOAT .
+
+    $default  reduce using rule 17 (TYPE_SPECIFIER)
+
+
+State 4
+
+   15 TYPE_SPECIFIER: T_INT .
+
+    $default  reduce using rule 15 (TYPE_SPECIFIER)
+
+
+State 5
+
+   16 TYPE_SPECIFIER: T_LONG .
+
+    $default  reduce using rule 16 (TYPE_SPECIFIER)
+
+
+State 6
+
+   14 TYPE_SPECIFIER: T_SHORT .
+
+    $default  reduce using rule 14 (TYPE_SPECIFIER)
+
+
+State 7
+
+   19 TYPE_SPECIFIER: T_SIGNED .
+
+    $default  reduce using rule 19 (TYPE_SPECIFIER)
+
+
+State 8
+
+   20 TYPE_SPECIFIER: T_UNSIGNED .
+
+    $default  reduce using rule 20 (TYPE_SPECIFIER)
+
+
+State 9
+
+   12 TYPE_SPECIFIER: T_VOID .
+
+    $default  reduce using rule 12 (TYPE_SPECIFIER)
+
+
+State 10
+
+    0 $accept: ROOT . $end
+
+    $end  shift, and go to state 15
+
+
+State 11
+
+    1 ROOT: FRAME .  [$end]
+    4 FRAME: FRAME . FUNCTION_DEFINITION
+    5      | FRAME . FUNCTION_DECLARATION
+    6 FUNCTION_DECLARATION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
+    7 FUNCTION_DEFINITION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE
+   12 TYPE_SPECIFIER: . T_VOID
+   13               | . T_CHAR
+   14               | . T_SHORT
+   15               | . T_INT
+   16               | . T_LONG
+   17               | . T_FLOAT
+   18               | . T_DOUBLE
+   19               | . T_SIGNED
+   20               | . T_UNSIGNED
+
+    T_CHAR      shift, and go to state 1
+    T_DOUBLE    shift, and go to state 2
+    T_FLOAT     shift, and go to state 3
+    T_INT       shift, and go to state 4
+    T_LONG      shift, and go to state 5
+    T_SHORT     shift, and go to state 6
+    T_SIGNED    shift, and go to state 7
+    T_UNSIGNED  shift, and go to state 8
+    T_VOID      shift, and go to state 9
+
+    $default  reduce using rule 1 (ROOT)
+
+    FUNCTION_DECLARATION  go to state 16
+    FUNCTION_DEFINITION   go to state 17
+    TYPE_SPECIFIER        go to state 14
+
+
+State 12
+
+    3 FRAME: FUNCTION_DECLARATION .
+
+    $default  reduce using rule 3 (FRAME)
+
+
+State 13
+
+    2 FRAME: FUNCTION_DEFINITION .
+
+    $default  reduce using rule 2 (FRAME)
+
+
+State 14
+
+    6 FUNCTION_DECLARATION: TYPE_SPECIFIER . DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
+    7 FUNCTION_DEFINITION: TYPE_SPECIFIER . DECLARATOR WRAPPED_ARGUMENTS SCOPE
+   10 DECLARATOR: . T_IDENTIFIER
+   11           | . T_MULT T_IDENTIFIER
+
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+
+    DECLARATOR  go to state 20
+
+
+State 15
+
+    0 $accept: ROOT $end .
+
+    $default  accept
+
+
+State 16
+
+    5 FRAME: FRAME FUNCTION_DECLARATION .
+
+    $default  reduce using rule 5 (FRAME)
+
+
+State 17
+
+    4 FRAME: FRAME FUNCTION_DEFINITION .
+
+    $default  reduce using rule 4 (FRAME)
+
+
+State 18
+
+   11 DECLARATOR: T_MULT . T_IDENTIFIER
+
+    T_IDENTIFIER  shift, and go to state 21
+
+
+State 19
+
+   10 DECLARATOR: T_IDENTIFIER .
+
+    $default  reduce using rule 10 (DECLARATOR)
+
+
+State 20
+
+    6 FUNCTION_DECLARATION: TYPE_SPECIFIER DECLARATOR . WRAPPED_ARGUMENTS T_SEMICOLON
+    7 FUNCTION_DEFINITION: TYPE_SPECIFIER DECLARATOR . WRAPPED_ARGUMENTS SCOPE
+    8 WRAPPED_ARGUMENTS: . T_L_PARENTHESIS T_R_PARENTHESIS
+
+    T_L_PARENTHESIS  shift, and go to state 22
+
+    WRAPPED_ARGUMENTS  go to state 23
+
+
+State 21
+
+   11 DECLARATOR: T_MULT T_IDENTIFIER .
+
+    $default  reduce using rule 11 (DECLARATOR)
+
+
+State 22
+
+    8 WRAPPED_ARGUMENTS: T_L_PARENTHESIS . T_R_PARENTHESIS
+
+    T_R_PARENTHESIS  shift, and go to state 24
+
+
+State 23
+
+    6 FUNCTION_DECLARATION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS . T_SEMICOLON
+    7 FUNCTION_DEFINITION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS . SCOPE
+    9 SCOPE: . T_L_BRACE T_R_BRACE
+
+    T_SEMICOLON  shift, and go to state 25
+    T_L_BRACE    shift, and go to state 26
+
+    SCOPE  go to state 27
+
+
+State 24
+
+    8 WRAPPED_ARGUMENTS: T_L_PARENTHESIS T_R_PARENTHESIS .
+
+    $default  reduce using rule 8 (WRAPPED_ARGUMENTS)
+
+
+State 25
+
+    6 FUNCTION_DECLARATION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON .
+
+    $default  reduce using rule 6 (FUNCTION_DECLARATION)
+
+
+State 26
+
+    9 SCOPE: T_L_BRACE . T_R_BRACE
+
+    T_R_BRACE  shift, and go to state 28
+
+
+State 27
+
+    7 FUNCTION_DEFINITION: TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE .
+
+    $default  reduce using rule 7 (FUNCTION_DEFINITION)
+
+
+State 28
+
+    9 SCOPE: T_L_BRACE T_R_BRACE .
+
+    $default  reduce using rule 9 (SCOPE)

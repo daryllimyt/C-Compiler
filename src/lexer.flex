@@ -86,10 +86,10 @@ MULTIPLE_LINE_COMMENT ([/]\*(.|{NEW_LINE})*\*[/])
 "&"					{ return T_AND; }
 "!"					{ return T_NOT; }
 "~"					{ return T_INVERT; }
-"-"					{ return T_MINUS }
-"+"					{ return T_PLUS }
-"*"					{ return T_MULT }
-"/"					{ return T_DIV }
+"-"					{ return T_MINUS; }
+"+"					{ return T_PLUS; }
+"*"					{ return T_MULT; }
+"/"					{ return T_DIV; }
 "%"					{ return T_MOD; }
 "<"					{ return T_LT; }
 ">"					{ return T_GT; }
@@ -134,23 +134,23 @@ MULTIPLE_LINE_COMMENT ([/]\*(.|{NEW_LINE})*\*[/])
 ":"					{ return T_COLON; }
 ("{"|"<%")	{ return T_L_BRACE; }
 ("}"|"%>")	{ return T_R_BRACE; }
-"("					{ return T_L_PARENTHENSIS; }
-")"					{ return T_R_PARENTHENSIS; }
+"("					{ return T_L_PARENTHESIS; }
+")"					{ return T_R_PARENTHESIS; }
 ("["|"<:")	{ return T_L_BRACKET; }
 ("]"|":>")	{ return T_R_BRACKET; }
 
-{BINARY_INTEGER} 	{yylval.number = std::stoi(yytext, nullptr, 2); return T_INT_CONST;}
-{OCTAL_INTEGER} 	{yylval.number = std::stoi(yytext, nullptr, 8); return T_INT_CONST;}
-{DECIMAL_INTEGER} {yylval.number = std::stoi(yytext, nullptr, 10); return T_INT_CONST;}
-{HEXA_INTEGER} 		{yylval.number = std::stoi(yytext, nullptr, 16); return T_INT_CONST;}
+{BINARY_INTEGER} 	{yylval.integer_constant = std::stoi(yytext, nullptr, 2); return T_INT_CONST;}
+{OCTAL_INTEGER} 	{yylval.integer_constant = std::stoi(yytext, nullptr, 8); return T_INT_CONST;}
+{DECIMAL_INTEGER} {yylval.integer_constant = std::stoi(yytext, nullptr, 10); return T_INT_CONST;}
+{HEXA_INTEGER} 		{yylval.integer_constant = std::stoi(yytext, nullptr, 16); return T_INT_CONST;}
 
-{FLOAT_CONSTANT} 	{yylval.number = std::atof(yytext); return T_FLOAT_CONST}
+{FLOAT_CONSTANT} 	{yylval.float_constant = std::atof(yytext); return T_FLOAT_CONST; }
 
-{CHAR_CONSTANT} 	{yylval.text = new std::string(yytext); return T_CHAR_CONST};
-{STRING_CONSTANT} {yylval.text = new std::string(yytext); return T_STRING_CONST};
+{CHAR_CONSTANT} 	{yylval.string = new std::string(yytext); return T_CHAR_CONST; }
+{STRING_CONSTANT} {yylval.string = new std::string(yytext); return T_STRING_CONST; }
 
 
-{IDENTIFIER} 			{yyval.text = new std::string(yytext); return T_IDENTIFIER}
+{IDENTIFIER} 			{yylval.string = new std::string(yytext); return T_IDENTIFIER; }
 
 {NEW_LINE} 				{line_number++;}
 

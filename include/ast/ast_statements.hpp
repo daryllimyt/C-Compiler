@@ -45,7 +45,7 @@ class WrappedArguments : public Node {
     NodePtr right_;
 
    public:
-    Frame(NodePtr left, NodePtr right) {
+    WrappedArguments(NodePtr left, NodePtr right) {
         type_ = "WRAPPED_ARGUMENTS";
         left_ = left;    
         right_ = right;  
@@ -56,6 +56,22 @@ class WrappedArguments : public Node {
     NodePtr getRight() const {
         return right_;
     }
-}
+};
+
+class Scope : public Node {
+   protected:
+    NodePtr next_;
+
+   public:
+    Scope(NodePtr next) {
+        type_ = "SCOPE";
+        next_ = next;    
+    }
+    NodePtr getNext() const {
+        return next_;
+    }
+};
+
+
 
 #endif
