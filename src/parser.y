@@ -186,7 +186,8 @@ EXPRESSION_STATEMENT
  * etc..
  * Only assignment and declaration for now. */
 EXPRESSION
-  : VARIABLE_ASSIGNMENT       { $$ = $1; }
+  : VARIABLE_DECLARATION       { $$ = $1; }
+  | ASSIGNMENT_STATEMENT        { $$ = $1; }
   | MATH_OR_BITWISE_EXPRESSION  { $$ = $1; }
   ;
 
