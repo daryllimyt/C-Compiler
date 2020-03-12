@@ -1,5 +1,5 @@
 %code requires{
-  #include "../inc/ast.hpp"
+  #include "../include/ast.hpp"
   #include <cassert>
 
   extern const Node *g_root; // A way of getting the AST out

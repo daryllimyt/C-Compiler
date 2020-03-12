@@ -109,7 +109,7 @@ extern int yydebug;
 /* "%code requires" blocks.  */
 #line 1 "src/parser.y"
 
-  #include "../inc/ast.hpp"
+  #include "../include/ast.hpp"
   #include <cassert>
 
   extern const Node *g_root; // A way of getting the AST out
@@ -1950,67 +1950,67 @@ yyreduce:
 
   case 52:
 #line 196 "src/parser.y"
-                   { (yyval.node) = new std::string("="); }
+                        { (yyval.node) = new AssignmentOperator("="); }
 #line 1955 "src/parser.tab.cpp"
     break;
 
   case 53:
 #line 197 "src/parser.y"
-                   { (yyval.node) = new std::string("*="); }
+                        { (yyval.node) = new AssignmentOperator("*="); }
 #line 1961 "src/parser.tab.cpp"
     break;
 
   case 54:
 #line 198 "src/parser.y"
-                   { (yyval.node) = new std::string("/="); }
+                        { (yyval.node) = new AssignmentOperator("/="); }
 #line 1967 "src/parser.tab.cpp"
     break;
 
   case 55:
 #line 199 "src/parser.y"
-                   { (yyval.node) = new std::string("%="); }
+                        { (yyval.node) = new AssignmentOperator("%="); }
 #line 1973 "src/parser.tab.cpp"
     break;
 
   case 56:
 #line 200 "src/parser.y"
-                   { (yyval.node) = new std::string("+="); }
+                        { (yyval.node) = new AssignmentOperator("+="); }
 #line 1979 "src/parser.tab.cpp"
     break;
 
   case 57:
 #line 201 "src/parser.y"
-                   { (yyval.node) = new std::string("-="); }
+                        { (yyval.node) = new AssignmentOperator("-="); }
 #line 1985 "src/parser.tab.cpp"
     break;
 
   case 58:
 #line 202 "src/parser.y"
-                     { (yyval.node) = new std::string("<<="); }
+                        { (yyval.node) = new AssignmentOperator("<<="); }
 #line 1991 "src/parser.tab.cpp"
     break;
 
   case 59:
 #line 203 "src/parser.y"
-                    { (yyval.node) = new std::string(">>="); }
+                        { (yyval.node) = new AssignmentOperator(">>="); }
 #line 1997 "src/parser.tab.cpp"
     break;
 
   case 60:
 #line 204 "src/parser.y"
-                   { (yyval.node) = new std::string("&="); }
+                        { (yyval.node) = new AssignmentOperator("&="); }
 #line 2003 "src/parser.tab.cpp"
     break;
 
   case 61:
 #line 205 "src/parser.y"
-                   { (yyval.node) = new std::string("^="); }
+                        { (yyval.node) = new AssignmentOperator("^="); }
 #line 2009 "src/parser.tab.cpp"
     break;
 
   case 62:
 #line 206 "src/parser.y"
-                   { (yyval.node) = new std::string("|="); }
+                        { (yyval.node) = new AssignmentOperator("|="); }
 #line 2015 "src/parser.tab.cpp"
     break;
 
@@ -2052,7 +2052,7 @@ yyreduce:
 
   case 69:
 #line 231 "src/parser.y"
-                                                              { (yyval.node) = new AssignmentExpression((yyvsp[-2].node), *(yyvsp[-1].node), (yyvsp[0].node)); }
+                                                              { (yyval.node) = new AssignmentExpression((yyvsp[-2].node), (yyvsp[-1].node), (yyvsp[0].node)); }
 #line 2057 "src/parser.tab.cpp"
     break;
 
@@ -2118,37 +2118,37 @@ yyreduce:
 
   case 80:
 #line 254 "src/parser.y"
-                                     { (yyval.node) = new UnaryExpression(*(yyvsp[-1].node), (yyvsp[0].node)); delete (yyvsp[-1].node); }
+                                     { (yyval.node) = new UnaryExpression((yyvsp[-1].node), (yyvsp[0].node)); }
 #line 2123 "src/parser.tab.cpp"
     break;
 
   case 81:
 #line 258 "src/parser.y"
-              { (yyval.node) = new std::string("&"); }
+                { (yyval.node) = new UnaryOperator("&"); }
 #line 2129 "src/parser.tab.cpp"
     break;
 
   case 82:
 #line 259 "src/parser.y"
-            { (yyval.node) = new std::string("+"); }
+                { (yyval.node) = new UnaryOperator("+"); }
 #line 2135 "src/parser.tab.cpp"
     break;
 
   case 83:
 #line 260 "src/parser.y"
-             { (yyval.node) = new std::string("-"); }
+                { (yyval.node) = new UnaryOperator("-"); }
 #line 2141 "src/parser.tab.cpp"
     break;
 
   case 84:
 #line 261 "src/parser.y"
-           { (yyval.node) = new std::string("~"); }
+                { (yyval.node) = new UnaryOperator("~"); }
 #line 2147 "src/parser.tab.cpp"
     break;
 
   case 85:
 #line 262 "src/parser.y"
-           { (yyval.node) = new std::string("!"); }
+                { (yyval.node) = new UnaryOperator("!"); }
 #line 2153 "src/parser.tab.cpp"
     break;
 

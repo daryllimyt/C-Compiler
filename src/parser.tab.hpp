@@ -46,7 +46,7 @@ extern int yydebug;
 /* "%code requires" blocks.  */
 #line 1 "src/parser.y"
 
-  #include "../inc/ast.hpp"
+  #include "../include/ast.hpp"
   #include <cassert>
 
   extern const Node *g_root; // A way of getting the AST out

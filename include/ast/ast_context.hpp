@@ -27,7 +27,7 @@ struct ProgramContext {
     // Variables
     std::string identifier;
     std::string typeSpecifier;
-    std::string typeQualifier;
+    std::string typeQualifier; // const, volatile
     /* Variable assignment states (for variable nodes)
     None: NO_ASSIGN
     Variable declaration: VAR_DECLARATION

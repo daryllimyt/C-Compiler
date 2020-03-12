@@ -62,7 +62,7 @@ class String : public Node {
 class TypeSpecifier : public Node {
    public:
     TypeSpecifier(const std::string &type) {
-        type_ = type;
+        type_ = type; // void, char, short, int ...
     }
 };
 

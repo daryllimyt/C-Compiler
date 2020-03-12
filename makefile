@@ -19,15 +19,15 @@ src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
 	bison -v --report=all -d src/parser.y -o src/parser.tab.cpp -g
 
 # builds lexer and parser
-# src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
-# 	flex -o src/lexer.yy.cpp  src/lexer.flex
+src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
+	flex -o src/lexer.yy.cpp  src/lexer.flex
 
-# builds the lexer (standalone)
-src/lexer.yy.cpp : src/lexer.flex
-	flex -o src/lexer.yy.cpp src/lexer.flex
+# # builds the lexer (standalone)
+# src/lexer.yy.cpp : src/lexer.flex
+# 	flex -o src/lexer.yy.cpp src/lexer.flex
 
-src/l : lexer.yy.o 
-	$(CC) $(CPPFLAGS) -o lexer  lexer.yy.o
+src/lexer : src/lexer.yy.o 
+	$(CC) $(CPPFLAGS) -o lexer  src/lexer.yy.o
 
 bin/piledriver : src/parser.tab.o src/lexer.yy.o include/ast/ast_translator.o include/ast/codegen/ast_compiler.o src/c_compiler.o 
 	mkdir -p bin
