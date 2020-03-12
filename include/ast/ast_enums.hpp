@@ -6,8 +6,8 @@
 
 #include "ast_node.hpp"
 
-class Statement : public Node {
+// class Statement : public Node {
 
-};
+// };
 
 #endif

@@ -30,8 +30,8 @@ class Node {
         return type_;
     };
 
-    // Pure virtual print node to the given stream
-    virtual std::ostream &print(std::ostream &dst, std::string indent) const = 0;
+    // // Pure virtual print node to the given stream
+    // virtual std::ostream &print(std::ostream &dst, std::string indent) const = 0;
 
     // Virtual functions for all types of nodes
     virtual NodePtr getLeft() const { return NULL; }

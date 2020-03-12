@@ -81,7 +81,7 @@ FRAME
 //   : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
 //   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, NULL); }
 //   ;
-//
+
 // ENUMERATOR //need revision
 //   : T_IDENTIFIER                                       { $$ = new EnumDeclaration(*$1, NULL); delete $1; }
 //   | T_IDENTIFIER T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION  { $$ = new EnumDeclaration(*$1, $3); delete $1; } //change ltr
@@ -95,6 +95,7 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
   : TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE { $$ = new FunctionDefinition($1, $2, $3, $4);; }
   ;
 
+/*
 WRAPPED_ARGUMENTS //(int i, string j) or ()
   : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
   | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
@@ -169,19 +170,19 @@ ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForStatement($3, $4, $5, $7); }
   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
   ;
-
+*/
 JUMP_STATEMENT //return; || return x; || break; || continue;
   : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
   | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
   | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
   | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
   ;
-
+/*
 EXPRESSION_STATEMENT
   : T_SEMICOLON            { $$ = new EmptyExpression(); }
   | EXPRESSION T_SEMICOLON { $$ = $1; }
   ;
-
+*/
 /* Every simple expression. Could be an assignment, a declaration, a function call
  * etc..
  * Only assignment and declaration for now. */
@@ -191,7 +192,7 @@ EXPRESSION
   | MATH_OR_BITWISE_EXPRESSION  { $$ = $1; }
   ;
 
-
+/*
 ASSIGNMENT_OPERATOR
   : T_EQ_ASSIGN         { $$ = new AssignmentOperator("="); }
   | T_MUL_ASSIGN        { $$ = new AssignmentOperator("*="); }
@@ -213,7 +214,7 @@ ASSIGNMENT_OPERATOR
  *                                      /          |           \
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
  */
-
+/*
 VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
 
@@ -230,17 +231,17 @@ MATH_OR_BITWISE_EXPRESSION
   : CONDITIONAL_EXPRESSION  { $$ = $1; }
   | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, $2, $3); }
   ;
-
+*/
 PRIMARY_EXPRESSION //a || 1 || a+1
   : DECLARATOR                                { $$ = $1; }
   | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
-  | STRING_CONSTANT */
+  | STRING_CONSTANT 
   | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_L_PARENTHESIS  { $$ = $2; }
   | T_IDENTIFIER WRAPPED_PARAMETERS  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
-  ;
-
+  ; */
+/*
 POSTFIX_EXPRESSION // a++
   : PRIMARY_EXPRESSION         { $$ = $1; }
   | POSTFIX_EXPRESSION T_INC_OP  { $$ = new PostfixExpression($1, "++"); }
@@ -324,9 +325,9 @@ CONDITIONAL_EXPRESSION
   : BOOLEAN_OR_EXPRESSION                                            { $$ = $1; }
   | BOOLEAN_OR_EXPRESSION T_QUESTION EXPRESSION T_COLON CONDITIONAL_EXPRESSION  { $$ = new ConditionalExpression($1, $3, $5); }
 	;
-
+*/
 /* ============== END Arithmetic and logical expressions ordering */
-
+/*
 WRAPPED_PARAMETERS // (int i = 5, double j)
   : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = $2; }
 	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParametersList(NULL, NULL); }
@@ -336,7 +337,7 @@ MULTIPLE_PARAMETERS //int i = 5, double j
   : MATH_OR_BITWISE_EXPRESSION T_COMMA MULTIPLE_PARAMETERS { $$ = new MultipleParameters($1, $3); }
   | MATH_OR_BITWISE_EXPRESSION                        { $$ = new MultipleParameters($1, NULL); }
   ;
-
+*/
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", NULL); delete $1; }
   | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "pointer", NULL); delete $2; }
