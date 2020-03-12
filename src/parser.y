@@ -100,7 +100,7 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
   // : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
-  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
+  : T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
   ;
   /*
 
