@@ -20,7 +20,7 @@
   long long int integer_constant;
   std::string *string;
 }
-%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT
+%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT PRIMARY_EXPRESSION EXPRESSION
 
 // %type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
 // SCOPE MULTIPLE_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
@@ -72,7 +72,7 @@ ROOT
 FRAME
   : FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
-  | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
+  // | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
   | FRAME FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
   | FRAME FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
   // | FRAME VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
@@ -189,8 +189,9 @@ JUMP_STATEMENT //return; || return x; || break; || continue;
  * etc..
  * Only assignment and declaration for now. */
 EXPRESSION
-  : VARIABLE_DECLARATION       { $$ = $1; }
-  | ASSIGNMENT_STATEMENT        { $$ = $1; }
+  : PRIMARY_EXPRESSION { $$ = $1; }
+  // : VARIABLE_DECLARATION       { $$ = $1; }
+  // | ASSIGNMENT_STATEMENT        { $$ = $1; }
   // | MATH_OR_BITWISE_EXPRESSION  { $$ = $1; }
   ;
 
@@ -235,8 +236,8 @@ MATH_OR_BITWISE_EXPRESSION
   ;
 */
 PRIMARY_EXPRESSION //a || 1 || a+1
-  : DECLARATOR                                { $$ = $1; }
-  | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+  // : DECLARATOR                                { $$ = $1; }
+  : T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
   | STRING_CONSTANT
