@@ -8,7 +8,7 @@ all : clean bin/piledriver
 
 parser : src/parser.tab.cpp src/parser.tab.hpp
 
-lexer : src/lexer.yy.cpp
+#lexer : src/lexer.yy.cpp
 
 piledriver : bin/piledriver
 
@@ -17,6 +17,9 @@ src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
 
 src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
 	flex -o src/lexer.yy.cpp  src/lexer.flex
+
+lexer : lexer.yy.o 
+	$(CC) $(CPPFLAGS) -o lexer  lexer.yy.o
 
 bin/piledriver : src/parser.tab.o src/lexer.yy.o include/ast/ast_translator.o include/ast/codegen/ast_compiler.o src/c_compiler.o 
 	mkdir -p bin
