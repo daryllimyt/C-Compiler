@@ -1,7 +1,7 @@
 # Makefile for Piledriver compiler & translator
 
 # Target : dependencies
-#			flags target dependencies
+#			flags target dependency1 dependency 2 ...
 
 CC=g++
 CPPFLAGS += -std=c++11 -W -Wall -g -Wno-unused-parameter -Wno-reorder -w 
@@ -18,9 +18,11 @@ piledriver : bin/piledriver
 src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
 	bison -v --report=all -d src/parser.y -o src/parser.tab.cpp -g
 
+# builds lexer and parser
 # src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
 # 	flex -o src/lexer.yy.cpp  src/lexer.flex
 
+# builds the lexer (standalone)
 src/lexer.yy.cpp : src/lexer.flex
 	flex -o src/lexer.yy.cpp src/lexer.flex
 

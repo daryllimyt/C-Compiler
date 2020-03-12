@@ -15,25 +15,28 @@
 
 // Represents the value associated with any kind of AST node.
 %union{
-  const Node *node;
-  double float_constant;
-  long long int integer_constant;
+  const Expression *expr;
+  double number;
   std::string *string;
 }
 
-%type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
-SCOPE MULTI_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
-MULTIPLE_CASE_STATEMENTS SINGLE_CASE_STATEMENT DEFAULT_STATEMENT ITERATION_STATEMENT JUMP_STATEMENT
-EXPRESSION_STATEMENT EXPRESSION ASSIGNMENT_OPERATOR VARIABLE_DECLARATION ASSIGNMENT_STATEMENT
-MATH_OR_BITWISE_EXPRESSION PRIMARY_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION UNARY_OPERATOR
-MULTIPLICATIVE_EXPRESSION ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION EQUALITY_EXPRESSION
-BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION
-CONDITIONAL_EXPRESSION WRAPPED_PARAMETERS PARAMETER_LIST DECLARATOR TYPE_SPECIFIER
+%type <node> external_declaration function_definition declaration_expression_list
+declaration_expression_list_node declarator direct_declarator arguments_list
+SCOPE statement statement_list expression_statement jump_statement
+iteration_statement selection_statement function_argument function_arguments
+function_call_parameters_list parameters_list logical_or_arithmetic_expression
+conditional_expression logical_or_expression logical_and_expression
+inclusive_or_expression exclusive_or_expression and_expression equality_expression
+relational_expression expression shift_expression additive_expression
+multiplicative_expression unary_expression postfix_expression primary_expression
+case_statement_list compound_case_statement default_statement
+case_or_default_statement_list case_statement enum_declaration
+enum_declaration_list_node function_declaration
 
-%type <string> T_IDENTIFIER
-%type <integer_constant> T_INT_CONST
-%type <float_constant> T_FLOAT_CONST
-%type <string> T_CHAR_CONST T_STRING_CONST
+%type <string> T_IDENTIFIER type_specifier unary_operator assignment_operator
+%type <integer_constant> INTEGER_CONSTANT
+%type <float_constant> FLOAT_CONSTANT
+%type <char_string_constant> CHARACTER_CONSTANT STRING_CONSTANT
 
 //general
 %token T_AUTO T_BREAK T_CASE T_CHAR T_CONST T_CONTINUE T_DEFAULT T_DO T_DOUBLE
@@ -58,9 +61,9 @@ CONDITIONAL_EXPRESSION WRAPPED_PARAMETERS PARAMETER_LIST DECLARATOR TYPE_SPECIFI
 %token T_L_PARENTHESIS T_R_PARENTHESIS T_L_BRACKET T_R_BRACKET
 
 //T_IDENTIFIERs and constant expressions
-%token T_IDENTIFIER T_INT_CONST T_FLOAT_CONST T_CHAR_CONST T_STRING_CONST
+%token T_T_IDENTIFIER T_INT_CONST T_FLOAT_CONST T_CHAR_CONST T_STRING_CONST
 
-%start ROOT
+%start translation_unit
 
 %%
 
@@ -171,10 +174,10 @@ ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   ;
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
-  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
-  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
-  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
-  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
+  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("RETURN", NULL); }
+  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("RETURN", $2); }
+  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("BREAK", NULL); }
+  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("CONTINUE", NULL); }
   ;
 
 EXPRESSION_STATEMENT
@@ -232,12 +235,12 @@ MATH_OR_BITWISE_EXPRESSION
 
 PRIMARY_EXPRESSION //a || 1 || a+1
   : DECLARATOR                                { $$ = $1; }
-  | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+  | INTEGER_CONSTANT                          { $$ = new IntegerConstant( $1 ); }
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
   | STRING_CONSTANT */
-  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_L_PARENTHESIS  { $$ = $2; }
-  | T_IDENTIFIER WRAPPED_PARAMETERS  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
+  | '(' MATH_OR_BITWISE_EXPRESSION ')'  { $$ = $2; }
+  | T_IDENTIFIER function_call_parameters_list  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
   ;
 
 POSTFIX_EXPRESSION // a++
@@ -326,14 +329,14 @@ CONDITIONAL_EXPRESSION
 
 /* ============== END Arithmetic and logical expressions ordering */
 
-WRAPPED_PARAMETERS // (int i = 5, double j)
-  : T_L_PARENTHESIS PARAMETER_LIST T_R_PARENTHESIS  { $$ = $2; }
-	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParametersList(NULL, NULL); }
+function_call_parameters_list // (int i = 5, double j)
+  : '(' parameters_list ')'  { $$ = $2; }
+	| '(' ')'                  { $$ = new ParametersListNode(NULL, NULL); }
   ;
 
-PARAMETER_LIST //int i = 5, double j
-  : MATH_OR_BITWISE_EXPRESSION T_COMMA PARAMETER_LIST { $$ = new ParametersList($1, $3); }
-  | MATH_OR_BITWISE_EXPRESSION                        { $$ = new ParametersList($1, NULL); }
+parameters_list //int i = 5, double j
+  : MATH_OR_BITWISE_EXPRESSION ',' parameters_list { $$ = new ParametersListNode($1, $3); }
+  | MATH_OR_BITWISE_EXPRESSION                     { $$ = new ParametersListNode($1, NULL); }
   ;
 
 DECLARATOR //a || *a || a[1]
