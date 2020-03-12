@@ -608,9 +608,9 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    70,    70,    73,    74,    76,    77,    93,    98,   104,
-     120,   345,   346,   352,   353,   354,   355,   356,   357,   358,
-     359,   360
+       0,    70,    70,    73,    74,    76,    77,    93,    97,   103,
+     119,   344,   345,   351,   352,   353,   354,   355,   356,   357,
+     358,   359
 };
 #endif
 
@@ -1473,85 +1473,85 @@ yyreduce:
     break;
 
   case 8:
-#line 98 "src/parser.y"
+#line 97 "src/parser.y"
                                                       { (yyval.node) = new FunctionDefinition((yyvsp[-3].node), (yyvsp[-2].node), (yyvsp[-1].node), (yyvsp[0].node)); }
 #line 1479 "src/parser.tab.cpp"
     break;
 
   case 9:
-#line 104 "src/parser.y"
+#line 103 "src/parser.y"
                                                         { (yyval.node) = new WrappedArguments(NULL, NULL); }
 #line 1485 "src/parser.tab.cpp"
     break;
 
   case 10:
-#line 120 "src/parser.y"
+#line 119 "src/parser.y"
                                        { (yyval.node) = new Scope(NULL); }
 #line 1491 "src/parser.tab.cpp"
     break;
 
   case 11:
-#line 345 "src/parser.y"
+#line 344 "src/parser.y"
                                                                      { (yyval.node) = new Variable(*(yyvsp[0].string), "normal", NULL); delete (yyvsp[0].string); }
 #line 1497 "src/parser.tab.cpp"
     break;
 
   case 12:
-#line 346 "src/parser.y"
+#line 345 "src/parser.y"
                                                                      { (yyval.node) = new Variable(*(yyvsp[0].string), "pointer", NULL); delete (yyvsp[0].string); }
 #line 1503 "src/parser.tab.cpp"
     break;
 
   case 13:
-#line 352 "src/parser.y"
+#line 351 "src/parser.y"
                { (yyval.node) = new TypeSpecifier("void"); }
 #line 1509 "src/parser.tab.cpp"
     break;
 
   case 14:
-#line 353 "src/parser.y"
+#line 352 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("char"); }
 #line 1515 "src/parser.tab.cpp"
     break;
 
   case 15:
-#line 354 "src/parser.y"
+#line 353 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("short"); }
 #line 1521 "src/parser.tab.cpp"
     break;
 
   case 16:
-#line 355 "src/parser.y"
+#line 354 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("int"); }
 #line 1527 "src/parser.tab.cpp"
     break;
 
   case 17:
-#line 356 "src/parser.y"
+#line 355 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("long"); }
 #line 1533 "src/parser.tab.cpp"
     break;
 
   case 18:
-#line 357 "src/parser.y"
+#line 356 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("float"); }
 #line 1539 "src/parser.tab.cpp"
     break;
 
   case 19:
-#line 358 "src/parser.y"
+#line 357 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("double"); }
 #line 1545 "src/parser.tab.cpp"
     break;
 
   case 20:
-#line 359 "src/parser.y"
+#line 358 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("signed int"); }
 #line 1551 "src/parser.tab.cpp"
     break;
 
   case 21:
-#line 360 "src/parser.y"
+#line 359 "src/parser.y"
                      { (yyval.node) = new TypeSpecifier("unsigned int"); }
 #line 1557 "src/parser.tab.cpp"
     break;
@@ -1789,7 +1789,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 363 "src/parser.y"
+#line 362 "src/parser.y"
 
 
 // Definition of variable (to match declaration earlier).

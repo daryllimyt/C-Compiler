@@ -2,7 +2,7 @@
 // Creates an AST by calling parseAST()
 // Traverses the AST by calling compile()
 
-#include "include/ast.hpp"
+#include "../include/ast.hpp"
 
 int main(int argc, char *argv[]) {
     /*

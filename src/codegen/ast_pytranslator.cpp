@@ -1,4 +1,4 @@
-#include "../include/ast.hpp"
+#include "../../include/ast.hpp"
 
 void indent(std::ostream *output, ProgramContext &context);
 void addVarToGlobal(ProgramContext &context, const std::string &id);

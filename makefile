@@ -38,7 +38,7 @@ src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
 src/lexer : src/lexer.yy.o 
 	$(CC) $(CPPFLAGS) -o lexer  src/lexer.yy.o
 
-bin/piledriver : src/parser.tab.o src/lexer.yy.o include/src/codegen/ast_pytranslator.o include/src/codegen/ast_compiler.o src/c_compiler.o 
+bin/piledriver : src/parser.tab.o src/lexer.yy.o src/codegen/ast_pytranslator.o src/codegen/ast_compiler.o src/c_compiler.o 
 	mkdir -p bin
 	$(CC) $(CPPFLAGS) -o bin/c_compiler $^
 

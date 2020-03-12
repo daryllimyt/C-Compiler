@@ -1,6 +1,6 @@
 // This file generates the MIPS assembly code
 
-#include "include/ast.hpp"
+#include "../../include/ast.hpp"
 
 void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     if (astNode == NULL) {
