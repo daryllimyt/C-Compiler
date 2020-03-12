@@ -1,3 +1,6 @@
+def foo():
+	return 1
+	
 def main():
 	return 1000
 	
