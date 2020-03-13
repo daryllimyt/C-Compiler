@@ -62,7 +62,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
 
     } else if (astNode->getType() == "IF_STATEMENT") {
-        *output << "if (";
+        *output << "if(";
         PyTranslate(output, context, astNode->getCondition());
         *output << "):\n";
         context.scope++;
@@ -79,26 +79,25 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
     } else if (astNode->getType() == "WHILE_LOOP") {
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition());  //condition
-        *output << ":\n";
+        *output << ": \n";
         context.scope++;
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());  //scope
         }
         context.scope--;
+
     } else if (astNode->getType() == "FOR_LOOP") {
-        
-        PyTranslate(output, context, astNode->getConditionOne());  //printing identifier
+        PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
         *output << "\n";
         indent(output, context);
         *output << "while (";
         //cond1 points to variable_declaration which points right to assignment_statement
         //which points to the identifier
-        PyTranslate(output, context, astNode->getConditionTwo());  //printing identifier
+        PyTranslate(output, context, astNode->getConditionTwo()); //printing identifier
         *output << "):\n";
         //printing the MATH_OR_BITWISE_EXPRESSION (left) in assignment_statement
         context.scope++;
         PyTranslate(output, context, astNode->getNext());
-        indent(output, context);
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
     } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
