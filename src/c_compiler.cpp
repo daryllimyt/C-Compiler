@@ -3,8 +3,6 @@
 // Traverses the AST by calling compile()
 
 #include "../include/ast.hpp"
-template<type T>
-void printIterable(const T & iterable);
 
 int main(int argc, char *argv[]) {
     /*
@@ -92,7 +90,7 @@ int main(int argc, char *argv[]) {
             *output << "\n\tsys.exit(ret)\n";
             std::cerr << "Info: Translation complete\n";
         }
-        std::cerr << "Info: "
+        // print program context here
         return 0;  // Successful execution
     }
     std::cerr << "Error: Received " << argc << " arguments when minimum required is 3.\n";

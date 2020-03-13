@@ -115,14 +115,14 @@ class VariableDeclaration : public Node {
     }
 };
 
-class WhileLoop : public Node {
+class WhileStatement : public Node {
    protected:
     NodePtr condition_; //condition
     NodePtr next_; //statement
 
    public:
-    WhileLoop(NodePtr condition, NodePtr next) {
-        type_ = "WHILE_LOOP";
+    WhileStatement(NodePtr condition, NodePtr next) {
+        type_ = "WHILE_STATEMENT";
         condition_ = condition;
         next_ = next;
     }
@@ -134,7 +134,7 @@ class WhileLoop : public Node {
     }
 };
 
-class ForLoop : public Node {
+class ForStatement : public Node {
    protected:
     NodePtr condition1_; //int i = 0
     NodePtr condition2_; //i < 3
@@ -142,8 +142,8 @@ class ForLoop : public Node {
     NodePtr next_; //{do smth;}
 
    public:
-    ForLoop(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
-        type_ = "For_LOOP";
+    ForStatement(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
+        type_ = "FOR_STATEMENT";
         condition1_ = cond1;
         condition2_ = cond2;
         condition3_ = cond3;
