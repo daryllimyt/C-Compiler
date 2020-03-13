@@ -60,6 +60,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << "\n";
+
     } else if (astNode->getType() == "WHILE_LOOP") {
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition()); //condition
@@ -83,7 +84,10 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
         *output << "\n";
-
+    } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
+        PyTranslate(output, context, astNode->getLeft()); //identifier
+        *output << astNode->getId(); //operator
+        PyTranslate(output, context, astNode->getRight()); //expr
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
