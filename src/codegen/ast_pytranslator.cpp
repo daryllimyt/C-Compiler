@@ -60,10 +60,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());
         }
-<<<<<<< HEAD
 
     } else if (astNode->getType() == "IF_STATEMENT") {
-        *output << "if(";
+        *output << "if (";
         PyTranslate(output, context, astNode->getCondition());
         *output << "):\n";
         context.scope++;
@@ -77,50 +76,31 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             context.scope--;
         }
 
-    } else if (astNode->getType() == "WHILE_STATEMENT") {
-=======
-        *output << "\n";
-
     } else if (astNode->getType() == "WHILE_LOOP") {
->>>>>>> rayrayy
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition());  //condition
-        *output << ": \n";
+        *output << ":\n";
         context.scope++;
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());  //scope
         }
         context.scope--;
-        *output << "\n";
-<<<<<<< HEAD
-        context.scope--;
-    } else if (astNode->getType() == "FOR_STATEMENT") {
+    } else if (astNode->getType() == "FOR_LOOP") {
+        
         PyTranslate(output, context, astNode->getConditionOne());  //printing identifier
-        *output << "while(";
+        *output << "\n";
+        indent(output, context);
+        *output << "while (";
         //cond1 points to variable_declaration which points right to assignment_statement
         //which points to the identifier
         PyTranslate(output, context, astNode->getConditionTwo());  //printing identifier
-        *output << " )\n";
-=======
-    } else if (astNode->getType() == "FOR_LOOP") {
-        PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
-        indent(output, context);
-        *output << "while(";
-        //cond1 points to variable_declaration which points right to assignment_statement
-        //which points to the identifier
-        PyTranslate(output, context, astNode->getConditionTwo()); //printing identifier
-        *output << " ): \n";
->>>>>>> rayrayy
+        *output << "):\n";
         //printing the MATH_OR_BITWISE_EXPRESSION (left) in assignment_statement
         context.scope++;
         PyTranslate(output, context, astNode->getNext());
+        indent(output, context);
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
-        *output << "\n";
-<<<<<<< HEAD
-
-    } else if (astNode->getType() == "SCOPE") { // Redundant?
-=======
     } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
         PyTranslate(output, context, astNode->getLeft()); //identifier
         *output << astNode->getId(); //operator
@@ -129,7 +109,6 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         PyTranslate(output, context, astNode->getLeft()); //identifier
         *output << astNode->getId(); //operator
     } else if (astNode->getType() == "SCOPE") {
->>>>>>> rayrayy
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
         }

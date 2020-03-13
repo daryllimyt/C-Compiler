@@ -51,8 +51,9 @@ clean :
 	rm -f src/*.output
 	rm -f src/*.dot
 	rm -f src/*.tab.hpp
+	rm -f src/codegen/*.o
 	rm -f include/ast/*.o
-	rm -f include/ast/codegen/*.o
+	rm -f include/ast/*.gch
 	rm -f translator_tests/output/*
 	
 
