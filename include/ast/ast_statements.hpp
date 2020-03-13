@@ -115,22 +115,51 @@ class VariableDeclaration : public Node {
     }
 };
 
-class WhileStatement : public Node {
+class WhileLoop : public Node {
    protected:
-    NodePtr left_; //condition
-    NodePtr right_; //statement
+    NodePtr condition_; //condition
+    NodePtr next_; //statement
 
    public:
-    WhileStatement(NodePtr left, NodePtr right) {
-        type_ = "WHILE_STATEMENT";
-        left_ = left;
-        right_ = right;
+    WhileLoop(NodePtr condition, NodePtr next) {
+        type_ = "WHILE_LOOP";
+        condition_ = condition;
+        next_ = next;
     }
-    NodePtr getLeft() const {
-        return left_; // Current statement
+    NodePtr getCondition() const {
+        return condition_; // Current statement
     }
-    NodePtr getRight() const {
-        return right_; // Next statement
+    NodePtr getNext() const {
+        return next_; // Next statement
+    }
+};
+
+class ForLoop : public Node {
+   protected:
+    NodePtr condition1_; //int i = 0
+    NodePtr condition2_; //i < 3
+    NodePtr condition3_; //i++
+    NodePtr next_; //{do smth;}
+
+   public:
+    ForLoop(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
+        type_ = "For_LOOP";
+        condition1_ = cond1;
+        condition2_ = cond2;
+        condition3_ = cond3;
+        next_ = next;
+    }
+    NodePtr getConditionOne() const {
+        return condition1_; // //int i = 0
+    }
+    NodePtr getConditionTwo() const {
+        return condition2_; // //i < 3
+    }
+    NodePtr getConditionThree() const {
+        return condition3_; // //i++
+    }
+    NodePtr getNext() const {
+        return next_; //{do smth;}
     }
 };
 
