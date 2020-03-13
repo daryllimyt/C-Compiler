@@ -6,23 +6,48 @@
 
 #include "ast_node.hpp"
 
-// class AssignmentExprNode : public Node {
-//    protected:
-//     NodePtr left_;   // Target
-//     NodePtr right_;  // Value
+class RelationalExpression : public Node {
+   protected:
+    NodePtr left_;   // Target
+    std::string operator_;
+    NodePtr right_;  // Value
 
-//    public:
-//     AssignmentExprNode(const std::string &type, NodePtr left, NodePtr right) {
-//         type_ = type;
-//         left_ = left;
-//         right_ = right;
-//     }
-//     NodePtr getLeft() const {
-//         return left_;
-//     }
-//     NodePtr getRight() const {
-//         return right_;
-//     }
-// };
+   public:
+    RelationalExpression(NodePtr left, const std::string& op, NodePtr right) {
+        type_ = "RELATIONAL_EXPRESSION";
+        left_ = left;
+        operator_ = op;
+        right_ = right;
+    }
+    NodePtr getLeft() const {
+        return left_;
+    }
+    const std::string getId() const {
+        return operator_;
+    }
+    NodePtr getRight() const {
+        return right_;
+    }
+};
+
+class PostfixExpression : public Node {
+   protected:
+    NodePtr left_;
+    std::string operator_;
+
+   public:
+    PostfixExpression(NodePtr left, const std::string& op) {
+        type_ = "POSTFIX_EXPRESSION";
+        left_ = left;
+        operator_ = op;
+
+    }
+    NodePtr getLeft() const {
+        return left_;
+    }
+    const std::string getId() const {
+        return operator_;
+    }
+};
 
 #endif

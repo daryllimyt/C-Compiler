@@ -7,9 +7,11 @@ Terminals unused in grammar
     T_CONTINUE
     T_DEFAULT
     T_DO
+    T_ELSE
     T_ENUM
     T_EXTERN
     T_GOTO
+    T_IF
     T_REGISTER
     T_SIZEOF
     T_STATIC
@@ -24,8 +26,6 @@ Terminals unused in grammar
     T_PLUS
     T_DIV
     T_MOD
-    T_LT
-    T_GT
     T_XOR
     T_OR
     T_QUESTION
@@ -43,8 +43,6 @@ Terminals unused in grammar
     T_OR_ASSIGN
     T_RSHIFT_OP
     T_LSHIFT_OP
-    T_INC_OP
-    T_DEC_OP
     T_PTR_OP
     T_AND_OP
     T_OR_OP
@@ -61,7 +59,7 @@ Terminals unused in grammar
     T_STRING_CONST
 
 
-State 80 conflicts: 1 shift/reduce
+State 57 conflicts: 2 reduce/reduce
 
 
 Grammar
@@ -91,33 +89,32 @@ Grammar
    14                 | EXPRESSION_STATEMENT
    15                 | JUMP_STATEMENT
    16                 | ITERATION_STATEMENT
-   17                 | SELECTION_STATEMENT
 
-   18 SELECTION_STATEMENT: T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
+   17 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18                    | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
 
-   20 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   19 JUMP_STATEMENT: T_RETURN T_SEMICOLON
+   20               | T_RETURN EXPRESSION T_SEMICOLON
 
-   22 JUMP_STATEMENT: T_RETURN T_SEMICOLON
-   23               | T_RETURN EXPRESSION T_SEMICOLON
+   21 EXPRESSION_STATEMENT: EXPRESSION T_SEMICOLON
 
-   24 EXPRESSION_STATEMENT: EXPRESSION T_SEMICOLON
+   22 EXPRESSION: VARIABLE_DECLARATION
+   23           | ASSIGNMENT_STATEMENT
+   24           | MATH_OR_BITWISE_EXPRESSION
 
-   25 EXPRESSION: VARIABLE_DECLARATION
-   26           | ASSIGNMENT_STATEMENT
-   27           | MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: TYPE_SPECIFIER ASSIGNMENT_STATEMENT
 
-   28 VARIABLE_DECLARATION: TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | DECLARATOR
 
-   29 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: CONDITIONAL_EXPRESSION
 
-   31 MATH_OR_BITWISE_EXPRESSION: CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: DECLARATOR
+   30                   | T_INT_CONST
 
-   32 PRIMARY_EXPRESSION: T_INT_CONST
-
-   33 POSTFIX_EXPRESSION: PRIMARY_EXPRESSION
+   31 POSTFIX_EXPRESSION: PRIMARY_EXPRESSION
+   32                   | POSTFIX_EXPRESSION T_INC_OP
+   33                   | POSTFIX_EXPRESSION T_DEC_OP
 
    34 UNARY_EXPRESSION: POSTFIX_EXPRESSION
 
@@ -128,33 +125,35 @@ Grammar
    37 SHIFT_EXPRESSION: ADDITIVE_EXPRESSION
 
    38 RELATIONAL_EXPRESSION: SHIFT_EXPRESSION
+   39                      | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
 
-   39 EQUALITY_EXPRESSION: RELATIONAL_EXPRESSION
+   41 EQUALITY_EXPRESSION: RELATIONAL_EXPRESSION
 
-   40 BITWISE_AND_EXPRESSION: EQUALITY_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: EQUALITY_EXPRESSION
 
-   41 BITWISE_XOR_EXPRESSION: BITWISE_AND_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: BITWISE_AND_EXPRESSION
 
-   42 BITWISE_OR_EXPRESSION: BITWISE_XOR_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: BITWISE_XOR_EXPRESSION
 
-   43 BOOLEAN_AND_EXPRESSION: BITWISE_OR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: BITWISE_OR_EXPRESSION
 
-   44 BOOLEAN_OR_EXPRESSION: BOOLEAN_AND_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: BOOLEAN_AND_EXPRESSION
 
-   45 CONDITIONAL_EXPRESSION: BOOLEAN_OR_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: BOOLEAN_OR_EXPRESSION
 
-   46 DECLARATOR: T_IDENTIFIER
-   47           | T_MULT T_IDENTIFIER
+   48 DECLARATOR: T_IDENTIFIER
+   49           | T_MULT T_IDENTIFIER
 
-   48 TYPE_SPECIFIER: T_VOID
-   49               | T_CHAR
-   50               | T_SHORT
-   51               | T_INT
-   52               | T_LONG
-   53               | T_FLOAT
-   54               | T_DOUBLE
-   55               | T_SIGNED
-   56               | T_UNSIGNED
+   50 TYPE_SPECIFIER: T_VOID
+   51               | T_CHAR
+   52               | T_SHORT
+   53               | T_INT
+   54               | T_LONG
+   55               | T_FLOAT
+   56               | T_DOUBLE
+   57               | T_SIGNED
+   58               | T_UNSIGNED
 
 
 Terminals, with rules where they appear
@@ -164,44 +163,44 @@ Terminals, with rules where they appear
     T_AUTO (258)
     T_BREAK (259)
     T_CASE (260)
-    T_CHAR (261) 49
+    T_CHAR (261) 51
     T_CONST (262)
     T_CONTINUE (263)
     T_DEFAULT (264)
     T_DO (265)
-    T_DOUBLE (266) 54
-    T_ELSE (267) 19
+    T_DOUBLE (266) 56
+    T_ELSE (267)
     T_ENUM (268)
     T_EXTERN (269)
-    T_FLOAT (270) 53
-    T_FOR (271) 21
+    T_FLOAT (270) 55
+    T_FOR (271) 18
     T_GOTO (272)
-    T_IF (273) 18 19
-    T_INT (274) 51
-    T_LONG (275) 52
+    T_IF (273)
+    T_INT (274) 53
+    T_LONG (275) 54
     T_REGISTER (276)
-    T_RETURN (277) 22 23
-    T_SHORT (278) 50
-    T_SIGNED (279) 55
+    T_RETURN (277) 19 20
+    T_SHORT (278) 52
+    T_SIGNED (279) 57
     T_SIZEOF (280)
     T_STATIC (281)
     T_STRUCT (282)
     T_SWITCH (283)
     T_TYPEDEF (284)
     T_UNION (285)
-    T_UNSIGNED (286) 56
-    T_VOID (287) 48
-    T_WHILE (288) 20
+    T_UNSIGNED (286) 58
+    T_VOID (287) 50
+    T_WHILE (288) 17
     T_AND (289)
     T_NOT (290)
     T_INVERT (291)
     T_MINUS (292)
     T_PLUS (293)
-    T_MULT (294) 47
+    T_MULT (294) 49
     T_DIV (295)
     T_MOD (296)
-    T_LT (297)
-    T_GT (298)
+    T_LT (297) 39
+    T_GT (298) 40
     T_XOR (299)
     T_OR (300)
     T_QUESTION (301)
@@ -217,11 +216,11 @@ Terminals, with rules where they appear
     T_AND_ASSIGN (311)
     T_XOR_ASSIGN (312)
     T_OR_ASSIGN (313)
-    T_EQ_ASSIGN <node> (314) 29
+    T_EQ_ASSIGN <node> (314) 26
     T_RSHIFT_OP (315)
     T_LSHIFT_OP (316)
-    T_INC_OP (317)
-    T_DEC_OP (318)
+    T_INC_OP (317) 32
+    T_DEC_OP (318) 33
     T_PTR_OP (319)
     T_AND_OP (320)
     T_OR_OP (321)
@@ -229,17 +228,17 @@ Terminals, with rules where they appear
     T_GE_OP (323)
     T_EQ_OP (324)
     T_NE_OP (325)
-    T_SEMICOLON (326) 6 22 23 24
+    T_SEMICOLON (326) 6 19 20 21
     T_COMMA (327)
     T_COLON (328)
     T_L_BRACE (329) 9 10
     T_R_BRACE (330) 9 10
-    T_L_PARENTHESIS (331) 8 18 19 20 21
-    T_R_PARENTHESIS (332) 8 18 19 20 21
+    T_L_PARENTHESIS (331) 8 17 18
+    T_R_PARENTHESIS (332) 8 17 18
     T_L_BRACKET (333)
     T_R_BRACKET (334)
-    T_IDENTIFIER <string> (335) 46 47
-    T_INT_CONST <integer_constant> (336) 32
+    T_IDENTIFIER <string> (335) 48 49
+    T_INT_CONST <integer_constant> (336) 30
     T_FLOAT_CONST <float_constant> (337)
     T_CHAR_CONST <string> (338)
     T_STRING_CONST <string> (339)
@@ -271,80 +270,77 @@ Nonterminals, with rules where they appear
         on left: 11 12
         on right: 9 11
     SINGLE_STATEMENT <node> (93)
-        on left: 13 14 15 16 17
-        on right: 11 12 18 19 20 21
-    SELECTION_STATEMENT <node> (94)
-        on left: 18 19
-        on right: 17
-    ITERATION_STATEMENT <node> (95)
-        on left: 20 21
+        on left: 13 14 15 16
+        on right: 11 12 17 18
+    ITERATION_STATEMENT <node> (94)
+        on left: 17 18
         on right: 16
-    JUMP_STATEMENT <node> (96)
-        on left: 22 23
+    JUMP_STATEMENT <node> (95)
+        on left: 19 20
         on right: 15
-    EXPRESSION_STATEMENT <node> (97)
-        on left: 24
-        on right: 14 21
-    EXPRESSION <node> (98)
-        on left: 25 26 27
-        on right: 18 19 20 21 23 24
-    VARIABLE_DECLARATION <node> (99)
+    EXPRESSION_STATEMENT <node> (96)
+        on left: 21
+        on right: 14 18
+    EXPRESSION <node> (97)
+        on left: 22 23 24
+        on right: 17 18 20 21
+    VARIABLE_DECLARATION <node> (98)
+        on left: 25
+        on right: 22
+    ASSIGNMENT_STATEMENT <node> (99)
+        on left: 26 27
+        on right: 23 25
+    MATH_OR_BITWISE_EXPRESSION <node> (100)
         on left: 28
-        on right: 25
-    ASSIGNMENT_STATEMENT <node> (100)
+        on right: 24 26
+    PRIMARY_EXPRESSION <node> (101)
         on left: 29 30
-        on right: 26 28
-    MATH_OR_BITWISE_EXPRESSION <node> (101)
-        on left: 31
-        on right: 27 29
-    PRIMARY_EXPRESSION <node> (102)
-        on left: 32
-        on right: 33
-    POSTFIX_EXPRESSION <node> (103)
-        on left: 33
-        on right: 34
-    UNARY_EXPRESSION <node> (104)
+        on right: 31
+    POSTFIX_EXPRESSION <node> (102)
+        on left: 31 32 33
+        on right: 32 33 34
+    UNARY_EXPRESSION <node> (103)
         on left: 34
         on right: 35
-    MULTIPLICATIVE_EXPRESSION <node> (105)
+    MULTIPLICATIVE_EXPRESSION <node> (104)
         on left: 35
         on right: 36
-    ADDITIVE_EXPRESSION <node> (106)
+    ADDITIVE_EXPRESSION <node> (105)
         on left: 36
         on right: 37
-    SHIFT_EXPRESSION <node> (107)
+    SHIFT_EXPRESSION <node> (106)
         on left: 37
-        on right: 38
-    RELATIONAL_EXPRESSION <node> (108)
-        on left: 38
-        on right: 39
-    EQUALITY_EXPRESSION <node> (109)
-        on left: 39
-        on right: 40
-    BITWISE_AND_EXPRESSION <node> (110)
-        on left: 40
-        on right: 41
-    BITWISE_XOR_EXPRESSION <node> (111)
+        on right: 38 39 40
+    RELATIONAL_EXPRESSION <node> (107)
+        on left: 38 39 40
+        on right: 39 40 41
+    EQUALITY_EXPRESSION <node> (108)
         on left: 41
         on right: 42
-    BITWISE_OR_EXPRESSION <node> (112)
+    BITWISE_AND_EXPRESSION <node> (109)
         on left: 42
         on right: 43
-    BOOLEAN_AND_EXPRESSION <node> (113)
+    BITWISE_XOR_EXPRESSION <node> (110)
         on left: 43
         on right: 44
-    BOOLEAN_OR_EXPRESSION <node> (114)
+    BITWISE_OR_EXPRESSION <node> (111)
         on left: 44
         on right: 45
-    CONDITIONAL_EXPRESSION <node> (115)
+    BOOLEAN_AND_EXPRESSION <node> (112)
         on left: 45
-        on right: 31
-    DECLARATOR <node> (116)
-        on left: 46 47
-        on right: 6 7 29 30
-    TYPE_SPECIFIER <node> (117)
-        on left: 48 49 50 51 52 53 54 55 56
-        on right: 6 7 28
+        on right: 46
+    BOOLEAN_OR_EXPRESSION <node> (113)
+        on left: 46
+        on right: 47
+    CONDITIONAL_EXPRESSION <node> (114)
+        on left: 47
+        on right: 28
+    DECLARATOR <node> (115)
+        on left: 48 49
+        on right: 6 7 26 27 29
+    TYPE_SPECIFIER <node> (116)
+        on left: 50 51 52 53 54 55 56 57 58
+        on right: 6 7 25
 
 
 State 0
@@ -357,15 +353,15 @@ State 0
     5      | . FRAME FUNCTION_DECLARATION
     6 FUNCTION_DECLARATION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
     7 FUNCTION_DEFINITION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR      shift, and go to state 1
     T_DOUBLE    shift, and go to state 2
@@ -386,65 +382,65 @@ State 0
 
 State 1
 
-   49 TYPE_SPECIFIER: T_CHAR .
-
-    $default  reduce using rule 49 (TYPE_SPECIFIER)
-
-
-State 2
-
-   54 TYPE_SPECIFIER: T_DOUBLE .
-
-    $default  reduce using rule 54 (TYPE_SPECIFIER)
-
-
-State 3
-
-   53 TYPE_SPECIFIER: T_FLOAT .
-
-    $default  reduce using rule 53 (TYPE_SPECIFIER)
-
-
-State 4
-
-   51 TYPE_SPECIFIER: T_INT .
+   51 TYPE_SPECIFIER: T_CHAR .
 
     $default  reduce using rule 51 (TYPE_SPECIFIER)
 
 
-State 5
+State 2
 
-   52 TYPE_SPECIFIER: T_LONG .
-
-    $default  reduce using rule 52 (TYPE_SPECIFIER)
-
-
-State 6
-
-   50 TYPE_SPECIFIER: T_SHORT .
-
-    $default  reduce using rule 50 (TYPE_SPECIFIER)
-
-
-State 7
-
-   55 TYPE_SPECIFIER: T_SIGNED .
-
-    $default  reduce using rule 55 (TYPE_SPECIFIER)
-
-
-State 8
-
-   56 TYPE_SPECIFIER: T_UNSIGNED .
+   56 TYPE_SPECIFIER: T_DOUBLE .
 
     $default  reduce using rule 56 (TYPE_SPECIFIER)
 
 
+State 3
+
+   55 TYPE_SPECIFIER: T_FLOAT .
+
+    $default  reduce using rule 55 (TYPE_SPECIFIER)
+
+
+State 4
+
+   53 TYPE_SPECIFIER: T_INT .
+
+    $default  reduce using rule 53 (TYPE_SPECIFIER)
+
+
+State 5
+
+   54 TYPE_SPECIFIER: T_LONG .
+
+    $default  reduce using rule 54 (TYPE_SPECIFIER)
+
+
+State 6
+
+   52 TYPE_SPECIFIER: T_SHORT .
+
+    $default  reduce using rule 52 (TYPE_SPECIFIER)
+
+
+State 7
+
+   57 TYPE_SPECIFIER: T_SIGNED .
+
+    $default  reduce using rule 57 (TYPE_SPECIFIER)
+
+
+State 8
+
+   58 TYPE_SPECIFIER: T_UNSIGNED .
+
+    $default  reduce using rule 58 (TYPE_SPECIFIER)
+
+
 State 9
 
-   48 TYPE_SPECIFIER: T_VOID .
+   50 TYPE_SPECIFIER: T_VOID .
 
-    $default  reduce using rule 48 (TYPE_SPECIFIER)
+    $default  reduce using rule 50 (TYPE_SPECIFIER)
 
 
 State 10
@@ -461,15 +457,15 @@ State 11
     5      | FRAME . FUNCTION_DECLARATION
     6 FUNCTION_DECLARATION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
     7 FUNCTION_DEFINITION: . TYPE_SPECIFIER DECLARATOR WRAPPED_ARGUMENTS SCOPE
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR      shift, and go to state 1
     T_DOUBLE    shift, and go to state 2
@@ -506,8 +502,8 @@ State 14
 
     6 FUNCTION_DECLARATION: TYPE_SPECIFIER . DECLARATOR WRAPPED_ARGUMENTS T_SEMICOLON
     7 FUNCTION_DEFINITION: TYPE_SPECIFIER . DECLARATOR WRAPPED_ARGUMENTS SCOPE
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
 
     T_MULT        shift, and go to state 18
     T_IDENTIFIER  shift, and go to state 19
@@ -538,16 +534,16 @@ State 17
 
 State 18
 
-   47 DECLARATOR: T_MULT . T_IDENTIFIER
+   49 DECLARATOR: T_MULT . T_IDENTIFIER
 
     T_IDENTIFIER  shift, and go to state 21
 
 
 State 19
 
-   46 DECLARATOR: T_IDENTIFIER .
+   48 DECLARATOR: T_IDENTIFIER .
 
-    $default  reduce using rule 46 (DECLARATOR)
+    $default  reduce using rule 48 (DECLARATOR)
 
 
 State 20
@@ -563,9 +559,9 @@ State 20
 
 State 21
 
-   47 DECLARATOR: T_MULT T_IDENTIFIER .
+   49 DECLARATOR: T_MULT T_IDENTIFIER .
 
-    $default  reduce using rule 47 (DECLARATOR)
+    $default  reduce using rule 49 (DECLARATOR)
 
 
 State 22
@@ -614,93 +610,93 @@ State 26
    14                 | . EXPRESSION_STATEMENT
    15                 | . JUMP_STATEMENT
    16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   17 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   19 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
+   20               | . T_RETURN EXPRESSION T_SEMICOLON
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
    38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR        shift, and go to state 1
     T_DOUBLE      shift, and go to state 2
     T_FLOAT       shift, and go to state 3
     T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
     T_INT         shift, and go to state 4
     T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
+    T_RETURN      shift, and go to state 29
     T_SHORT       shift, and go to state 6
     T_SIGNED      shift, and go to state 7
     T_UNSIGNED    shift, and go to state 8
     T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
+    T_WHILE       shift, and go to state 30
     T_MULT        shift, and go to state 18
     T_L_BRACE     shift, and go to state 26
-    T_R_BRACE     shift, and go to state 32
+    T_R_BRACE     shift, and go to state 31
     T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
+    T_INT_CONST   shift, and go to state 32
 
-    SCOPE                       go to state 34
-    MULTIPLE_STATEMENTS         go to state 35
-    SINGLE_STATEMENT            go to state 36
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    SCOPE                       go to state 33
+    MULTIPLE_STATEMENTS         go to state 34
+    SINGLE_STATEMENT            go to state 35
+    ITERATION_STATEMENT         go to state 36
+    JUMP_STATEMENT              go to state 37
+    EXPRESSION_STATEMENT        go to state 38
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 27
@@ -712,55 +708,52 @@ State 27
 
 State 28
 
-   21 ITERATION_STATEMENT: T_FOR . T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18 ITERATION_STATEMENT: T_FOR . T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
 
-    T_L_PARENTHESIS  shift, and go to state 61
+    T_L_PARENTHESIS  shift, and go to state 59
 
 
 State 29
 
-   18 SELECTION_STATEMENT: T_IF . T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | T_IF . T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-
-    T_L_PARENTHESIS  shift, and go to state 62
-
-
-State 30
-
-   22 JUMP_STATEMENT: T_RETURN . T_SEMICOLON
-   23               | T_RETURN . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   19 JUMP_STATEMENT: T_RETURN . T_SEMICOLON
+   20               | T_RETURN . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
    38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR        shift, and go to state 1
     T_DOUBLE      shift, and go to state 2
@@ -772,68 +765,68 @@ State 30
     T_UNSIGNED    shift, and go to state 8
     T_VOID        shift, and go to state 9
     T_MULT        shift, and go to state 18
-    T_SEMICOLON   shift, and go to state 63
+    T_SEMICOLON   shift, and go to state 60
     T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
+    T_INT_CONST   shift, and go to state 32
 
-    EXPRESSION                  go to state 64
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    EXPRESSION                  go to state 61
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
+
+
+State 30
+
+   17 ITERATION_STATEMENT: T_WHILE . T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+
+    T_L_PARENTHESIS  shift, and go to state 62
 
 
 State 31
-
-   20 ITERATION_STATEMENT: T_WHILE . T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-
-    T_L_PARENTHESIS  shift, and go to state 65
-
-
-State 32
 
    10 SCOPE: T_L_BRACE T_R_BRACE .
 
     $default  reduce using rule 10 (SCOPE)
 
 
+State 32
+
+   30 PRIMARY_EXPRESSION: T_INT_CONST .
+
+    $default  reduce using rule 30 (PRIMARY_EXPRESSION)
+
+
 State 33
-
-   32 PRIMARY_EXPRESSION: T_INT_CONST .
-
-    $default  reduce using rule 32 (PRIMARY_EXPRESSION)
-
-
-State 34
 
    13 SINGLE_STATEMENT: SCOPE .
 
     $default  reduce using rule 13 (SINGLE_STATEMENT)
 
 
-State 35
+State 34
 
     9 SCOPE: T_L_BRACE MULTIPLE_STATEMENTS . T_R_BRACE
 
-    T_R_BRACE  shift, and go to state 66
+    T_R_BRACE  shift, and go to state 63
 
 
-State 36
+State 35
 
     9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
    10      | . T_L_BRACE T_R_BRACE
@@ -845,384 +838,415 @@ State 36
    14                 | . EXPRESSION_STATEMENT
    15                 | . JUMP_STATEMENT
    16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   17 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   19 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
+   20               | . T_RETURN EXPRESSION T_SEMICOLON
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
    38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR        shift, and go to state 1
     T_DOUBLE      shift, and go to state 2
     T_FLOAT       shift, and go to state 3
     T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
     T_INT         shift, and go to state 4
     T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
+    T_RETURN      shift, and go to state 29
     T_SHORT       shift, and go to state 6
     T_SIGNED      shift, and go to state 7
     T_UNSIGNED    shift, and go to state 8
     T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
+    T_WHILE       shift, and go to state 30
     T_MULT        shift, and go to state 18
     T_L_BRACE     shift, and go to state 26
     T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
+    T_INT_CONST   shift, and go to state 32
 
     $default  reduce using rule 12 (MULTIPLE_STATEMENTS)
 
-    SCOPE                       go to state 34
-    MULTIPLE_STATEMENTS         go to state 67
-    SINGLE_STATEMENT            go to state 36
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    SCOPE                       go to state 33
+    MULTIPLE_STATEMENTS         go to state 64
+    SINGLE_STATEMENT            go to state 35
+    ITERATION_STATEMENT         go to state 36
+    JUMP_STATEMENT              go to state 37
+    EXPRESSION_STATEMENT        go to state 38
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
-State 37
-
-   17 SINGLE_STATEMENT: SELECTION_STATEMENT .
-
-    $default  reduce using rule 17 (SINGLE_STATEMENT)
-
-
-State 38
+State 36
 
    16 SINGLE_STATEMENT: ITERATION_STATEMENT .
 
     $default  reduce using rule 16 (SINGLE_STATEMENT)
 
 
-State 39
+State 37
 
    15 SINGLE_STATEMENT: JUMP_STATEMENT .
 
     $default  reduce using rule 15 (SINGLE_STATEMENT)
 
 
-State 40
+State 38
 
    14 SINGLE_STATEMENT: EXPRESSION_STATEMENT .
 
     $default  reduce using rule 14 (SINGLE_STATEMENT)
 
 
+State 39
+
+   21 EXPRESSION_STATEMENT: EXPRESSION . T_SEMICOLON
+
+    T_SEMICOLON  shift, and go to state 65
+
+
+State 40
+
+   22 EXPRESSION: VARIABLE_DECLARATION .
+
+    $default  reduce using rule 22 (EXPRESSION)
+
+
 State 41
 
-   24 EXPRESSION_STATEMENT: EXPRESSION . T_SEMICOLON
+   23 EXPRESSION: ASSIGNMENT_STATEMENT .
 
-    T_SEMICOLON  shift, and go to state 68
+    $default  reduce using rule 23 (EXPRESSION)
 
 
 State 42
 
-   25 EXPRESSION: VARIABLE_DECLARATION .
+   24 EXPRESSION: MATH_OR_BITWISE_EXPRESSION .
 
-    $default  reduce using rule 25 (EXPRESSION)
+    $default  reduce using rule 24 (EXPRESSION)
 
 
 State 43
 
-   26 EXPRESSION: ASSIGNMENT_STATEMENT .
+   31 POSTFIX_EXPRESSION: PRIMARY_EXPRESSION .
 
-    $default  reduce using rule 26 (EXPRESSION)
+    $default  reduce using rule 31 (POSTFIX_EXPRESSION)
 
 
 State 44
 
-   27 EXPRESSION: MATH_OR_BITWISE_EXPRESSION .
+   32 POSTFIX_EXPRESSION: POSTFIX_EXPRESSION . T_INC_OP
+   33                   | POSTFIX_EXPRESSION . T_DEC_OP
+   34 UNARY_EXPRESSION: POSTFIX_EXPRESSION .  [T_LT, T_GT, T_SEMICOLON, T_R_PARENTHESIS]
 
-    $default  reduce using rule 27 (EXPRESSION)
-
-
-State 45
-
-   33 POSTFIX_EXPRESSION: PRIMARY_EXPRESSION .
-
-    $default  reduce using rule 33 (POSTFIX_EXPRESSION)
-
-
-State 46
-
-   34 UNARY_EXPRESSION: POSTFIX_EXPRESSION .
+    T_INC_OP  shift, and go to state 66
+    T_DEC_OP  shift, and go to state 67
 
     $default  reduce using rule 34 (UNARY_EXPRESSION)
 
 
-State 47
+State 45
 
    35 MULTIPLICATIVE_EXPRESSION: UNARY_EXPRESSION .
 
     $default  reduce using rule 35 (MULTIPLICATIVE_EXPRESSION)
 
 
-State 48
+State 46
 
    36 ADDITIVE_EXPRESSION: MULTIPLICATIVE_EXPRESSION .
 
     $default  reduce using rule 36 (ADDITIVE_EXPRESSION)
 
 
-State 49
+State 47
 
    37 SHIFT_EXPRESSION: ADDITIVE_EXPRESSION .
 
     $default  reduce using rule 37 (SHIFT_EXPRESSION)
 
 
-State 50
+State 48
 
    38 RELATIONAL_EXPRESSION: SHIFT_EXPRESSION .
 
     $default  reduce using rule 38 (RELATIONAL_EXPRESSION)
 
 
+State 49
+
+   39 RELATIONAL_EXPRESSION: RELATIONAL_EXPRESSION . T_LT SHIFT_EXPRESSION
+   40                      | RELATIONAL_EXPRESSION . T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: RELATIONAL_EXPRESSION .  [T_SEMICOLON, T_R_PARENTHESIS]
+
+    T_LT  shift, and go to state 68
+    T_GT  shift, and go to state 69
+
+    $default  reduce using rule 41 (EQUALITY_EXPRESSION)
+
+
+State 50
+
+   42 BITWISE_AND_EXPRESSION: EQUALITY_EXPRESSION .
+
+    $default  reduce using rule 42 (BITWISE_AND_EXPRESSION)
+
+
 State 51
 
-   39 EQUALITY_EXPRESSION: RELATIONAL_EXPRESSION .
+   43 BITWISE_XOR_EXPRESSION: BITWISE_AND_EXPRESSION .
 
-    $default  reduce using rule 39 (EQUALITY_EXPRESSION)
+    $default  reduce using rule 43 (BITWISE_XOR_EXPRESSION)
 
 
 State 52
 
-   40 BITWISE_AND_EXPRESSION: EQUALITY_EXPRESSION .
+   44 BITWISE_OR_EXPRESSION: BITWISE_XOR_EXPRESSION .
 
-    $default  reduce using rule 40 (BITWISE_AND_EXPRESSION)
+    $default  reduce using rule 44 (BITWISE_OR_EXPRESSION)
 
 
 State 53
 
-   41 BITWISE_XOR_EXPRESSION: BITWISE_AND_EXPRESSION .
+   45 BOOLEAN_AND_EXPRESSION: BITWISE_OR_EXPRESSION .
 
-    $default  reduce using rule 41 (BITWISE_XOR_EXPRESSION)
+    $default  reduce using rule 45 (BOOLEAN_AND_EXPRESSION)
 
 
 State 54
 
-   42 BITWISE_OR_EXPRESSION: BITWISE_XOR_EXPRESSION .
+   46 BOOLEAN_OR_EXPRESSION: BOOLEAN_AND_EXPRESSION .
 
-    $default  reduce using rule 42 (BITWISE_OR_EXPRESSION)
+    $default  reduce using rule 46 (BOOLEAN_OR_EXPRESSION)
 
 
 State 55
 
-   43 BOOLEAN_AND_EXPRESSION: BITWISE_OR_EXPRESSION .
+   47 CONDITIONAL_EXPRESSION: BOOLEAN_OR_EXPRESSION .
 
-    $default  reduce using rule 43 (BOOLEAN_AND_EXPRESSION)
+    $default  reduce using rule 47 (CONDITIONAL_EXPRESSION)
 
 
 State 56
 
-   44 BOOLEAN_OR_EXPRESSION: BOOLEAN_AND_EXPRESSION .
+   28 MATH_OR_BITWISE_EXPRESSION: CONDITIONAL_EXPRESSION .
 
-    $default  reduce using rule 44 (BOOLEAN_OR_EXPRESSION)
+    $default  reduce using rule 28 (MATH_OR_BITWISE_EXPRESSION)
 
 
 State 57
 
-   45 CONDITIONAL_EXPRESSION: BOOLEAN_OR_EXPRESSION .
+   26 ASSIGNMENT_STATEMENT: DECLARATOR . T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | DECLARATOR .  [T_SEMICOLON, T_R_PARENTHESIS]
+   29 PRIMARY_EXPRESSION: DECLARATOR .  [T_LT, T_GT, T_INC_OP, T_DEC_OP, T_SEMICOLON, T_R_PARENTHESIS]
 
-    $default  reduce using rule 45 (CONDITIONAL_EXPRESSION)
+    T_EQ_ASSIGN  shift, and go to state 70
+
+    T_SEMICOLON      reduce using rule 27 (ASSIGNMENT_STATEMENT)
+    T_SEMICOLON      [reduce using rule 29 (PRIMARY_EXPRESSION)]
+    T_R_PARENTHESIS  reduce using rule 27 (ASSIGNMENT_STATEMENT)
+    T_R_PARENTHESIS  [reduce using rule 29 (PRIMARY_EXPRESSION)]
+    $default         reduce using rule 29 (PRIMARY_EXPRESSION)
 
 
 State 58
 
-   31 MATH_OR_BITWISE_EXPRESSION: CONDITIONAL_EXPRESSION .
+   25 VARIABLE_DECLARATION: TYPE_SPECIFIER . ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
 
-    $default  reduce using rule 31 (MATH_OR_BITWISE_EXPRESSION)
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+
+    ASSIGNMENT_STATEMENT  go to state 71
+    DECLARATOR            go to state 72
 
 
 State 59
 
-   29 ASSIGNMENT_STATEMENT: DECLARATOR . T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | DECLARATOR .  [T_SEMICOLON, T_R_PARENTHESIS]
+   18 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS . EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
-    T_EQ_ASSIGN  shift, and go to state 69
+    T_CHAR        shift, and go to state 1
+    T_DOUBLE      shift, and go to state 2
+    T_FLOAT       shift, and go to state 3
+    T_INT         shift, and go to state 4
+    T_LONG        shift, and go to state 5
+    T_SHORT       shift, and go to state 6
+    T_SIGNED      shift, and go to state 7
+    T_UNSIGNED    shift, and go to state 8
+    T_VOID        shift, and go to state 9
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
 
-    $default  reduce using rule 30 (ASSIGNMENT_STATEMENT)
+    EXPRESSION_STATEMENT        go to state 73
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 60
 
-   28 VARIABLE_DECLARATION: TYPE_SPECIFIER . ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
+   19 JUMP_STATEMENT: T_RETURN T_SEMICOLON .
 
-    T_MULT        shift, and go to state 18
-    T_IDENTIFIER  shift, and go to state 19
-
-    ASSIGNMENT_STATEMENT  go to state 70
-    DECLARATOR            go to state 59
+    $default  reduce using rule 19 (JUMP_STATEMENT)
 
 
 State 61
 
-   21 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS . EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   20 JUMP_STATEMENT: T_RETURN EXPRESSION . T_SEMICOLON
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_MULT        shift, and go to state 18
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    EXPRESSION_STATEMENT        go to state 71
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    T_SEMICOLON  shift, and go to state 74
 
 
 State 62
 
-   18 SELECTION_STATEMENT: T_IF T_L_PARENTHESIS . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | T_IF T_L_PARENTHESIS . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   17 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
    38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR        shift, and go to state 1
     T_DOUBLE      shift, and go to state 2
@@ -1235,773 +1259,590 @@ State 62
     T_VOID        shift, and go to state 9
     T_MULT        shift, and go to state 18
     T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
+    T_INT_CONST   shift, and go to state 32
 
-    EXPRESSION                  go to state 72
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    EXPRESSION                  go to state 75
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 63
-
-   22 JUMP_STATEMENT: T_RETURN T_SEMICOLON .
-
-    $default  reduce using rule 22 (JUMP_STATEMENT)
-
-
-State 64
-
-   23 JUMP_STATEMENT: T_RETURN EXPRESSION . T_SEMICOLON
-
-    T_SEMICOLON  shift, and go to state 73
-
-
-State 65
-
-   20 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
-
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_MULT        shift, and go to state 18
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    EXPRESSION                  go to state 74
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
-
-
-State 66
 
     9 SCOPE: T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE .
 
     $default  reduce using rule 9 (SCOPE)
 
 
-State 67
+State 64
 
    11 MULTIPLE_STATEMENTS: SINGLE_STATEMENT MULTIPLE_STATEMENTS .
 
     $default  reduce using rule 11 (MULTIPLE_STATEMENTS)
 
 
+State 65
+
+   21 EXPRESSION_STATEMENT: EXPRESSION T_SEMICOLON .
+
+    $default  reduce using rule 21 (EXPRESSION_STATEMENT)
+
+
+State 66
+
+   32 POSTFIX_EXPRESSION: POSTFIX_EXPRESSION T_INC_OP .
+
+    $default  reduce using rule 32 (POSTFIX_EXPRESSION)
+
+
+State 67
+
+   33 POSTFIX_EXPRESSION: POSTFIX_EXPRESSION T_DEC_OP .
+
+    $default  reduce using rule 33 (POSTFIX_EXPRESSION)
+
+
 State 68
 
-   24 EXPRESSION_STATEMENT: EXPRESSION T_SEMICOLON .
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   39 RELATIONAL_EXPRESSION: RELATIONAL_EXPRESSION T_LT . SHIFT_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
 
-    $default  reduce using rule 24 (EXPRESSION_STATEMENT)
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
+
+    PRIMARY_EXPRESSION         go to state 43
+    POSTFIX_EXPRESSION         go to state 44
+    UNARY_EXPRESSION           go to state 45
+    MULTIPLICATIVE_EXPRESSION  go to state 46
+    ADDITIVE_EXPRESSION        go to state 47
+    SHIFT_EXPRESSION           go to state 76
+    DECLARATOR                 go to state 77
 
 
 State 69
 
-   29 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN . MATH_OR_BITWISE_EXPRESSION
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   40 RELATIONAL_EXPRESSION: RELATIONAL_EXPRESSION T_GT . SHIFT_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
 
-    T_INT_CONST  shift, and go to state 33
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
 
-    MATH_OR_BITWISE_EXPRESSION  go to state 75
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
+    PRIMARY_EXPRESSION         go to state 43
+    POSTFIX_EXPRESSION         go to state 44
+    UNARY_EXPRESSION           go to state 45
+    MULTIPLICATIVE_EXPRESSION  go to state 46
+    ADDITIVE_EXPRESSION        go to state 47
+    SHIFT_EXPRESSION           go to state 78
+    DECLARATOR                 go to state 77
 
 
 State 70
 
-   28 VARIABLE_DECLARATION: TYPE_SPECIFIER ASSIGNMENT_STATEMENT .
+   26 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN . MATH_OR_BITWISE_EXPRESSION
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
 
-    $default  reduce using rule 28 (VARIABLE_DECLARATION)
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
+
+    MATH_OR_BITWISE_EXPRESSION  go to state 79
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 77
 
 
 State 71
 
-   21 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT . EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   25 VARIABLE_DECLARATION: TYPE_SPECIFIER ASSIGNMENT_STATEMENT .
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_MULT        shift, and go to state 18
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    EXPRESSION_STATEMENT        go to state 76
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    $default  reduce using rule 25 (VARIABLE_DECLARATION)
 
 
 State 72
 
-   18 SELECTION_STATEMENT: T_IF T_L_PARENTHESIS EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | T_IF T_L_PARENTHESIS EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
+   26 ASSIGNMENT_STATEMENT: DECLARATOR . T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | DECLARATOR .  [T_SEMICOLON, T_R_PARENTHESIS]
 
-    T_R_PARENTHESIS  shift, and go to state 77
+    T_EQ_ASSIGN  shift, and go to state 70
+
+    $default  reduce using rule 27 (ASSIGNMENT_STATEMENT)
 
 
 State 73
 
-   23 JUMP_STATEMENT: T_RETURN EXPRESSION T_SEMICOLON .
+   18 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT . EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
-    $default  reduce using rule 23 (JUMP_STATEMENT)
+    T_CHAR        shift, and go to state 1
+    T_DOUBLE      shift, and go to state 2
+    T_FLOAT       shift, and go to state 3
+    T_INT         shift, and go to state 4
+    T_LONG        shift, and go to state 5
+    T_SHORT       shift, and go to state 6
+    T_SIGNED      shift, and go to state 7
+    T_UNSIGNED    shift, and go to state 8
+    T_VOID        shift, and go to state 9
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
+
+    EXPRESSION_STATEMENT        go to state 80
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 74
 
-   20 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT
+   20 JUMP_STATEMENT: T_RETURN EXPRESSION T_SEMICOLON .
 
-    T_R_PARENTHESIS  shift, and go to state 78
+    $default  reduce using rule 20 (JUMP_STATEMENT)
 
 
 State 75
 
-   29 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION .
+   17 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT
 
-    $default  reduce using rule 29 (ASSIGNMENT_STATEMENT)
+    T_R_PARENTHESIS  shift, and go to state 81
 
 
 State 76
 
-   21 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39 RELATIONAL_EXPRESSION: RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION .
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_MULT        shift, and go to state 18
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    EXPRESSION                  go to state 79
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    $default  reduce using rule 39 (RELATIONAL_EXPRESSION)
 
 
 State 77
 
-    9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
-   10      | . T_L_BRACE T_R_BRACE
-   13 SINGLE_STATEMENT: . SCOPE
-   14                 | . EXPRESSION_STATEMENT
-   15                 | . JUMP_STATEMENT
-   16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   18                    | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   19                    | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   29 PRIMARY_EXPRESSION: DECLARATOR .
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
-    T_MULT        shift, and go to state 18
-    T_L_BRACE     shift, and go to state 26
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    SCOPE                       go to state 34
-    SINGLE_STATEMENT            go to state 80
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    $default  reduce using rule 29 (PRIMARY_EXPRESSION)
 
 
 State 78
 
-    9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
-   10      | . T_L_BRACE T_R_BRACE
-   13 SINGLE_STATEMENT: . SCOPE
-   14                 | . EXPRESSION_STATEMENT
-   15                 | . JUMP_STATEMENT
-   16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   20                    | T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   40 RELATIONAL_EXPRESSION: RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION .
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
-    T_MULT        shift, and go to state 18
-    T_L_BRACE     shift, and go to state 26
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    SCOPE                       go to state 34
-    SINGLE_STATEMENT            go to state 81
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    $default  reduce using rule 40 (RELATIONAL_EXPRESSION)
 
 
 State 79
 
-   21 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT
+   26 ASSIGNMENT_STATEMENT: DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION .
 
-    T_R_PARENTHESIS  shift, and go to state 82
+    $default  reduce using rule 26 (ASSIGNMENT_STATEMENT)
 
 
 State 80
 
-   18 SELECTION_STATEMENT: T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT .  [T_CHAR, T_DOUBLE, T_ELSE, T_FLOAT, T_FOR, T_IF, T_INT, T_LONG, T_RETURN, T_SHORT, T_SIGNED, T_UNSIGNED, T_VOID, T_WHILE, T_MULT, T_L_BRACE, T_R_BRACE, T_IDENTIFIER, T_INT_CONST]
-   19                    | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT . T_ELSE SINGLE_STATEMENT
+   18 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT . EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
-    T_ELSE  shift, and go to state 83
+    T_CHAR        shift, and go to state 1
+    T_DOUBLE      shift, and go to state 2
+    T_FLOAT       shift, and go to state 3
+    T_INT         shift, and go to state 4
+    T_LONG        shift, and go to state 5
+    T_SHORT       shift, and go to state 6
+    T_SIGNED      shift, and go to state 7
+    T_UNSIGNED    shift, and go to state 8
+    T_VOID        shift, and go to state 9
+    T_MULT        shift, and go to state 18
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
 
-    T_ELSE    [reduce using rule 18 (SELECTION_STATEMENT)]
-    $default  reduce using rule 18 (SELECTION_STATEMENT)
+    EXPRESSION                  go to state 82
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 81
 
-   20 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT .
+    9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
+   10      | . T_L_BRACE T_R_BRACE
+   13 SINGLE_STATEMENT: . SCOPE
+   14                 | . EXPRESSION_STATEMENT
+   15                 | . JUMP_STATEMENT
+   16                 | . ITERATION_STATEMENT
+   17 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   17                    | T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT
+   18                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   19 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
+   20               | . T_RETURN EXPRESSION T_SEMICOLON
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
+   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
+   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
+   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
+   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
+   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
-    $default  reduce using rule 20 (ITERATION_STATEMENT)
+    T_CHAR        shift, and go to state 1
+    T_DOUBLE      shift, and go to state 2
+    T_FLOAT       shift, and go to state 3
+    T_FOR         shift, and go to state 28
+    T_INT         shift, and go to state 4
+    T_LONG        shift, and go to state 5
+    T_RETURN      shift, and go to state 29
+    T_SHORT       shift, and go to state 6
+    T_SIGNED      shift, and go to state 7
+    T_UNSIGNED    shift, and go to state 8
+    T_VOID        shift, and go to state 9
+    T_WHILE       shift, and go to state 30
+    T_MULT        shift, and go to state 18
+    T_L_BRACE     shift, and go to state 26
+    T_IDENTIFIER  shift, and go to state 19
+    T_INT_CONST   shift, and go to state 32
+
+    SCOPE                       go to state 33
+    SINGLE_STATEMENT            go to state 83
+    ITERATION_STATEMENT         go to state 36
+    JUMP_STATEMENT              go to state 37
+    EXPRESSION_STATEMENT        go to state 38
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 82
 
-    9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
-   10      | . T_L_BRACE T_R_BRACE
-   13 SINGLE_STATEMENT: . SCOPE
-   14                 | . EXPRESSION_STATEMENT
-   15                 | . JUMP_STATEMENT
-   16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
-   34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
-   35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
-   36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
-   37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
-   38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   18 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION . T_R_PARENTHESIS SINGLE_STATEMENT
 
-    T_CHAR        shift, and go to state 1
-    T_DOUBLE      shift, and go to state 2
-    T_FLOAT       shift, and go to state 3
-    T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
-    T_INT         shift, and go to state 4
-    T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
-    T_SHORT       shift, and go to state 6
-    T_SIGNED      shift, and go to state 7
-    T_UNSIGNED    shift, and go to state 8
-    T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
-    T_MULT        shift, and go to state 18
-    T_L_BRACE     shift, and go to state 26
-    T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
-
-    SCOPE                       go to state 34
-    SINGLE_STATEMENT            go to state 84
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
+    T_R_PARENTHESIS  shift, and go to state 84
 
 
 State 83
 
+   17 ITERATION_STATEMENT: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT .
+
+    $default  reduce using rule 17 (ITERATION_STATEMENT)
+
+
+State 84
+
     9 SCOPE: . T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE
    10      | . T_L_BRACE T_R_BRACE
    13 SINGLE_STATEMENT: . SCOPE
    14                 | . EXPRESSION_STATEMENT
    15                 | . JUMP_STATEMENT
    16                 | . ITERATION_STATEMENT
-   17                 | . SELECTION_STATEMENT
-   18 SELECTION_STATEMENT: . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   19                    | . T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT
-   19                    | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE . SINGLE_STATEMENT
-   20 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   21                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
-   22 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
-   23               | . T_RETURN EXPRESSION T_SEMICOLON
-   24 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
-   25 EXPRESSION: . VARIABLE_DECLARATION
-   26           | . ASSIGNMENT_STATEMENT
-   27           | . MATH_OR_BITWISE_EXPRESSION
-   28 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
-   29 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
-   30                     | . DECLARATOR
-   31 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
-   32 PRIMARY_EXPRESSION: . T_INT_CONST
-   33 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   17 ITERATION_STATEMENT: . T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18                    | . T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT
+   18                    | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS . SINGLE_STATEMENT
+   19 JUMP_STATEMENT: . T_RETURN T_SEMICOLON
+   20               | . T_RETURN EXPRESSION T_SEMICOLON
+   21 EXPRESSION_STATEMENT: . EXPRESSION T_SEMICOLON
+   22 EXPRESSION: . VARIABLE_DECLARATION
+   23           | . ASSIGNMENT_STATEMENT
+   24           | . MATH_OR_BITWISE_EXPRESSION
+   25 VARIABLE_DECLARATION: . TYPE_SPECIFIER ASSIGNMENT_STATEMENT
+   26 ASSIGNMENT_STATEMENT: . DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION
+   27                     | . DECLARATOR
+   28 MATH_OR_BITWISE_EXPRESSION: . CONDITIONAL_EXPRESSION
+   29 PRIMARY_EXPRESSION: . DECLARATOR
+   30                   | . T_INT_CONST
+   31 POSTFIX_EXPRESSION: . PRIMARY_EXPRESSION
+   32                   | . POSTFIX_EXPRESSION T_INC_OP
+   33                   | . POSTFIX_EXPRESSION T_DEC_OP
    34 UNARY_EXPRESSION: . POSTFIX_EXPRESSION
    35 MULTIPLICATIVE_EXPRESSION: . UNARY_EXPRESSION
    36 ADDITIVE_EXPRESSION: . MULTIPLICATIVE_EXPRESSION
    37 SHIFT_EXPRESSION: . ADDITIVE_EXPRESSION
    38 RELATIONAL_EXPRESSION: . SHIFT_EXPRESSION
-   39 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
-   40 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
-   41 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
-   42 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
-   43 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
-   44 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
-   45 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
-   46 DECLARATOR: . T_IDENTIFIER
-   47           | . T_MULT T_IDENTIFIER
-   48 TYPE_SPECIFIER: . T_VOID
-   49               | . T_CHAR
-   50               | . T_SHORT
-   51               | . T_INT
-   52               | . T_LONG
-   53               | . T_FLOAT
-   54               | . T_DOUBLE
-   55               | . T_SIGNED
-   56               | . T_UNSIGNED
+   39                      | . RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION
+   40                      | . RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION
+   41 EQUALITY_EXPRESSION: . RELATIONAL_EXPRESSION
+   42 BITWISE_AND_EXPRESSION: . EQUALITY_EXPRESSION
+   43 BITWISE_XOR_EXPRESSION: . BITWISE_AND_EXPRESSION
+   44 BITWISE_OR_EXPRESSION: . BITWISE_XOR_EXPRESSION
+   45 BOOLEAN_AND_EXPRESSION: . BITWISE_OR_EXPRESSION
+   46 BOOLEAN_OR_EXPRESSION: . BOOLEAN_AND_EXPRESSION
+   47 CONDITIONAL_EXPRESSION: . BOOLEAN_OR_EXPRESSION
+   48 DECLARATOR: . T_IDENTIFIER
+   49           | . T_MULT T_IDENTIFIER
+   50 TYPE_SPECIFIER: . T_VOID
+   51               | . T_CHAR
+   52               | . T_SHORT
+   53               | . T_INT
+   54               | . T_LONG
+   55               | . T_FLOAT
+   56               | . T_DOUBLE
+   57               | . T_SIGNED
+   58               | . T_UNSIGNED
 
     T_CHAR        shift, and go to state 1
     T_DOUBLE      shift, and go to state 2
     T_FLOAT       shift, and go to state 3
     T_FOR         shift, and go to state 28
-    T_IF          shift, and go to state 29
     T_INT         shift, and go to state 4
     T_LONG        shift, and go to state 5
-    T_RETURN      shift, and go to state 30
+    T_RETURN      shift, and go to state 29
     T_SHORT       shift, and go to state 6
     T_SIGNED      shift, and go to state 7
     T_UNSIGNED    shift, and go to state 8
     T_VOID        shift, and go to state 9
-    T_WHILE       shift, and go to state 31
+    T_WHILE       shift, and go to state 30
     T_MULT        shift, and go to state 18
     T_L_BRACE     shift, and go to state 26
     T_IDENTIFIER  shift, and go to state 19
-    T_INT_CONST   shift, and go to state 33
+    T_INT_CONST   shift, and go to state 32
 
-    SCOPE                       go to state 34
+    SCOPE                       go to state 33
     SINGLE_STATEMENT            go to state 85
-    SELECTION_STATEMENT         go to state 37
-    ITERATION_STATEMENT         go to state 38
-    JUMP_STATEMENT              go to state 39
-    EXPRESSION_STATEMENT        go to state 40
-    EXPRESSION                  go to state 41
-    VARIABLE_DECLARATION        go to state 42
-    ASSIGNMENT_STATEMENT        go to state 43
-    MATH_OR_BITWISE_EXPRESSION  go to state 44
-    PRIMARY_EXPRESSION          go to state 45
-    POSTFIX_EXPRESSION          go to state 46
-    UNARY_EXPRESSION            go to state 47
-    MULTIPLICATIVE_EXPRESSION   go to state 48
-    ADDITIVE_EXPRESSION         go to state 49
-    SHIFT_EXPRESSION            go to state 50
-    RELATIONAL_EXPRESSION       go to state 51
-    EQUALITY_EXPRESSION         go to state 52
-    BITWISE_AND_EXPRESSION      go to state 53
-    BITWISE_XOR_EXPRESSION      go to state 54
-    BITWISE_OR_EXPRESSION       go to state 55
-    BOOLEAN_AND_EXPRESSION      go to state 56
-    BOOLEAN_OR_EXPRESSION       go to state 57
-    CONDITIONAL_EXPRESSION      go to state 58
-    DECLARATOR                  go to state 59
-    TYPE_SPECIFIER              go to state 60
-
-
-State 84
-
-   21 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT .
-
-    $default  reduce using rule 21 (ITERATION_STATEMENT)
+    ITERATION_STATEMENT         go to state 36
+    JUMP_STATEMENT              go to state 37
+    EXPRESSION_STATEMENT        go to state 38
+    EXPRESSION                  go to state 39
+    VARIABLE_DECLARATION        go to state 40
+    ASSIGNMENT_STATEMENT        go to state 41
+    MATH_OR_BITWISE_EXPRESSION  go to state 42
+    PRIMARY_EXPRESSION          go to state 43
+    POSTFIX_EXPRESSION          go to state 44
+    UNARY_EXPRESSION            go to state 45
+    MULTIPLICATIVE_EXPRESSION   go to state 46
+    ADDITIVE_EXPRESSION         go to state 47
+    SHIFT_EXPRESSION            go to state 48
+    RELATIONAL_EXPRESSION       go to state 49
+    EQUALITY_EXPRESSION         go to state 50
+    BITWISE_AND_EXPRESSION      go to state 51
+    BITWISE_XOR_EXPRESSION      go to state 52
+    BITWISE_OR_EXPRESSION       go to state 53
+    BOOLEAN_AND_EXPRESSION      go to state 54
+    BOOLEAN_OR_EXPRESSION       go to state 55
+    CONDITIONAL_EXPRESSION      go to state 56
+    DECLARATOR                  go to state 57
+    TYPE_SPECIFIER              go to state 58
 
 
 State 85
 
-   19 SELECTION_STATEMENT: T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT .
+   18 ITERATION_STATEMENT: T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT .
 
-    $default  reduce using rule 19 (SELECTION_STATEMENT)
+    $default  reduce using rule 18 (ITERATION_STATEMENT)
