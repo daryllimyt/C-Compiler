@@ -55,6 +55,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                 indent(output, context);
                 PyTranslate(output, context, astNode->getNext());
         }
+    } else if (astNode->getType() == "VARIABLE_DECLARATION") {
+        indent(output, context);
+        PyTranslate(output, context, astNode->getRight());
     } else if (astNode->getType() == "return") {
         *output << "return ";
         // Returning a value
@@ -63,6 +66,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
         *output << "\n";
         indent(output, context);
+    } else if (astNode->getType() == "int") {
     } else if (astNode->getType() == "VARIABLE") {
         *output << astNode->getId();  // Write variable name to output
         // if (context.scope == 0) {

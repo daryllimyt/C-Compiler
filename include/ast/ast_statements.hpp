@@ -22,14 +22,16 @@ class Scope : public Node {
 
 class AssignmentStatement : public Node {
    protected:
-    NodePtr left_;   // Target
-    NodePtr right_;  // Value
+    NodePtr identifier_;
+    NodePtr left_;  
+    NodePtr right_;  
 
    public:
-    AssignmentStatement(const std::string &type, NodePtr left, NodePtr right) {
-        type_ = type;
-        left_ = left;
-        right_ = right;
+    AssignmentStatement(NodePtr identifier, NodePtr left, NodePtr right) {
+        type_ = "ASSIGNMENT_STATEMENT";
+        identifier_ = identifier;
+        left_ = left; // math or bitwise expression
+        right_ = right; // Further assignment statements
     }
     NodePtr getLeft() const {
         return left_;
@@ -90,5 +92,26 @@ class MultipleStatements : public Node {
         return right_; // Next statement
     }
 };
+
+class VariableDeclaration : public Node {
+   protected:
+    NodePtr left_;
+    NodePtr right_;
+
+   public:
+    VariableDeclaration(NodePtr left, NodePtr right) {
+        type_ = "VARIABLE_DECLARATION";
+        left_ = left;
+        right_ = right;
+    }
+    NodePtr getLeft() const {
+        return left_; // Current statement
+    }
+    NodePtr getRight() const {
+        return right_; // Next statement
+    }
+};
+
+
 
 #endif
