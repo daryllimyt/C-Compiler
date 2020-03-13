@@ -60,14 +60,31 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << "\n";
+    } else if(astNode->getType() == "if else"){
+        *output << "if(";
+        Interpret(output, context, astNode->getCondition());
+        *output << "):\n";
+        context.scope++;
+        indent(output, context);
+        Interpret(output, context, astNode->getTruePath());
+        *output << "\n";
+        indent(output, context);
+        *output << "else:\n";
+        indent(output, context);
+        Interpret(output, context, astNode->getFalsePath());
+        context.scope--;
+        *output << "\n";
+        indent(output, context);
     } else if (astNode->getType() == "WHILE_STATEMENT") {
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition()); //condition
         *output << ": \n";
+        context.scope++;
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext()); //scope
         }
         *output << "\n";
+        context.scope--;
     } else if (astNode->getType() == "FOR_STATEMENT") {
         PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
         *output << "while(";
