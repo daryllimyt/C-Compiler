@@ -62,10 +62,10 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         *output << "\n";
     } else if (astNode->getType() == "WHILE_STATEMENT") {
         *output << "while ";
-        PyTranslate(output, context, astNode->getLeft()); //condition
-        *output << ": \n";
+        PyTranslate(output, context, astNode->getCondition()); //condition
+        *output << ":\n";
         if (astNode->getRight()) {
-            PyTranslate(output, context, astNode->getRight()); //scope
+            PyTranslate(output, context, astNode->getScope()); //scope
         }
         *output << "\n";
     } else if (astNode->getType() == "SCOPE") {

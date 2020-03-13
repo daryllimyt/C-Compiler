@@ -3,6 +3,8 @@
 // Traverses the AST by calling compile()
 
 #include "../include/ast.hpp"
+template<type T>
+void printIterable(const T & iterable);
 
 int main(int argc, char *argv[]) {
     /*
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]) {
                     tempOut.open(destFilename);
                     if (!tempOut.is_open()) {
                         std::cerr << "Warning: Output file \"" << destFilename << "\" was not found\n";
-                        std::cerr << "Creating new file \"" << destFilename << "\"" << std::endl;
+                        std::cerr << "Creating new file \"" << destFilename << "\"\n";
                     } else {
                         tempOut.close();
                     }
@@ -86,10 +88,11 @@ int main(int argc, char *argv[]) {
             PyTranslate(output, context, astRoot);
             *output << "\nif __name__ == \"__main__\":";
             *output << "\n\timport sys";
-            *output << "\n\tret=main()";
+            *output << "\n\tret = main()";
             *output << "\n\tsys.exit(ret)\n";
             std::cerr << "Info: Translation complete\n";
         }
+        std::cerr << "Info: "
         return 0;  // Successful execution
     }
     std::cerr << "Error: Received " << argc << " arguments when minimum required is 3.\n";

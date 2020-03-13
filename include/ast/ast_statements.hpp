@@ -117,20 +117,38 @@ class VariableDeclaration : public Node {
 
 class WhileStatement : public Node {
    protected:
-    NodePtr left_; //condition
-    NodePtr right_; //statement
+    NodePtr condition_; //condition
+    NodePtr scope_; //statement
 
    public:
-    WhileStatement(NodePtr left, NodePtr right) {
+    WhileStatement(NodePtr condition, NodePtr scope) {
         type_ = "WHILE_STATEMENT";
-        left_ = left;
-        right_ = right;
+        condition_ = condition;
+        scope_ = scope;
     }
-    NodePtr getLeft() const {
-        return left_; // Current statement
+    NodePtr getCondition() const {
+        return condition_; 
     }
-    NodePtr getRight() const {
-        return right_; // Next statement
+    NodePtr getScope() const {
+        return scope_; 
+    }
+};
+class IfStatement : public Node {
+   protected:
+    NodePtr condition_; //condition
+    NodePtr scope_; //statement
+
+   public:
+    IfStatement(NodePtr condition, NodePtr scope) {
+        type_ = "IF_STATEMENT";
+        condition_ = condition;
+        scope_ = scope;
+    }
+    NodePtr getCondition() const {
+        return condition_; 
+    }
+    NodePtr getScope() const {
+        return scope_; // Next statement
     }
 };
 
