@@ -41,7 +41,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << ")";
-    } else if (astNode->getType() == "MULTIPLE_STATEMENTS") { //most indentation happens here
+    } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
         indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
         if (astNode->getRight()) {
@@ -60,7 +60,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << "\n";
-    } else if(astNode->getType() == "if else"){
+    } else if (astNode->getType() == "if else") {
         *output << "if(";
         Interpret(output, context, astNode->getCondition());
         *output << "):\n";
@@ -77,20 +77,20 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         indent(output, context);
     } else if (astNode->getType() == "WHILE_STATEMENT") {
         *output << "while ";
-        PyTranslate(output, context, astNode->getCondition()); //condition
+        PyTranslate(output, context, astNode->getCondition());  //condition
         *output << ": \n";
         context.scope++;
         if (astNode->getNext()) {
-            PyTranslate(output, context, astNode->getNext()); //scope
+            PyTranslate(output, context, astNode->getNext());  //scope
         }
         *output << "\n";
         context.scope--;
     } else if (astNode->getType() == "FOR_STATEMENT") {
-        PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
+        PyTranslate(output, context, astNode->getConditionOne());  //printing identifier
         *output << "while(";
         //cond1 points to variable_declaration which points right to assignment_statement
         //which points to the identifier
-        PyTranslate(output, context, astNode->getConditionTwo()); //printing identifier
+        PyTranslate(output, context, astNode->getConditionTwo());  //printing identifier
         *output << " )\n";
         //printing the MATH_OR_BITWISE_EXPRESSION (left) in assignment_statement
         context.scope++;
@@ -98,7 +98,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
         *output << "\n";
-      
+
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
@@ -113,8 +113,15 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
         *output << "\n";
         indent(output, context);
-    } else if (astNode->getType() == "int") {
-        std::cerr << "PASSED\n";
+    } else if (astNode->getType() == "void") {      // Do nothing
+    } else if (astNode->getType() == "char") {      // Do nothing
+    } else if (astNode->getType() == "short") {     // Do nothing
+    } else if (astNode->getType() == "int") {       // Do nothing
+    } else if (astNode->getType() == "long") {      // Do nothing
+    } else if (astNode->getType() == "float") {     // Do nothing
+    } else if (astNode->getType() == "double") {    // Do nothing
+    } else if (astNode->getType() == "signed") {    // Do nothing
+    } else if (astNode->getType() == "unsigned") {  // Do nothing
     } else if (astNode->getType() == "VARIABLE") {
         *output << astNode->getId();  // Write variable name to output
         // if (context.scope == 0) {
