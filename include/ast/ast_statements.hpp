@@ -23,8 +23,8 @@ class Scope : public Node {
 class AssignmentStatement : public Node {
    protected:
     NodePtr identifier_;
-    NodePtr left_;  
-    NodePtr right_;  
+    NodePtr left_;
+    NodePtr right_;
 
    public:
     AssignmentStatement(NodePtr identifier, NodePtr left, NodePtr right) {
@@ -104,6 +104,25 @@ class VariableDeclaration : public Node {
    public:
     VariableDeclaration(NodePtr left, NodePtr right) {
         type_ = "VARIABLE_DECLARATION";
+        left_ = left;
+        right_ = right;
+    }
+    NodePtr getLeft() const {
+        return left_; // Current statement
+    }
+    NodePtr getRight() const {
+        return right_; // Next statement
+    }
+};
+
+class WhileStatement : public Node {
+   protected:
+    NodePtr left_; //condition
+    NodePtr right_; //statement
+
+   public:
+    WhileStatement(NodePtr left, NodePtr right) {
+        type_ = "WHILE_STATEMENT";
         left_ = left;
         right_ = right;
     }

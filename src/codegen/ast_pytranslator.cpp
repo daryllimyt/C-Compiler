@@ -41,7 +41,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << ")";
-    } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
+    } else if (astNode->getType() == "MULTIPLE_STATEMENTS") { //most indentation happens here
         indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
         if (astNode->getRight()) {
@@ -58,6 +58,14 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());
+        }
+        *output << "\n";
+    } else if (astNode->getType() == "WHILE_STATEMENT") {
+        *output << "while ";
+        PyTranslate(output, context, astNode->getLeft()); //condition
+        *output << ": \n";
+        if (astNode->getRight()) {
+            PyTranslate(output, context, astNode->getRight()); //scope
         }
         *output << "\n";
     } else if (astNode->getType() == "SCOPE") {
