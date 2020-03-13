@@ -1,13 +1,10 @@
 def main():
-	a = 1
-	b = 3
-	while 1: 
-		return a
+	i = 0
+	while(i>5 )
+		return i
 
-		
-	return b
+		i++
 
-	
 
 if __name__ == "__main__":
 	import sys

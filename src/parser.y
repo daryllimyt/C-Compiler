@@ -236,19 +236,20 @@ MATH_OR_BITWISE_EXPRESSION
   ;
 
 PRIMARY_EXPRESSION //a || 1 || a+1
-  // : DECLARATOR                                { $$ = $1; }
-  : T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+  : DECLARATOR                                { $$ = $1; }
+  | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+  ;
   /*| FLOAT_CONSTANT
   | CHARACTER_CONSTANT
   | STRING_CONSTANT
   | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_L_PARENTHESIS  { $$ = $2; }
   | T_IDENTIFIER WRAPPED_PARAMETERS  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
-  ; */
+   */
 
 POSTFIX_EXPRESSION // a++
   : PRIMARY_EXPRESSION         { $$ = $1; }
-  // | POSTFIX_EXPRESSION T_INC_OP  { $$ = new PostfixExpression($1, "++"); }
-  // | POSTFIX_EXPRESSION T_DEC_OP  { $$ = new PostfixExpression($1, "--"); }
+  | POSTFIX_EXPRESSION T_INC_OP  { $$ = new PostfixExpression($1, "++"); }
+  | POSTFIX_EXPRESSION T_DEC_OP  { $$ = new PostfixExpression($1, "--"); }
   // ;
 
 UNARY_EXPRESSION //++a
@@ -284,7 +285,7 @@ SHIFT_EXPRESSION //a << 5 || b >> 5
   // | SHIFT_EXPRESSION T_LSHIFT_OP ADDITIVE_EXPRESSION   { $$ = new ShiftExpression($1, "<<", $3); }
   // | SHIFT_EXPRESSION T_RSHIFT_OP ADDITIVE_EXPRESSION  { $$ = new ShiftExpression($1, ">>", $3); }
   // ;
-
+//i < 5
 RELATIONAL_EXPRESSION
   : SHIFT_EXPRESSION                              { $$ = $1; }
   | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, "<", $3); }

@@ -142,7 +142,7 @@ class ForLoop : public Node {
     NodePtr next_; //{do smth;}
 
    public:
-    ForStatement(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
+    ForLoop(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
         type_ = "FOR_LOOP";
         condition1_ = cond1;
         condition2_ = cond2;
