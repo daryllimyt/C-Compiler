@@ -115,40 +115,51 @@ class VariableDeclaration : public Node {
     }
 };
 
-class WhileStatement : public Node {
+class WhileLoop : public Node {
    protected:
     NodePtr condition_; //condition
-    NodePtr scope_; //statement
+    NodePtr next_; //statement
 
    public:
-    WhileStatement(NodePtr condition, NodePtr scope) {
-        type_ = "WHILE_STATEMENT";
+    WhileLoop(NodePtr condition, NodePtr next) {
+        type_ = "WHILE_LOOP";
         condition_ = condition;
-        scope_ = scope;
+        next_ = next;
     }
     NodePtr getCondition() const {
-        return condition_; 
+        return condition_; // Current statement
     }
-    NodePtr getScope() const {
-        return scope_; 
+    NodePtr getNext() const {
+        return next_; // Next statement
     }
 };
-class IfStatement : public Node {
+
+class ForLoop : public Node {
    protected:
-    NodePtr condition_; //condition
-    NodePtr scope_; //statement
+    NodePtr condition1_; //int i = 0
+    NodePtr condition2_; //i < 3
+    NodePtr condition3_; //i++
+    NodePtr next_; //{do smth;}
 
    public:
-    IfStatement(NodePtr condition, NodePtr scope) {
-        type_ = "IF_STATEMENT";
-        condition_ = condition;
-        scope_ = scope;
+    ForLoop(NodePtr cond1, NodePtr cond2, NodePtr cond3, NodePtr next) {
+        type_ = "For_LOOP";
+        condition1_ = cond1;
+        condition2_ = cond2;
+        condition3_ = cond3;
+        next_ = next;
     }
-    NodePtr getCondition() const {
-        return condition_; 
+    NodePtr getConditionOne() const {
+        return condition1_; // //int i = 0
     }
-    NodePtr getScope() const {
-        return scope_; // Next statement
+    NodePtr getConditionTwo() const {
+        return condition2_; // //i < 3
+    }
+    NodePtr getConditionThree() const {
+        return condition3_; // //i++
+    }
+    NodePtr getNext() const {
+        return next_; //{do smth;}
     }
 };
 
