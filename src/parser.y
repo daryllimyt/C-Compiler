@@ -169,8 +169,8 @@ SINGLE_STATEMENT//each line inside a scope
 
 // //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
-  : T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileStatement($3, $5); }
-  | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForStatement($3, $4, $5, $7); }
+  : T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5); }
+  | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForLoop($3, $4, $5, $7); }
 //   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
 //   ;
 
@@ -279,7 +279,7 @@ ADDITIVE_EXPRESSION //a + b || a - b
   // | ADDITIVE_EXPRESSION T_MINUS MULTIPLICATIVE_EXPRESSION  { $$ = new AdditiveExpression($1, "-", $3); }
   // ;
 
-SHIFT_EXPRESSION //a < 5 || b > 5
+SHIFT_EXPRESSION //a << 5 || b >> 5
   : ADDITIVE_EXPRESSION                            { $$ = $1; }
   // | SHIFT_EXPRESSION T_LSHIFT_OP ADDITIVE_EXPRESSION   { $$ = new ShiftExpression($1, "<<", $3); }
   // | SHIFT_EXPRESSION T_RSHIFT_OP ADDITIVE_EXPRESSION  { $$ = new ShiftExpression($1, ">>", $3); }
@@ -287,8 +287,8 @@ SHIFT_EXPRESSION //a < 5 || b > 5
 
 RELATIONAL_EXPRESSION
   : SHIFT_EXPRESSION                              { $$ = $1; }
-  // | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, "<", $3); }
-  // | RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, ">", $3); }
+  | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, "<", $3); }
+  | RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, ">", $3); }
   // | RELATIONAL_EXPRESSION T_LE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, "<=", $3); }
   // | RELATIONAL_EXPRESSION T_GE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, ">=", $3); }
   // ;

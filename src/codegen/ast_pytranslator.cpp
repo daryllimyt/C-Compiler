@@ -60,7 +60,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << "\n";
-    } else if (astNode->getType() == "WHILE_STATEMENT") {
+    } else if (astNode->getType() == "WHILE_LOOP") {
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition()); //condition
         *output << ": \n";
@@ -70,7 +70,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
         context.scope--;
         *output << "\n";
-    } else if (astNode->getType() == "FOR_STATEMENT") {
+    } else if (astNode->getType() == "FOR_LOOP") {
         PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
         *output << "while(";
         //cond1 points to variable_declaration which points right to assignment_statement
@@ -83,7 +83,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
         *output << "\n";
-      
+
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
