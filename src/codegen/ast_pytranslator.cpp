@@ -31,7 +31,6 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getScope());  // Scope of the function
             context.scope -= 1;
             *output << "\n";
-            indent(output, context);
         }
     } else if (astNode->getType() == "WRAPPED_ARGUMENTS") {
         *output << "(";
@@ -43,6 +42,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
         *output << ")";
     } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
+        indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());  // Any further statements
@@ -50,13 +50,21 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         // else{
         //     *output<<"pass";
         // }
+    } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
+        PyTranslate(output, context, astNode->getIdentifier());
+        if (astNode->getLeft()) {
+            *output << " = ";
+            PyTranslate(output, context, astNode->getLeft());
+        }
+        if (astNode->getRight()) {
+            PyTranslate(output, context, astNode->getRight());
+        }
+        *output << "\n";
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
-                indent(output, context);
-                PyTranslate(output, context, astNode->getNext());
+            PyTranslate(output, context, astNode->getNext());
         }
     } else if (astNode->getType() == "VARIABLE_DECLARATION") {
-        indent(output, context);
         PyTranslate(output, context, astNode->getRight());
     } else if (astNode->getType() == "return") {
         *output << "return ";
@@ -67,12 +75,13 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         *output << "\n";
         indent(output, context);
     } else if (astNode->getType() == "int") {
+        std::cerr << "PASSED\n";
     } else if (astNode->getType() == "VARIABLE") {
         *output << astNode->getId();  // Write variable name to output
         // if (context.scope == 0) {
         //     addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
         // }                                               // function definition if in global scope
-        addVarToScope(context, astNode->getId());       // Add to variable list of current scope
+        addVarToScope(context, astNode->getId());  // Add to variable list of current scope
     } else if (astNode->getType() == "INTEGER_CONSTANT") {
         *output << astNode->getVal();
     } else if (astNode->getType() == "STRING_LITERAL") {

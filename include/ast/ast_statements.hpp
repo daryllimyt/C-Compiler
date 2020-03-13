@@ -33,6 +33,9 @@ class AssignmentStatement : public Node {
         left_ = left; // math or bitwise expression
         right_ = right; // Further assignment statements
     }
+    NodePtr getIdentifier() const {
+        return identifier_;
+    }
     NodePtr getLeft() const {
         return left_;
     }
@@ -111,7 +114,5 @@ class VariableDeclaration : public Node {
         return right_; // Next statement
     }
 };
-
-
 
 #endif

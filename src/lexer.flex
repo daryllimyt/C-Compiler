@@ -162,8 +162,8 @@ void yyerror (char const *s)
 {
    /* if s is unrecognised, print error */
   fprintf (stderr, "Parse error : %s\n", s);
-  std::cerr << " Syntax/lex error found at line: " << line_number << std::endl;
-  std::cerr << "Last accepted token: " << yytext << std::endl;
+  std::cerr << "Error: Syntax/lex error found at line: " << line_number << std::endl;
+  std::cerr << "Error: Last accepted token: " << yytext << std::endl;
 
   exit(1);
 }
