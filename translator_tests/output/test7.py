@@ -1,13 +1,15 @@
 def main():
 	a = 1
-	b = 3
-	while 1: 
+	b = 2
+	if(a):
+		return 3
+
+	if(3):
 		return a
+	else:
+		return 3
 
-		
-	return b
 
-	
 
 if __name__ == "__main__":
 	import sys

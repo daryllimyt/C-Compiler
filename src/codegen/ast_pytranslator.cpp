@@ -21,7 +21,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getIdentifier());
             PyTranslate(output, context, astNode->getArgs());
             *output << ":\n";
-            context.scope += 1;
+            context.scope++;
 
             for (auto &it : context.globalVariables) {
                 indent(output, context);
@@ -29,7 +29,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
 
             PyTranslate(output, context, astNode->getScope());  // Scope of the function
-            context.scope -= 1;
+            context.scope--;
             *output << "\n";
         }
     } else if (astNode->getType() == "WRAPPED_ARGUMENTS") {
@@ -44,6 +44,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
     } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
         indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
+        *output << "\n";
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());  // Any further statements
         }
@@ -59,22 +60,22 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());
         }
-        *output << "\n";
-    } else if (astNode->getType() == "if else") {
+
+    } else if (astNode->getType() == "IF_STATEMENT") {
         *output << "if(";
-        Interpret(output, context, astNode->getCondition());
+        PyTranslate(output, context, astNode->getCondition());
         *output << "):\n";
         context.scope++;
-        indent(output, context);
-        Interpret(output, context, astNode->getTruePath());
-        *output << "\n";
-        indent(output, context);
-        *output << "else:\n";
-        indent(output, context);
-        Interpret(output, context, astNode->getFalsePath());
+        PyTranslate(output, context, astNode->getLeft());
         context.scope--;
-        *output << "\n";
-        indent(output, context);
+        if (astNode->getRight()) {
+            indent(output, context);
+            *output << "else:\n";
+            context.scope++;
+            PyTranslate(output, context, astNode->getRight());
+            context.scope--;
+        }
+
     } else if (astNode->getType() == "WHILE_STATEMENT") {
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition());  //condition
@@ -99,7 +100,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         context.scope--;
         *output << "\n";
 
-    } else if (astNode->getType() == "SCOPE") {
+    } else if (astNode->getType() == "SCOPE") { // Redundant?
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
         }
@@ -111,8 +112,6 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         if (astNode->getReturnValue()) {
             PyTranslate(output, context, astNode->getReturnValue());
         }
-        *output << "\n";
-        indent(output, context);
     } else if (astNode->getType() == "void") {      // Do nothing
     } else if (astNode->getType() == "char") {      // Do nothing
     } else if (astNode->getType() == "short") {     // Do nothing

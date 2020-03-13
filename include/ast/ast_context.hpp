@@ -46,41 +46,4 @@ struct ProgramContext {
     // Others
     int scope = 0;
 };
-
-// template <class T>
-// void printIterable(const T &iterable) {
-//     for (auto &it : iterable) {
-//         std::cerr << it << "\t";
-//     }
-//     std::cerr << "\n";
-// }
-
-// void printContext(ProgramContext context) {
-//     std::cerr << "Info: *** Program Context ***\n";
-//     std::cerr << "Info: * parameters: ";
-//     printIterable(context.parameters);
-
-//     /* Contextual information for MIPS code generator */
-//     // Frame
-    
-//     std::cerr << "Info: * frameIndex: " << context.frameIndex << "\n";
-//     // std::cerr << ::string frameStart;
-//     // std::cerr << ::string frameEnd;
-//     printIterable(context.frameSizes);     // Tracks requred space for each frame (index)
-//     printIterable(context.variableCount);  // Tracks # of vars in each frame (index)
-
-//     // // Variables
-//     // std::string identifier;
-//     // std::string typeSpecifier;
-//     // std::string typeQualifier; // const, volatile
-//     // std::string variableAssignmentState = "NO_ASSIGN";
-
-//     // // Contextual information for Python translator
-//     // std::unordered_set<std::string> globalVariables;
-//     // std::unordered_set<std::string> scopeVariables;
-
-//     // // Others
-//     // int scope = 0;
-// }
-
 #endif

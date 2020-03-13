@@ -90,7 +90,38 @@ int main(int argc, char *argv[]) {
             *output << "\n\tsys.exit(ret)\n";
             std::cerr << "Info: Translation complete\n";
         }
-        // print program context here
+        // PRINTING PROGRAM CONTEXT
+        if (Util::DEBUG) {
+            std::cerr << "Info: *** Program Context ***\n";
+            std::cerr << "Info: * parameters: ";
+            printIterable(context.parameters);
+
+            /* Contextual information for MIPS code generator */
+            // Frame
+            std::cerr << "Info: * frameIndex: " << context.frameIndex << "\n";
+            std::cerr << "Info: * frameStart: " << context.frameStart << "\n";
+            std::cerr << "Info: * frameEnd: " << context.frameEnd << "\n";
+            std::cerr << "Info: * frameSizes: ";
+            printIterable(context.frameSizes);  // Tracks requred space for each frame (index)
+            std::cerr << "Info: * variableCount: ";
+            printIterable(context.variableCount);  // Tracks # of vars in each frame (index)
+
+            // // Variables
+            std::cerr << "Info: * identifier: " << context.identifier << "\n";
+            std::cerr << "Info: * typeSpecifier: " << context.typeSpecifier << "\n";
+            std::cerr << "Info: * typeQualifier: " << context.typeQualifier << "\n";  // const, volatile
+            std::cerr << "Info: * variableAssignmentState: " << context.variableAssignmentState << "\n";
+
+            // Contextual information for Python translator
+            std::cerr << "Info: * globalVariables: ";
+            printIterable(context.globalVariables);
+            std::cerr << "Info: * scopeVariables: ";
+            printIterable(context.scopeVariables);
+
+            // Others
+            std::cerr << "Info: * identifier:\t" << context.scope << "\n";
+        }
+
         return 0;  // Successful execution
     }
     std::cerr << "Error: Received " << argc << " arguments when minimum required is 3.\n";
