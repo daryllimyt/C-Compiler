@@ -64,9 +64,11 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         *output << "while ";
         PyTranslate(output, context, astNode->getCondition()); //condition
         *output << ": \n";
+        context.scope++;
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext()); //scope
         }
+        context.scope--;
         *output << "\n";
     } else if (astNode->getType() == "FOR_STATEMENT") {
         PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
