@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 struct VariableContext {
     // Unique to each variable, create a new VariableContext for each variable
@@ -12,9 +14,16 @@ struct VariableContext {
     std::string type;  // Type specifier
 };
 
+struct FunctionContext {
+    // Unique to each variable, create a new VariableContext for each variable
+    int scope;         // Scope in which the variable was defined
+    std::string type;  // Type specifier
+    std::vector<std::string> args;
+};
+
 struct ProgramContext {
     // General
-    std::vector<int> parameters;
+    
 
     /* Contextual information for MIPS code generator */
     // Frame
@@ -28,6 +37,7 @@ struct ProgramContext {
     std::string identifier;
     std::string typeSpecifier;
     std::string typeQualifier; // const, volatile
+    std::unordered_map<std::string, VariableContext> variableBindings;
     /* Variable assignment states (for variable nodes)
     None: NO_ASSIGN
     Variable declaration: VAR_DECLARATION
@@ -38,6 +48,11 @@ struct ProgramContext {
     Array declaration (unsized): ARRAY_DECLARATION_UNSIZED
     */
     std::string variableAssignmentState = "NO_ASSIGN";
+
+    // Functions
+    std::unordered_set<std::string> functionArgs;
+    std::unordered_set<std::string> allFunctions;
+    std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;

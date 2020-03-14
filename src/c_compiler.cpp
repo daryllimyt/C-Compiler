@@ -93,8 +93,7 @@ int main(int argc, char *argv[]) {
         // PRINTING PROGRAM CONTEXT
         if (Util::DEBUG) {
             std::cerr << "Info: *** Program Context ***\n";
-            std::cerr << "Info: * parameters: ";
-            printIterable(context.parameters);
+
 
             /* Contextual information for MIPS code generator */
             // Frame
@@ -111,6 +110,12 @@ int main(int argc, char *argv[]) {
             std::cerr << "Info: * typeSpecifier: " << context.typeSpecifier << "\n";
             std::cerr << "Info: * typeQualifier: " << context.typeQualifier << "\n";  // const, volatile
             std::cerr << "Info: * variableAssignmentState: " << context.variableAssignmentState << "\n";
+
+            // Functions
+            std::cerr << "Info: * functionArgs: ";
+            printIterable(context.functionArgs);
+            std::cerr << "Info: * allFunctions: ";
+            printIterable(context.allFunctions);
 
             // Contextual information for Python translator
             std::cerr << "Info: * globalVariables: ";

@@ -48,6 +48,7 @@ extern int yydebug;
 
   #include "../include/ast.hpp"
   #include <cassert>
+  #include <stdio.h>
 
   extern const Node *g_root; // A way of getting the AST out
 
@@ -59,7 +60,7 @@ extern int yydebug;
 
   // extern void yyset_in(FILE* fd);
 
-#line 63 "src/parser.tab.hpp"
+#line 64 "src/parser.tab.hpp"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -155,14 +156,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 17 "src/parser.y"
+#line 18 "src/parser.y"
 
   const Node *node;
   double float_constant;
   long long int integer_constant;
   std::string *string;
 
-#line 166 "src/parser.tab.hpp"
+#line 167 "src/parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

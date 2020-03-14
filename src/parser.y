@@ -1,6 +1,7 @@
 %code requires{
   #include "../include/ast.hpp"
   #include <cassert>
+  #include <stdio.h>
 
   extern const Node *g_root; // A way of getting the AST out
 
@@ -103,21 +104,21 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
-  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
+  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_R_PARENTHESIS  { $$ = new WrappedArguments($2, NULL); }
   | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
-  // : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
-  // : SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
-  : SINGLE_ARGUMENT                             { $$ = $1; }
+  : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
+  | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
   ;
+  // : SINGLE_ARGUMENT                             { $$ = $1; }
 
 SINGLE_ARGUMENT //int i
   : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
   // : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
-  //                                       new AssignmentStatement($2, NULL, NULL);
-  //                                       $$ = new VariableDeclaration(*$1, node);
+  //                                       new AssignmentStatement($2, NULL, NULL); // Declarator only
+  //                                       $$ = new VariableDeclaration($1, node);
   //                                       delete $1; } //check later
 
 SCOPE //scope {do smth;}
@@ -189,7 +190,7 @@ JUMP_STATEMENT //return; || return x; || break; || continue;
 EXPRESSION_STATEMENT
   // : T_SEMICOLON            { $$ = new EmptyExpression(); }
   : EXPRESSION T_SEMICOLON { $$ = $1; }
-  ;
+
 
 /* Every simple expression. Could be an assignment, a declaration, a function call
  * etc..
@@ -237,7 +238,7 @@ ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
 
 MATH_OR_BITWISE_EXPRESSION
   : CONDITIONAL_EXPRESSION  { $$ = $1; }
-  // | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, $2, $3); }
+  // | DECLARATOR ASSIGNMENT_OPERATOR MATH_OR_BITWISE_EXPRESSION { $$ = new AssignmentExpression($1, $2, $3); } redundant??
   ;
 
 PRIMARY_EXPRESSION //a || 1 || a+1

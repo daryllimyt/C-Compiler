@@ -1,8 +1,9 @@
-def foo():
-	global foo
-	x = 2
+def foo(y, x, z):
 	y = 3
-	z = x + y
+	z = y + y
+
+def main():
+	return 0
 
 
 if __name__ == "__main__":

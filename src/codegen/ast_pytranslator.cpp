@@ -20,16 +20,17 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         // Function has arguments
         if (astNode->getArgs()) {
             *output << "def ";
+            if (!context.allFunctions.count(astNode->getIdentifier()->getId())) {  // Record function name in context
+                context.allFunctions.insert(astNode->getIdentifier()->getId());
+            }
             PyTranslate(output, context, astNode->getIdentifier());
             PyTranslate(output, context, astNode->getArgs());
             *output << ":\n";
             context.scope++;
 
             for (auto &it : context.globalVariables) {
-                if (it != "main") {
-                    indent(output, context);
-                    *output << "global " << it << "\n";
-                }
+                indent(output, context);
+                *output << "global " << it << "\n";
             }
 
             PyTranslate(output, context, astNode->getScope());  // Scope of the function
@@ -49,12 +50,15 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
 
     } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
         if (astNode->getLeft()) {
+            if (!context.functionArgs.count(astNode->getLeft()->getRight()->getId())) {
+                context.functionArgs.insert(astNode->getLeft()->getRight()->getId());
+            }
             PyTranslate(output, context, astNode->getLeft());
         }
         if (astNode->getRight()) {
+            *output << ", ";
             PyTranslate(output, context, astNode->getRight());
         }
-
     } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
         indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
@@ -162,11 +166,13 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
     } else if (astNode->getType() == "unsigned") {  // Do nothing
     } else if (astNode->getType() == "VARIABLE") {
         *output << astNode->getId();  // Write variable name to output
-        if (context.scope == 0) {
-            addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
-        }                                               // function definition if in global scope
-        addVarToScope(context, astNode->getId());       // Add to variable list of current scope
-
+        if (!context.allFunctions.count(astNode->getId()) &&
+            !context.functionArgs.count(astNode->getId())) {  // If this variable is not a function declarator or a function argument
+            if (context.scope == 0) {
+                addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
+            }                                               // function definition if in global scope
+            addVarToScope(context, astNode->getId());       // Add to variable list of current scope
+        }
     } else if (astNode->getType() == "INTEGER_CONSTANT") {
         *output << astNode->getVal();
 
