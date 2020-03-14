@@ -11,6 +11,8 @@
 #include "ast/ast_context.hpp"
 #include "util.hpp"
 
+#include <exception>
+
 extern const Node *parseAST();
 extern void yyset_in(FILE *fd);
 
@@ -20,7 +22,7 @@ void printIterable(const T &iterable) {
     for (auto &it : iterable) {
         std::cerr << it << " ";
     }
-    std::cerr << " ]\n";
+    std::cerr << "]\n";
 }
 
 int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNode);

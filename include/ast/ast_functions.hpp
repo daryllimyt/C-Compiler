@@ -1,8 +1,8 @@
 #ifndef AST_FUNCTIONS_HPP_
 #define AST_FUNCTIONS_HPP_
 
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "ast_node.hpp"
 
@@ -50,6 +50,25 @@ class FunctionDeclaration : public Node {
     }
     NodePtr getSpecifier() const {
         return typeSpecifier_;  // type specifier
+    }
+    NodePtr getIdentifier() const {
+        return identifier_;  // variable name
+    }
+    NodePtr getArgs() const {
+        return args_;
+    }
+};
+
+class FunctionCall : public Node {
+   protected:
+    NodePtr identifier_;
+    NodePtr args_;
+
+   public:
+    FunctionCall(NodePtr identifier, NodePtr args) {
+        type_ = "FUNCTION_CALL";
+        identifier_ = identifier;
+        args_ = args;
     }
     NodePtr getIdentifier() const {
         return identifier_;  // variable name

@@ -56,7 +56,7 @@ struct ProgramContext {
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;
-    std::unordered_set<std::string> scopeVariables;
+    std::unordered_set<std::string> allVariables;
 
     // Others
     int scope = 0;

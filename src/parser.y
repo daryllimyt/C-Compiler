@@ -26,7 +26,7 @@ SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT PRIMARY_EXPRESSION EXP
 ASSIGNMENT_STATEMENT T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION MULTIPLICATIVE_EXPRESSION 
 ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION EQUALITY_EXPRESSION BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION 
 BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION CONDITIONAL_EXPRESSION EXPRESSION_STATEMENT
-ITERATION_STATEMENT SELECTION_STATEMENT MULTIPLE_ARGUMENTS SINGLE_ARGUMENT
+ITERATION_STATEMENT SELECTION_STATEMENT MULTIPLE_ARGUMENTS SINGLE_ARGUMENT WRAPPED_PARAMETERS MULTIPLE_PARAMETERS
 // %type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
 // SCOPE MULTIPLE_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
 // MULTIPLE_CASE_STATEMENTS SINGLE_CASE_STATEMENT DEFAULT_STATEMENT ITERATION_STATEMENT JUMP_STATEMENT
@@ -75,12 +75,15 @@ ROOT
   : FRAME       { g_root = new RootNode($1); }
 
 FRAME
-  : FUNCTION_DEFINITION                    { $$ = $1; }
+  : MULTIPLE_STATEMENTS                   { $$ = $1; }
+  | SCOPE                                 { $$ = $1; }
+  | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
-  // | VARIABLE_DECLARATION T_COLON           { $$ = $1; }
+  | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
+  | FRAME SCOPE                           { $$ = new Frame($1, $2); }
   | FRAME FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
   | FRAME FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
-  // | FRAME VARIABLE_DECLARATION T_COLON   { $$ = new Frame($1, $2); }
+  | FRAME VARIABLE_DECLARATION T_SEMICOLON   { $$ = new Frame($1, $2); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
@@ -112,7 +115,6 @@ MULTIPLE_ARGUMENTS //int i, string j, or more...
   : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
   | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
   ;
-  // : SINGLE_ARGUMENT                             { $$ = $1; }
 
 SINGLE_ARGUMENT //int i
   : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
@@ -178,7 +180,7 @@ ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   : T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5); }
   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForLoop($3, $4, $5, $7); }
 //   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
-//   ;
+  ; 
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
   : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
@@ -230,8 +232,8 @@ VARIABLE_DECLARATION //int a = 2, b = 5
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
   // : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
-  // | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
-  : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
+  : DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
+  | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
   | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, NULL, NULL); }
   ;
 
@@ -244,13 +246,12 @@ MATH_OR_BITWISE_EXPRESSION
 PRIMARY_EXPRESSION //a || 1 || a+1
   : DECLARATOR                                { $$ = $1; }
   | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
+  // | FLOAT_CONSTANT
+  // | CHARACTER_CONSTANT
+  | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }
+  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = $2; }
+  | DECLARATOR WRAPPED_PARAMETERS  { $$ = new FunctionCall($1, $2); } 
   ;
-  /*| FLOAT_CONSTANT
-  | CHARACTER_CONSTANT
-  | STRING_CONSTANT
-  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_L_PARENTHESIS  { $$ = $2; }
-  | T_IDENTIFIER WRAPPED_PARAMETERS  { $$ = new FunctionCall(*$1, $2); delete $1; } //change ltr
-   */
 
 POSTFIX_EXPRESSION // a++
   : PRIMARY_EXPRESSION         { $$ = $1; }
@@ -337,17 +338,17 @@ CONDITIONAL_EXPRESSION
 	// ;
 
 /* ============== END Arithmetic and logical expressions ordering */
-/*
+
 WRAPPED_PARAMETERS // (int i = 5, double j)
-  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = $2; }
-	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParametersList(NULL, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new WrappedParameters($2, NULL); }
+	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new WrappedParameters(NULL, NULL); }
   ;
 
 MULTIPLE_PARAMETERS //int i = 5, double j
   : MATH_OR_BITWISE_EXPRESSION T_COMMA MULTIPLE_PARAMETERS { $$ = new MultipleParameters($1, $3); }
   | MATH_OR_BITWISE_EXPRESSION                        { $$ = new MultipleParameters($1, NULL); }
   ;
-*/
+
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", NULL); delete $1; }
   | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "pointer", NULL); delete $2; }

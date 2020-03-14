@@ -1,8 +1,8 @@
 #ifndef AST_STATEMENTS_HPP_
 #define AST_STATEMENTS_HPP_
 
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "ast_node.hpp"
 
@@ -30,8 +30,8 @@ class AssignmentStatement : public Node {
     AssignmentStatement(NodePtr identifier, NodePtr current, NodePtr next) {
         type_ = "ASSIGNMENT_STATEMENT";
         identifier_ = identifier;
-        current_ = current;    // math or bitwise expression
-        next_ = next;  // Further assignment statements
+        current_ = current;  // math or bitwise expression
+        next_ = next;        // Further assignment statements
     }
     NodePtr getIdentifier() const {
         return identifier_;
@@ -77,22 +77,46 @@ class WrappedArguments : public Node {
     }
 };
 
-class MultipleStatements : public Node {
+class WrappedParameters : public Node {
    protected:
     NodePtr current_;
     NodePtr next_;
 
    public:
-    MultipleStatements(NodePtr current, NodePtr next) {
-        type_ = "MULTIPLE_STATEMENTS";
+    WrappedParameters(NodePtr current, NodePtr next) {
+        type_ = "WRAPPED_PARAMETERS";
         current_ = current;
         next_ = next;
     }
     NodePtr getLeft() const {
-        return current_;  // Current argument
+        return current_;
     }
     NodePtr getRight() const {
-        return next_;  // Next arguments
+        return next_;
+    }
+};
+
+class Wrapper : public Node {
+   protected:
+    std::string start_;
+    std::string end_;
+    NodePtr statements_;
+
+   public:
+    Wrapper(const std::string &start, const std::string &end, NodePtr statements) {
+        type_ = "WRAPPER";
+        start_ = start;
+        end_ = end;
+    }
+    NodePtr getStatements() const {
+        return statements_;
+    }
+    const std::string getStart() const {
+        return start_;
+    }
+
+    const std::string getEnd() const {
+        return end_;
     }
 };
 
@@ -104,6 +128,43 @@ class MultipleArguments : public Node {
    public:
     MultipleArguments(NodePtr current, NodePtr next) {
         type_ = "MULTIPLE_ARGUMENTS";
+        current_ = current;
+        next_ = next;
+    }
+    NodePtr getLeft() const {
+        return current_;  // Current argument
+    }
+    NodePtr getRight() const {
+        return next_;  // Next argument
+    }
+};
+class MultipleParameters : public Node {
+   protected:
+    NodePtr current_;
+    NodePtr next_;
+
+   public:
+    MultipleParameters(NodePtr current, NodePtr next) {
+        type_ = "MULTIPLE_PARAMETERS";
+        current_ = current;
+        next_ = next;
+    }
+    NodePtr getLeft() const {
+        return current_;  // Current parameter
+    }
+    NodePtr getRight() const {
+        return next_;  // Next parameter
+    }
+};
+
+class MultipleStatements : public Node {
+   protected:
+    NodePtr current_;
+    NodePtr next_;
+
+   public:
+    MultipleStatements(NodePtr current, NodePtr next) {
+        type_ = "MULTIPLE_STATEMENTS";
         current_ = current;
         next_ = next;
     }
@@ -205,8 +266,5 @@ class IfStatement : public Node {
         return elseStatements_;
     }
 };
-
-
-
 
 #endif

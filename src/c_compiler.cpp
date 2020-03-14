@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
             // Contextual information for Python translator
             std::cerr << "Info: * globalVariables: ";
             printIterable(context.globalVariables);
-            std::cerr << "Info: * scopeVariables: ";
-            printIterable(context.scopeVariables);
+            std::cerr << "Info: * allVariables: ";
+            printIterable(context.allVariables);
 
             // Others
             std::cerr << "Info: * identifier:\t" << context.scope << "\n";

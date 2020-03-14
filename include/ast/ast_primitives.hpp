@@ -6,6 +6,8 @@
 
 #include "ast_node.hpp"
 
+
+
 class Variable : public Node {
     // Normal, pointer, array
    private:
@@ -45,12 +47,40 @@ class IntegerConstant : public Node {
     }
 };
 
-class String : public Node {
+// class FloatConstant : public Node {
+//    private:
+//     double val_;
+
+//    public:
+//     FloatConstant(const double &val) {
+//         type_ = "INTEGER_CONSTANT";
+//         val_ = val;
+//     }
+//     const int64_t getVal() const {
+//         return val_;
+//     }
+// };
+
+// class CharConstant : public Node {
+//    private:
+//     char val_;
+
+//    public:
+//     CharConstant(const char &val) {
+//         type_ = "INTEGER_CONSTANT";
+//         val_ = val;
+//     }
+//     const char getVal() const {
+//         return val_;
+//     }
+// };
+
+class StringLiteral : public Node {
    private:
     std::string str_;
 
    public:
-    String(std::string str) {
+    StringLiteral(std::string str) {
         type_ = "STRING_LITERAL";
         str_ = str;
     }
