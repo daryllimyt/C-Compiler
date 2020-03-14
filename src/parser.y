@@ -20,9 +20,12 @@
   long long int integer_constant;
   std::string *string;
 }
-%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT PRIMARY_EXPRESSION EXPRESSION
-VARIABLE_DECLARATION ASSIGNMENT_STATEMENT T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION MULTIPLICATIVE_EXPRESSION ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION
-EQUALITY_EXPRESSION BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION CONDITIONAL_EXPRESSION EXPRESSION_STATEMENT ITERATION_STATEMENT SELECTION_STATEMENT
+%type <node> ROOT FRAME FUNCTION_DEFINITION FUNCTION_DECLARATION WRAPPED_ARGUMENTS DECLARATOR TYPE_SPECIFIER 
+SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT PRIMARY_EXPRESSION EXPRESSION VARIABLE_DECLARATION 
+ASSIGNMENT_STATEMENT T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION MULTIPLICATIVE_EXPRESSION 
+ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION EQUALITY_EXPRESSION BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION 
+BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION CONDITIONAL_EXPRESSION EXPRESSION_STATEMENT
+ITERATION_STATEMENT SELECTION_STATEMENT
 // %type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
 // SCOPE MULTIPLE_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
 // MULTIPLE_CASE_STATEMENTS SINGLE_CASE_STATEMENT DEFAULT_STATEMENT ITERATION_STATEMENT JUMP_STATEMENT
@@ -102,18 +105,19 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 WRAPPED_ARGUMENTS //(int i, string j) or ()
   // : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
   : T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
-  ;
+  // ;
 
 // MULTIPLE_ARGUMENTS //int i, string j, or more...
-//   : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
-//   | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
-//   ;
+  // : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
+  // | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
+  ;
 
 // SINGLE_ARGUMENT //int i
-//   : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
-//                                         new AssignmentStatement($2, NULL, NULL);
-//                                         $$ = new VariableDeclaration(*$1, node);
-//                                         delete $1; } //check later
+// : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
+  // : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
+  //                                       new AssignmentStatement($2, NULL, NULL);
+  //                                       $$ = new VariableDeclaration(*$1, node);
+  //                                       delete $1; } //check later
 
 SCOPE //scope {do smth;}
   : T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
@@ -269,16 +273,16 @@ UNARY_EXPRESSION //++a
 
 MULTIPLICATIVE_EXPRESSION //a * b || a / b || a % b
   : UNARY_EXPRESSION                                { $$ = $1; }
-  // | MULTIPLICATIVE_EXPRESSION T_MULT UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "*", $3); }
+  | MULTIPLICATIVE_EXPRESSION T_MULT UNARY_EXPRESSION  { $$ = new ArithmeticExpression($1, "*", $3); }
   // | MULTIPLICATIVE_EXPRESSION T_DIV UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "/", $3); }
   // | MULTIPLICATIVE_EXPRESSION T_MOD UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "%", $3); }
-  // ;
+  ;
 
 ADDITIVE_EXPRESSION //a + b || a - b
   : MULTIPLICATIVE_EXPRESSION                          { $$ = $1; }
-  // | ADDITIVE_EXPRESSION T_PLUS MULTIPLICATIVE_EXPRESSION  { $$ = new AdditiveExpression($1, "+", $3); }
-  // | ADDITIVE_EXPRESSION T_MINUS MULTIPLICATIVE_EXPRESSION  { $$ = new AdditiveExpression($1, "-", $3); }
-  // ;
+  | ADDITIVE_EXPRESSION T_PLUS MULTIPLICATIVE_EXPRESSION  { $$ = new ArithmeticExpression($1, "+", $3); }
+  | ADDITIVE_EXPRESSION T_MINUS MULTIPLICATIVE_EXPRESSION  { $$ = new ArithmeticExpression($1, "-", $3); }
+  ;
 
 SHIFT_EXPRESSION //a << 5 || b >> 5
   : ADDITIVE_EXPRESSION                            { $$ = $1; }
@@ -296,7 +300,7 @@ RELATIONAL_EXPRESSION
 
 EQUALITY_EXPRESSION
   : RELATIONAL_EXPRESSION                            { $$ = $1; }
-  // | EQUALITY_EXPRESSION T_EQ_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "==", $3); }
+  | EQUALITY_EXPRESSION T_EQ_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "==", $3); }
   // | EQUALITY_EXPRESSION T_NE_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "!=", $3); }
   // ;
 
@@ -317,13 +321,13 @@ BITWISE_OR_EXPRESSION
 
 BOOLEAN_AND_EXPRESSION
   : BITWISE_OR_EXPRESSION                                { $$ = $1; }
-  // | BOOLEAN_AND_EXPRESSION T_AND_OP BITWISE_OR_EXPRESSION  { $$ = new BooleanANDExpression($1, $3); }
-  // ;
+  | BOOLEAN_AND_EXPRESSION T_AND_OP BITWISE_OR_EXPRESSION  { $$ = new BooleanExpression($1, "and", $3); }
+  ;
 
 BOOLEAN_OR_EXPRESSION
   : BOOLEAN_AND_EXPRESSION                              { $$ = $1; }
-  // | BOOLEAN_OR_EXPRESSION T_OR_OP BOOLEAN_AND_EXPRESSION  { $$ = new BooleanORExpression($1, $3); }
-  // ;
+  | BOOLEAN_OR_EXPRESSION T_OR_OP BOOLEAN_AND_EXPRESSION  { $$ = new BooleanExpression($1, "or", $3); }
+  ;
 
 CONDITIONAL_EXPRESSION
   : BOOLEAN_OR_EXPRESSION                                            { $$ = $1; }

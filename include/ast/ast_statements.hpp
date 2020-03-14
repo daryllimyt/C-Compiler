@@ -79,39 +79,58 @@ class WrappedArguments : public Node {
 
 class MultipleStatements : public Node {
    protected:
-    NodePtr left_;
-    NodePtr right_;
+    NodePtr current_;
+    NodePtr next_;
 
    public:
-    MultipleStatements(NodePtr left, NodePtr right) {
+    MultipleStatements(NodePtr current, NodePtr next) {
         type_ = "MULTIPLE_STATEMENTS";
-        left_ = left;
-        right_ = right;
+        current_ = current;
+        next_ = next;
     }
     NodePtr getLeft() const {
-        return left_;  // Current statement
+        return current_;  // Current argument
     }
     NodePtr getRight() const {
-        return right_;  // Next statement
+        return next_;  // Next arguments
+    }
+};
+
+class MultipleArguments : public Node {
+   protected:
+    NodePtr current_;
+    NodePtr next_;
+
+   public:
+    MultipleArguments(NodePtr current, NodePtr next) {
+        type_ = "MULTIPLE_ARGUMENTS";
+        current_ = current;
+        next_ = next;
+    }
+    NodePtr getLeft() const {
+        return current_;  // Current argument
+    }
+    NodePtr getRight() const {
+        return next_;  // Next arguments
     }
 };
 
 class VariableDeclaration : public Node {
    protected:
-    NodePtr left_;
-    NodePtr right_;
+    NodePtr TypeSpecifier_;
+    NodePtr declarator_;
 
    public:
-    VariableDeclaration(NodePtr left, NodePtr right) {
+    VariableDeclaration(NodePtr TypeSpecifier, NodePtr declarator) {
         type_ = "VARIABLE_DECLARATION";
-        left_ = left;
-        right_ = right;
+        TypeSpecifier_ = TypeSpecifier;
+        declarator_ = declarator;
     }
     NodePtr getLeft() const {
-        return left_;  // Current statement
+        return TypeSpecifier_;  // Current statement
     }
     NodePtr getRight() const {
-        return right_;  // Next statement
+        return declarator_;  // Next statement
     }
 };
 
@@ -187,5 +206,8 @@ class IfStatement : public Node {
         return elseStatements_;
     }
 };
+
+
+
 
 #endif

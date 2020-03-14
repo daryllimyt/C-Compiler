@@ -9,9 +9,11 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         throw std::runtime_error("Unhandled NULL-type ast node \n");
     } else if (astNode->getType() == "ROOT") {
         PyTranslate(output, context, astNode->getNext());
+
     } else if (astNode->getType() == "FRAME") {
         PyTranslate(output, context, astNode->getLeft());
         PyTranslate(output, context, astNode->getRight());
+
     } else if (astNode->getType() == "FUNCTION_DECLARATION") {
         // Do nothing, function declarations not supported in Python
     } else if (astNode->getType() == "FUNCTION_DEFINITION") {
@@ -24,14 +26,17 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             context.scope++;
 
             for (auto &it : context.globalVariables) {
-                indent(output, context);
-                *output << "global " << it << "\n";
+                if (it != "main") {
+                    indent(output, context);
+                    *output << "global " << it << "\n";
+                }
             }
 
             PyTranslate(output, context, astNode->getScope());  // Scope of the function
             context.scope--;
             *output << "\n";
         }
+
     } else if (astNode->getType() == "WRAPPED_ARGUMENTS") {
         *output << "(";
         if (astNode->getLeft()) {
@@ -41,6 +46,13 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
         }
         *output << ")";
+
+    } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
+        PyTranslate(output, context, astNode->getLeft());
+        if (astNode->getRight()) {
+            PyTranslate(output, context, astNode->getRight());
+        }
+
     } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
         indent(output, context);
         PyTranslate(output, context, astNode->getLeft());  // Current statement
@@ -48,9 +60,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());  // Any further statements
         }
-        // else{
-        //     *output<<"pass";
-        // }
+
     } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
         PyTranslate(output, context, astNode->getIdentifier());
         if (astNode->getLeft()) {
@@ -87,32 +97,52 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         context.scope--;
 
     } else if (astNode->getType() == "FOR_LOOP") {
-        PyTranslate(output, context, astNode->getConditionOne()); //printing identifier
+        PyTranslate(output, context, astNode->getConditionOne());  //printing identifier
         *output << "\n";
         indent(output, context);
         *output << "while (";
         //cond1 points to variable_declaration which points right to assignment_statement
         //which points to the identifier
-        PyTranslate(output, context, astNode->getConditionTwo()); //printing identifier
+        PyTranslate(output, context, astNode->getConditionTwo());  //printing identifier
         *output << "):\n";
         //printing the MATH_OR_BITWISE_EXPRESSION (left) in assignment_statement
         context.scope++;
         PyTranslate(output, context, astNode->getNext());
         PyTranslate(output, context, astNode->getConditionThree());
         context.scope--;
+
     } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
-        PyTranslate(output, context, astNode->getLeft()); //identifier
-        *output << astNode->getId(); //operator
-        PyTranslate(output, context, astNode->getRight()); //expr
+        PyTranslate(output, context, astNode->getLeft());   //identifier
+        *output << " " << astNode->getId() << " ";                       //shift operator
+        PyTranslate(output, context, astNode->getRight());  //expr
+
+    } else if (astNode->getType() == "ARITHMETIC_EXPRESSION") {
+        PyTranslate(output, context, astNode->getLeft());   //identifier
+        *output << " " << astNode->getId() << " ";                      //arithmetic operator
+        PyTranslate(output, context, astNode->getRight());  //expr
+
     } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
-        PyTranslate(output, context, astNode->getLeft()); //identifier
-        *output << astNode->getId(); //operator
+        PyTranslate(output, context, astNode->getLeft());  //identifier
+        *output << astNode->getId();                       //operator
+
+    } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
+        PyTranslate(output, context, astNode->getLeft());  //identifier
+        *output << " " << astNode->getId() << " ";
+        PyTranslate(output, context, astNode->getRight());  //expr
+    
+    } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
+        PyTranslate(output, context, astNode->getLeft());  //identifier
+        *output << " " << astNode->getId() << " ";
+        PyTranslate(output, context, astNode->getRight());  //expr
+    
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());
         }
+
     } else if (astNode->getType() == "VARIABLE_DECLARATION") {
         PyTranslate(output, context, astNode->getRight());
+
     } else if (astNode->getType() == "return") {
         *output << "return ";
         // Returning a value
@@ -130,14 +160,17 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
     } else if (astNode->getType() == "unsigned") {  // Do nothing
     } else if (astNode->getType() == "VARIABLE") {
         *output << astNode->getId();  // Write variable name to output
-        // if (context.scope == 0) {
-        //     addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
-        // }                                               // function definition if in global scope
-        addVarToScope(context, astNode->getId());  // Add to variable list of current scope
+        if (context.scope == 0) {
+            addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
+        }                                               // function definition if in global scope
+        addVarToScope(context, astNode->getId());       // Add to variable list of current scope
+
     } else if (astNode->getType() == "INTEGER_CONSTANT") {
         *output << astNode->getVal();
+
     } else if (astNode->getType() == "STRING_LITERAL") {
         *output << "\"" << astNode->getId() << "\"";
+
     } else {
         std::cerr << "Error: Unknown type of " << astNode->getType() << "\n";
     }

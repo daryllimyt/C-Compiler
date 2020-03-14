@@ -1,13 +1,14 @@
 def main():
 	a = 1
-	b = 3
-	while 1: 
-		return a
+	b = 2
+	c = a or b
+	d = c and b
+	if(a == b):
+		return 3
 
-	return b
 
 
 if __name__ == "__main__":
 	import sys
-	ret = main()
+	ret=main()
 	sys.exit(ret)

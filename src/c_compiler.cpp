@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             PyTranslate(output, context, astRoot);
             *output << "\nif __name__ == \"__main__\":";
             *output << "\n\timport sys";
-            *output << "\n\tret = main()";
+            *output << "\n\tret=main()";
             *output << "\n\tsys.exit(ret)\n";
             std::cerr << "Info: Translation complete\n";
         }
