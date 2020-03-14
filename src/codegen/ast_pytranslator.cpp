@@ -42,6 +42,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getIdentifier());
             PyTranslate(output, context, astNode->getArgs());
             *output << "\n";
+
         } else if (astNode->getType() == "WRAPPED_PARAMETERS") {
             *output << "(";
             if (astNode->getLeft()) {
@@ -186,15 +187,17 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else if (astNode->getType() == "signed") {    // Do nothing
         } else if (astNode->getType() == "unsigned") {  // Do nothing
         } else if (astNode->getType() == "VARIABLE") {
+            // If this variable is not a function declarator or a function argument
             if (!context.allFunctions.count(astNode->getId()) &&
-                !context.functionArgs.count(astNode->getId())) {  // If this variable is not a function declarator or a function argument
+                !context.functionArgs.count(astNode->getId())) {  
                 if (context.scope == 0) {
                     addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
                 }                                               // function definition if in global scope
                 addVarToScope(context, astNode->getId());       // Add to variable list of current scope
             }
-            if (!context.globalVariables.count(astNode->getId())) {
-                *output << astNode->getId();  // Write variable name to output if not a global variable
+            // If this variable is not a global variable or inside a scioe
+            if (!context.globalVariables.count(astNode->getId()) || context.scope > 0) {
+                *output << astNode->getId(); 
             } else {
                 *output << astNode->getId() << "=0\n"; // globalVar=0
             }

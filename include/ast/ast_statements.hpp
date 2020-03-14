@@ -96,30 +96,6 @@ class WrappedParameters : public Node {
     }
 };
 
-class Wrapper : public Node {
-   protected:
-    std::string start_;
-    std::string end_;
-    NodePtr statements_;
-
-   public:
-    Wrapper(const std::string &start, const std::string &end, NodePtr statements) {
-        type_ = "WRAPPER";
-        start_ = start;
-        end_ = end;
-    }
-    NodePtr getStatements() const {
-        return statements_;
-    }
-    const std::string getStart() const {
-        return start_;
-    }
-
-    const std::string getEnd() const {
-        return end_;
-    }
-};
-
 class MultipleArguments : public Node {
    protected:
     NodePtr current_;
@@ -138,6 +114,7 @@ class MultipleArguments : public Node {
         return next_;  // Next argument
     }
 };
+
 class MultipleParameters : public Node {
    protected:
     NodePtr current_;
