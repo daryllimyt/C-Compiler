@@ -48,7 +48,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         *output << ")";
 
     } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
-        PyTranslate(output, context, astNode->getLeft());
+        if (astNode->getLeft()) {
+            PyTranslate(output, context, astNode->getLeft());
+        }
         if (astNode->getRight()) {
             PyTranslate(output, context, astNode->getRight());
         }
@@ -113,12 +115,12 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
 
     } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
         PyTranslate(output, context, astNode->getLeft());   //identifier
-        *output << " " << astNode->getId() << " ";                       //shift operator
+        *output << " " << astNode->getId() << " ";          //shift operator
         PyTranslate(output, context, astNode->getRight());  //expr
 
     } else if (astNode->getType() == "ARITHMETIC_EXPRESSION") {
         PyTranslate(output, context, astNode->getLeft());   //identifier
-        *output << " " << astNode->getId() << " ";                      //arithmetic operator
+        *output << " " << astNode->getId() << " ";          //arithmetic operator
         PyTranslate(output, context, astNode->getRight());  //expr
 
     } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
@@ -129,12 +131,12 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         PyTranslate(output, context, astNode->getLeft());  //identifier
         *output << " " << astNode->getId() << " ";
         PyTranslate(output, context, astNode->getRight());  //expr
-    
+
     } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
         PyTranslate(output, context, astNode->getLeft());  //identifier
         *output << " " << astNode->getId() << " ";
         PyTranslate(output, context, astNode->getRight());  //expr
-    
+
     } else if (astNode->getType() == "SCOPE") {
         if (astNode->getNext()) {
             PyTranslate(output, context, astNode->getNext());

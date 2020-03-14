@@ -25,7 +25,7 @@ SCOPE JUMP_STATEMENT MULTIPLE_STATEMENTS SINGLE_STATEMENT PRIMARY_EXPRESSION EXP
 ASSIGNMENT_STATEMENT T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION POSTFIX_EXPRESSION UNARY_EXPRESSION MULTIPLICATIVE_EXPRESSION 
 ADDITIVE_EXPRESSION SHIFT_EXPRESSION RELATIONAL_EXPRESSION EQUALITY_EXPRESSION BITWISE_AND_EXPRESSION BITWISE_XOR_EXPRESSION 
 BITWISE_OR_EXPRESSION BOOLEAN_AND_EXPRESSION BOOLEAN_OR_EXPRESSION CONDITIONAL_EXPRESSION EXPRESSION_STATEMENT
-ITERATION_STATEMENT SELECTION_STATEMENT
+ITERATION_STATEMENT SELECTION_STATEMENT MULTIPLE_ARGUMENTS SINGLE_ARGUMENT
 // %type <node> ROOT FRAME FUNCTION_DECLARATION FUNCTION_DEFINITION WRAPPED_ARGUMENTS MULTIPLE_ARGUMENTS
 // SCOPE MULTIPLE_STATEMENTS SINGLE_STATEMENT SELECTION_STATEMENT WRAPPED_CASE_STATEMENTS MULTIPLE_CASE_DEFAULT
 // MULTIPLE_CASE_STATEMENTS SINGLE_CASE_STATEMENT DEFAULT_STATEMENT ITERATION_STATEMENT JUMP_STATEMENT
@@ -103,17 +103,18 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
-  // : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
-  : T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
-  // ;
-
-// MULTIPLE_ARGUMENTS //int i, string j, or more...
-  // : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
-  // | SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_L_PARENTHESIS  { $$ = $2; }
+  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
   ;
 
-// SINGLE_ARGUMENT //int i
-// : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
+MULTIPLE_ARGUMENTS //int i, string j, or more...
+  // : SINGLE_ARGUMENT T_COMMA MULTIPLE_ARGUMENTS  { $$ = new MultipleArguments($1, $3); }
+  // : SINGLE_ARGUMENT                             { $$ = new MultipleArguments($1, NULL); }
+  : SINGLE_ARGUMENT                             { $$ = $1; }
+  ;
+
+SINGLE_ARGUMENT //int i
+  : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
   // : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
   //                                       new AssignmentStatement($2, NULL, NULL);
   //                                       $$ = new VariableDeclaration(*$1, node);
@@ -274,8 +275,8 @@ UNARY_EXPRESSION //++a
 MULTIPLICATIVE_EXPRESSION //a * b || a / b || a % b
   : UNARY_EXPRESSION                                { $$ = $1; }
   | MULTIPLICATIVE_EXPRESSION T_MULT UNARY_EXPRESSION  { $$ = new ArithmeticExpression($1, "*", $3); }
-  // | MULTIPLICATIVE_EXPRESSION T_DIV UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "/", $3); }
-  // | MULTIPLICATIVE_EXPRESSION T_MOD UNARY_EXPRESSION  { $$ = new MultiplicativeExpression($1, "%", $3); }
+  | MULTIPLICATIVE_EXPRESSION T_DIV UNARY_EXPRESSION  { $$ = new ArithmeticExpression($1, "/", $3); }
+  | MULTIPLICATIVE_EXPRESSION T_MOD UNARY_EXPRESSION  { $$ = new ArithmeticExpression($1, "%", $3); }
   ;
 
 ADDITIVE_EXPRESSION //a + b || a - b
@@ -294,15 +295,15 @@ RELATIONAL_EXPRESSION
   : SHIFT_EXPRESSION                              { $$ = $1; }
   | RELATIONAL_EXPRESSION T_LT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, "<", $3); }
   | RELATIONAL_EXPRESSION T_GT SHIFT_EXPRESSION    { $$ = new RelationalExpression($1, ">", $3); }
-  // | RELATIONAL_EXPRESSION T_LE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, "<=", $3); }
-  // | RELATIONAL_EXPRESSION T_GE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, ">=", $3); }
-  // ;
+  | RELATIONAL_EXPRESSION T_LE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, "<=", $3); }
+  | RELATIONAL_EXPRESSION T_GE_OP SHIFT_EXPRESSION  { $$ = new RelationalExpression($1, ">=", $3); }
+  ;
 
 EQUALITY_EXPRESSION
   : RELATIONAL_EXPRESSION                            { $$ = $1; }
   | EQUALITY_EXPRESSION T_EQ_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "==", $3); }
-  // | EQUALITY_EXPRESSION T_NE_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "!=", $3); }
-  // ;
+  | EQUALITY_EXPRESSION T_NE_OP RELATIONAL_EXPRESSION  { $$ = new EqualityExpression($1, "!=", $3); }
+  ;
 
 BITWISE_AND_EXPRESSION
   : EQUALITY_EXPRESSION                     { $$ = $1; }

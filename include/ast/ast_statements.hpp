@@ -23,24 +23,24 @@ class Scope : public Node {
 class AssignmentStatement : public Node {
    protected:
     NodePtr identifier_;
-    NodePtr left_;
-    NodePtr right_;
+    NodePtr current_;
+    NodePtr next_;
 
    public:
-    AssignmentStatement(NodePtr identifier, NodePtr left, NodePtr right) {
+    AssignmentStatement(NodePtr identifier, NodePtr current, NodePtr next) {
         type_ = "ASSIGNMENT_STATEMENT";
         identifier_ = identifier;
-        left_ = left;    // math or bitwise expression
-        right_ = right;  // Further assignment statements
+        current_ = current;    // math or bitwise expression
+        next_ = next;  // Further assignment statements
     }
     NodePtr getIdentifier() const {
         return identifier_;
     }
     NodePtr getLeft() const {
-        return left_;
+        return current_;
     }
     NodePtr getRight() const {
-        return right_;
+        return next_;
     }
 };
 
@@ -60,20 +60,20 @@ class JumpStatement : public Node {
 
 class WrappedArguments : public Node {
    protected:
-    NodePtr left_;
-    NodePtr right_;
+    NodePtr current_;
+    NodePtr next_;
 
    public:
-    WrappedArguments(NodePtr left, NodePtr right) {
+    WrappedArguments(NodePtr current, NodePtr next) {
         type_ = "WRAPPED_ARGUMENTS";
-        left_ = left;
-        right_ = right;
+        current_ = current;
+        next_ = next;
     }
     NodePtr getLeft() const {
-        return left_;
+        return current_;
     }
     NodePtr getRight() const {
-        return right_;
+        return next_;
     }
 };
 
@@ -117,17 +117,17 @@ class MultipleArguments : public Node {
 
 class VariableDeclaration : public Node {
    protected:
-    NodePtr TypeSpecifier_;
+    NodePtr typeSpecifier_;
     NodePtr declarator_;
 
    public:
-    VariableDeclaration(NodePtr TypeSpecifier, NodePtr declarator) {
+    VariableDeclaration(NodePtr typeSpecifier, NodePtr declarator) {
         type_ = "VARIABLE_DECLARATION";
-        TypeSpecifier_ = TypeSpecifier;
+        typeSpecifier_ = typeSpecifier;
         declarator_ = declarator;
     }
     NodePtr getLeft() const {
-        return TypeSpecifier_;  // Current statement
+        return typeSpecifier_;  // Current statement
     }
     NodePtr getRight() const {
         return declarator_;  // Next statement
@@ -187,7 +187,6 @@ class IfStatement : public Node {
     NodePtr expression_;
     NodePtr ifStatements_;
     NodePtr elseStatements_;
-    NodePtr next_;
 
    public:
     IfStatement(NodePtr expression, NodePtr ifStatements, NodePtr elseStatements) {

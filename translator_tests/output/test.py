@@ -1,11 +1,8 @@
-def main():
-	a = 1
-	b = 2
-	c = a or b
-	d = c and b
-	if(a == b):
-		return 3
-
+def foo():
+	global foo
+	x = 2
+	y = 3
+	z = x + y
 
 
 if __name__ == "__main__":
