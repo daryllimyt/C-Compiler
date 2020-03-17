@@ -80,10 +80,10 @@ FRAME
   | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
   | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
-  | FRAME SCOPE                           { $$ = new Frame($1, $2); }
-  | FRAME FUNCTION_DEFINITION            { $$ = new Frame($1, $2); }
-  | FRAME FUNCTION_DECLARATION           { $$ = new Frame($1, $2); }
-  | FRAME VARIABLE_DECLARATION T_SEMICOLON   { $$ = new Frame($1, $2); }
+  | SCOPE FRAME                            { $$ = new Frame($1, $2); }
+  | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
+  | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
+  | VARIABLE_DECLARATION T_SEMICOLON FRAME  { $$ = new Frame($1, $2); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 

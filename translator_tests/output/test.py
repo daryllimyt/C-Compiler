@@ -1,6 +1,6 @@
 y=0
 z=0
-def g(a):
+def g(a, b):
 	global z
 	global y
 	return a+y
@@ -8,8 +8,8 @@ def g(a):
 def f(x):
 	global z
 	global y
-	g(x)
-
+	y = x+3
+	g(x, y)
 	return x == y
 
 

@@ -41,7 +41,6 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else if (astNode->getType() == "FUNCTION_CALL") {
             PyTranslate(output, context, astNode->getIdentifier());
             PyTranslate(output, context, astNode->getArgs());
-            *output << "\n";
 
         } else if (astNode->getType() == "WRAPPED_PARAMETERS") {
             *output << "(";
