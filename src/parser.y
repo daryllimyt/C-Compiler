@@ -83,7 +83,7 @@ FRAME
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
   | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
-  | VARIABLE_DECLARATION T_SEMICOLON FRAME  { $$ = new Frame($1, $2); }
+  | VARIABLE_DECLARATION T_SEMICOLON FRAME  { $$ = new Frame($1, $3); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 

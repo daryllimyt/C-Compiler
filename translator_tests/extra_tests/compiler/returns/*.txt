@@ -1,1 +1,0 @@
-Invalid Command Argument: test/compiler/outputs/*.s
