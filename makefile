@@ -55,6 +55,7 @@ clean :
 	rm -f include/ast/*.o
 	rm -f include/ast/*.gch
 	rm -f translator_tests/output/*
+	rm -f translator_tests/extra_tests/translator/outputs/*
 	
 
 bin/c_compiler: all
