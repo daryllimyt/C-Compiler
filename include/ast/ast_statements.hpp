@@ -6,20 +6,6 @@
 
 #include "ast_node.hpp"
 
-class Scope : public Node {
-   protected:
-    NodePtr next_;
-
-   public:
-    Scope(NodePtr next) {
-        type_ = "SCOPE";
-        next_ = next;
-    }
-    NodePtr getNext() const {
-        return next_;
-    }
-};
-
 class AssignmentStatement : public Node {
    protected:
     NodePtr identifier_;

@@ -145,8 +145,9 @@ SINGLE_STATEMENT//each line inside a scope
   ;
 
 SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
-  : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, NULL); }
-  | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT  { $$ = new IfStatement($3, $5, $7); }
+  : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                              { $$ = new IfStatement($3, $5, NULL); }
+  | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT SELECTION_STATEMENT   { $$ = new IfStatement($3, $5, $6); } //recursive
+  | T_ELSE SINGLE_STATEMENT                                                                              { $$ = $2; }
   // | T_SWITCH T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS WRAPPED_CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 

@@ -108,21 +108,26 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
 
         } else if (astNode->getType() == "IF_STATEMENT") {
             context.variableAssignmentState = "IF_STATEMENT";
-
             *output << "if(";
             PyTranslate(output, context, astNode->getCondition());
             *output << "):\n";
+
             context.scope++;
             PyTranslate(output, context, astNode->getLeft());
             context.scope--;
+
             if (astNode->getRight()) {
                 indent(output, context);
-                *output << "else:\n";
-                context.scope++;
-                PyTranslate(output, context, astNode->getRight());
-                context.scope--;
+                *output << "el";
+                if (astNode->getRight()->getType() != "IF_STATEMENT") { // If next node is not an IF
+                    *output << "se:\n";
+                    context.scope++;
+                    PyTranslate(output, context, astNode->getRight());
+                    context.scope--;
+                } else {
+                    PyTranslate(output, context, astNode->getRight());
+                }
             }
-
         } else if (astNode->getType() == "WHILE_LOOP") {
             context.variableAssignmentState = "WHILE_LOOP";
             *output << "while ";
