@@ -1,7 +1,7 @@
 def main():
 	x = 0
 	y = 1
-	z = y < x and x
+	z = (y < x and x)
 	return z
 
 

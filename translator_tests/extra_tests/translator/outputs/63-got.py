@@ -2,7 +2,7 @@ def main():
 	x =  - 1
 	y =  - 2
 	z = x + y
-	return z + x + y
+	return z + (x + y)
 
 
 if __name__ == "__main__":

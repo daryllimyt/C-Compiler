@@ -1,13 +1,21 @@
-int y;
-int z = 1;
+// int f(){
+//     return 5;
+// }
 
-int g(int a, int b) {
-    return a+y;
-}
-
-int f(int x) {
-    int y = x+3;
+int f1(int a){
+    // return a*b;
     int a;
-    g(x, y);
-    return x == y;
+    int a = 1;
 }
+// int f1(){
+//     return a*b;
+// }
+
+// int f2(int A, int B, int C, int D){
+//     return A*B*C*D;
+// }
+
+// int main()
+// {
+//     return f()+f1(2,3)+f2(4,5,6,7);
+// }

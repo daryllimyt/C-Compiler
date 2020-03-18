@@ -4,7 +4,7 @@ def main():
 	z = 0
 	while y > 0: 
 		y -= 1
-		if(x + y % 2 == 0):
+		if((x + y) % 2 == 0):
 			continue
 
 		z += 1

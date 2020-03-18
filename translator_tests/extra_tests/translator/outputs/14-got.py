@@ -5,7 +5,7 @@ def main():
 	x = 5 * f()
 	y = f() * f() + f()
 	z = f() / 12
-	a = x * f() + f() / y + 7 - f() * z
+	a = x * f() + f() / (y + 7) - f() * z
 	return f() - 10
 
 

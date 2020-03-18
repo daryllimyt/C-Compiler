@@ -1,7 +1,7 @@
 def main():
 	x = 0
 	y = 1
-	z = y or y or x
+	z = (y or y or x)
 	return z
 
 

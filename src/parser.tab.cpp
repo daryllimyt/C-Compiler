@@ -1681,13 +1681,13 @@ yyreduce:
 
   case 13:
 #line 112 "src/parser.y"
-                                                        { (yyval.node) = new WrappedArguments((yyvsp[-1].node), NULL); }
+                                                        { (yyval.node) = new ParenthesisWrapper((yyvsp[-1].node), NULL); }
 #line 1686 "src/parser.tab.cpp"
     break;
 
   case 14:
 #line 113 "src/parser.y"
-                                                        { (yyval.node) = new WrappedArguments(NULL, NULL); }
+                                                        { (yyval.node) = new ParenthesisWrapper(NULL, NULL); }
 #line 1692 "src/parser.tab.cpp"
     break;
 
@@ -1969,7 +1969,7 @@ yyreduce:
 
   case 61:
 #line 256 "src/parser.y"
-                                                                { (yyval.node) = (yyvsp[-1].node); }
+                                                                { (yyval.node) = new ParenthesisWrapper((yyvsp[-1].node), NULL); }
 #line 1974 "src/parser.tab.cpp"
     break;
 
@@ -2227,13 +2227,13 @@ yyreduce:
 
   case 104:
 #line 347 "src/parser.y"
-                                                         { (yyval.node) = new WrappedParameters((yyvsp[-1].node), NULL); }
+                                                         { (yyval.node) = new ParenthesisWrapper((yyvsp[-1].node), NULL); }
 #line 2232 "src/parser.tab.cpp"
     break;
 
   case 105:
 #line 348 "src/parser.y"
-                                                          { (yyval.node) = new WrappedParameters(NULL, NULL); }
+                                                          { (yyval.node) = new ParenthesisWrapper(NULL, NULL); }
 #line 2238 "src/parser.tab.cpp"
     break;
 

@@ -3,8 +3,8 @@ def f(a):
 
 def main():
 	xzabc = 54
-	z = xzabc * f(3) + 10
-	return z + xzabc * f(3) + 10
+	z = ((((xzabc)))) * f(3) + (10)
+	return z + (((((xzabc)))) * f(3) + (10))
 
 
 if __name__ == "__main__":

@@ -2401,9 +2401,9 @@ void yyfree (void * ptr )
 void yyerror (char const *s)
 {
    /* if s is unrecognised, print error */
-  fprintf (stderr, "Parse error : %s\n", s);
-  std::cerr << "Error: Syntax/lex error found at line: " << line_number << std::endl;
-  std::cerr << "Error: Last accepted token: " << yytext << std::endl;
+  fprintf (stderr, "[ERROR] Parse error %s\n", s);
+  std::cerr << "[ERROR] Syntax/lex error found at line: " << line_number << std::endl;
+  std::cerr << "[ERROR] Last accepted token: " << yytext << std::endl;
 
   exit(1);
 }
