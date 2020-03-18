@@ -1,22 +1,22 @@
-e=0
+e = 0
  = 5def f():
 	global e
 	return 5+e
 
-_f_=0
+_f_ = 0
  = 7def f1(a, b):
 	global _f_
 	global e
 	return e+a*b+_f_
 
-_=0
+_ = 0
  = 23def f2(A, B, C, D):
 	global _
 	global _f_
 	global e
 	return e+_f_+A*B*C*D+_
 
-_123=0
+_123 = 0
  = 123def main():
 	global _123
 	global _

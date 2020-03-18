@@ -1,4 +1,4 @@
-x=0
+x = 0
  = 1def f0():
 	global x
 	if(x):

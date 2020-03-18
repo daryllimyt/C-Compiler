@@ -75,15 +75,16 @@ ROOT
   : FRAME       { g_root = new RootNode($1); }
 
 FRAME
-  : MULTIPLE_STATEMENTS                   { $$ = $1; }
-  | SCOPE                                 { $$ = $1; }
+  // : MULTIPLE_STATEMENTS                   { $$ = $1; }
+  : SCOPE                                 { $$ = $1; }
   | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
-  | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
+  // | MULTIPLE_STATEMENTS FRAME               { $$ = new Frame($1, $2); }
+  | VARIABLE_DECLARATION T_SEMICOLON { $$ = $1; }
+  | VARIABLE_DECLARATION T_SEMICOLON FRAME { $$ = new Frame($1, $3); }
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
   | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
-  | VARIABLE_DECLARATION T_SEMICOLON FRAME  { $$ = new Frame($1, $3); }
   // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
@@ -139,6 +140,7 @@ SINGLE_STATEMENT//each line inside a scope
   | JUMP_STATEMENT        { $$ = $1; }
   | ITERATION_STATEMENT   { $$ = $1; }
   | SELECTION_STATEMENT   { $$ = $1; }
+  // | VARIABLE_DECLARATION T_SEMICOLON  { $$ = $1; }
   ;
 
 SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}

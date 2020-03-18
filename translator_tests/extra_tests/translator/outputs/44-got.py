@@ -1,4 +1,4 @@
-z=0
+z = 0
 def f():
 	global z
 	return 5

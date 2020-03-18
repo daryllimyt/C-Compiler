@@ -12,12 +12,14 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getNext());
 
         } else if (astNode->getType() == "FRAME") {
+            context.variableAssignmentState = "GLOBAL";
             PyTranslate(output, context, astNode->getLeft());
             PyTranslate(output, context, astNode->getRight());
 
         } else if (astNode->getType() == "FUNCTION_DECLARATION") {
             // Do nothing, function declarations not supported in Python
         } else if (astNode->getType() == "FUNCTION_DEFINITION") {
+            context.variableAssignmentState = "FUNCTION_DEFINITION";
             // Function has arguments
             if (astNode->getArgs()) {
                 *output << "def ";
@@ -90,6 +92,12 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
 
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
             PyTranslate(output, context, astNode->getIdentifier());
+            if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
+                // context.variableAssignmentState = "VARIABLE_ASSIGNMENT";
+                if (!astNode->getLeft() && !astNode->getRight()) {
+                    *output << " = 0";
+                }
+            }
             if (astNode->getLeft()) {
                 *output << " = ";
                 PyTranslate(output, context, astNode->getLeft());
@@ -168,7 +176,12 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
+            std::string prevState = context.variableAssignmentState; 
+            context.variableAssignmentState = "VARIABLE_DECLARATION";
             PyTranslate(output, context, astNode->getRight());
+            if (prevState == "GLOBAL") { // If not within a function definition
+                *output << "\n";
+            }
 
         } else if (astNode->getType() == "return") {
             *output << "return ";
@@ -176,10 +189,11 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             if (astNode->getReturnValue()) {
                 PyTranslate(output, context, astNode->getReturnValue());
             }
-        } else if (astNode->getType() == "void") {      // Do nothing
-        } else if (astNode->getType() == "char") {      // Do nothing
-        } else if (astNode->getType() == "short") {     // Do nothing
-        } else if (astNode->getType() == "int") {       // Do nothing
+        } else if (astNode->getType() == "void") {   // Do nothing
+        } else if (astNode->getType() == "char") {   // Do nothing
+        } else if (astNode->getType() == "short") {  // Do nothing
+        } else if (astNode->getType() == "int") {    // Do nothing
+
         } else if (astNode->getType() == "long") {      // Do nothing
         } else if (astNode->getType() == "float") {     // Do nothing
         } else if (astNode->getType() == "double") {    // Do nothing
@@ -188,18 +202,20 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else if (astNode->getType() == "VARIABLE") {
             // If this variable is not a function declarator or a function argument
             if (!context.allFunctions.count(astNode->getId()) &&
-                !context.functionArgs.count(astNode->getId())) {  
+                !context.functionArgs.count(astNode->getId())) {
                 if (context.scope == 0) {
                     addVarToGlobal(context, astNode->getId());  // Add all global variables at start of
                 }                                               // function definition if in global scope
                 addVarToScope(context, astNode->getId());       // Add to variable list of current scope
             }
+
             // If this variable is not a global variable or inside a scioe
-            if (!context.globalVariables.count(astNode->getId()) || context.scope > 0) {
-                *output << astNode->getId(); 
-            } else {
-                *output << astNode->getId() << "=0\n"; // globalVar=0
-            }
+            *output << astNode->getId();
+            // if (!context.globalVariables.count(astNode->getId()) || context.scope > 0) {
+
+            // } else {
+            //     *output << astNode->getId() << " = 0\n";  // globalVar=0
+            // }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << astNode->getVal();
 
@@ -209,7 +225,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else {
             throw std::runtime_error("Unknown type of " + astNode->getType() + "\n");
         }
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cerr << e.what() << "\n";
         return -1;
     }

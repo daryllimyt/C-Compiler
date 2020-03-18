@@ -1,4 +1,4 @@
-Z=0
+Z = 0
  = 40def main():
 	global Z
 	x = 15

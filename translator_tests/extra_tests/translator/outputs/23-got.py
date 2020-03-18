@@ -1,6 +1,6 @@
-x=0
- = 5y=0
- = 22z=0
+x = 0
+ = 5y = 0
+ = 22z = 0
  = 15def main():
 	global z
 	global y
