@@ -1,17 +1,16 @@
-y = 0
-z = 1
-def g(a, b):
-	global z
-	global y
-	return a+y
+def main():
+	a = 1
+	b = 2
+	if(a):
+		if(3):
+			return a
 
-def f(x):
-	global z
-	global y
-	y = x+3
-	a = 0
-	g(x, y)
-	return x == y
+	else:
+		if(3):
+			return a
+
+		return 3
+
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ def main():
 	x = 15
 	return x
 	return 0
-	return 22*x+5
+	return 22 * x + 5
 
 
 if __name__ == "__main__":

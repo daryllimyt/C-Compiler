@@ -47,19 +47,19 @@ class IntegerConstant : public Node {
     }
 };
 
-// class FloatConstant : public Node {
-//    private:
-//     double val_;
+class FloatConstant : public Node {
+   private:
+    double val_;
 
-//    public:
-//     FloatConstant(const double &val) {
-//         type_ = "INTEGER_CONSTANT";
-//         val_ = val;
-//     }
-//     const int64_t getVal() const {
-//         return val_;
-//     }
-// };
+   public:
+    FloatConstant(const double &val) {
+        type_ = "FLOAT_CONSTANT";
+        val_ = val;
+    }
+    const double getFloat() const {
+        return val_;
+    }
+};
 
 // class CharConstant : public Node {
 //    private:

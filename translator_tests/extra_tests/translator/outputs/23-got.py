@@ -1,12 +1,12 @@
-x = 0
- = 5y = 0
- = 22z = 0
- = 15def main():
+x = 5
+y = 22
+z = 15
+def main():
 	global z
 	global y
 	global x
-	x+1
-	a = y+5
+	x + 1
+	a = y + 5
 	b = 22
 	return 0
 

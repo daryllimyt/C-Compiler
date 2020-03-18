@@ -1,7 +1,7 @@
-x = 0
- = 1def f0():
+x = 1
+def f0():
 	global x
-	if(x):
+		if(x):
 		return 
 
 

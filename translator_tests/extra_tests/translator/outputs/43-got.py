@@ -1,9 +1,9 @@
-Z = 0
- = 40def main():
+Z = 40
+def main():
 	global Z
 	x = 15
 	y = 25
-	return x+y+Z
+	return x + y + Z
 
 
 if __name__ == "__main__":

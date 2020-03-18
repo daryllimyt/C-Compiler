@@ -1,7 +1,7 @@
 def f():
 	x = 15
 	y = 16
-	return x*y
+	return x * y
 
 def main():
 	a = 21
@@ -9,10 +9,10 @@ def main():
 	c = f()
 	a = 11
 	b = 24
-	d = b+a
-	e = 6+10
+	d = b + a
+	e = 6 + 10
 	c = 15
-	d = 5*f()
+	d = 5 * f()
 	return 0
 
 

@@ -1,7 +1,7 @@
 def f(a, b, c, d):
-	if(a):
+		if(a):
 return 12	else:
-if(c):
+		if(c):
 return 214
 
 def main():

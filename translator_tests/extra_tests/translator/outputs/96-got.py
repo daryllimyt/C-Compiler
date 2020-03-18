@@ -1,6 +1,6 @@
 def f(a, b, c, d):
-	if(a):
-if(b):
+		if(a):
+		if(b):
 return 23		else:
 return 34
 

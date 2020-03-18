@@ -1,5 +1,5 @@
 def main():
-	x
+	x = 0
 	return 0
 
 

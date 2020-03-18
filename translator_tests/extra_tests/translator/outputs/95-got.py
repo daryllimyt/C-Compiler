@@ -1,8 +1,8 @@
 def f(a, b, c, d):
-	if(a):
-if(b):
-if(c):
-if(d):
+		if(a):
+		if(b):
+			if(c):
+				if(d):
 return 1				else:
 return 2			else:
 return 3		else:

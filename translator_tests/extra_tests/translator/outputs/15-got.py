@@ -1,12 +1,12 @@
 def f(x):
-	y = x+15
+	y = x + 15
 
 def g(a, b, c, d):
-	x = a+12
-	x = x*b
-	y = c+a
-	y = d+14
-	return x-y
+	x = a + 12
+	x = x * b
+	y = c + a
+	y = d + 14
+	return x - y
 
 def main():
 	a = 21

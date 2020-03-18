@@ -1,15 +1,16 @@
-x = 0
- = 5y = 0
- = 0z = 0
- = 0def main():
+x = 5
+y = 0
+z = 0
+def main():
 	global z
 	global y
 	global x
-	if(x == 5):
+		if(x == 5):
 		y = 1
 
 	a = 0
-	if(x != 5):
+		if(x != 5):
+		pass
 	else:
 		z = 1
 

@@ -107,6 +107,8 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
 
         } else if (astNode->getType() == "IF_STATEMENT") {
+            context.variableAssignmentState = "IF_STATEMENT";
+
             *output << "if(";
             PyTranslate(output, context, astNode->getCondition());
             *output << "):\n";
@@ -122,6 +124,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
 
         } else if (astNode->getType() == "WHILE_LOOP") {
+            context.variableAssignmentState = "WHILE_LOOP";
             *output << "while ";
             PyTranslate(output, context, astNode->getCondition());  //condition
             *output << ": \n";
@@ -146,49 +149,59 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getConditionThree());
             context.scope--;
 
-        } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
-            PyTranslate(output, context, astNode->getLeft());   //identifier
-            *output << astNode->getId();                        //shift operator
-            PyTranslate(output, context, astNode->getRight());  //expr
+        } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
+            PyTranslate(output, context, astNode->getLeft());
+            PyTranslate(output, context, astNode->getIdentifier());
+            PyTranslate(output, context, astNode->getRight());
 
-        } else if (astNode->getType() == "ARITHMETIC_EXPRESSION") {
+        } else if (astNode->getType() == "UNARY_EXPRESSION") {
+            PyTranslate(output, context, astNode->getIdentifier());
+            PyTranslate(output, context, astNode->getRight());
+
+        } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION" ||
+                   astNode->getType() == "ADDITIVE_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_AND_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_XOR_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_OR_EXPRESSION" ||
+                   astNode->getType() == "BOOLEAN_EXPRESSION" ||
+                   astNode->getType() == "EQUALITY_EXPRESSION" ||
+                   astNode->getType() == "SHIFT_EXPRESSION" ||
+                   astNode->getType() == "RELATIONAL_EXPRESSION") {
             PyTranslate(output, context, astNode->getLeft());   //identifier
-            *output << astNode->getId();                        //arithmetic operator
+            *output << " " << astNode->getId() << " ";          //arithmetic operator
             PyTranslate(output, context, astNode->getRight());  //expr
 
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             PyTranslate(output, context, astNode->getLeft());  //identifier
             *output << astNode->getId();                       //operator
 
-        } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
-            PyTranslate(output, context, astNode->getLeft());  //identifier
-            *output << " " << astNode->getId() << " ";
-            PyTranslate(output, context, astNode->getRight());  //expr
-
-        } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
-            PyTranslate(output, context, astNode->getLeft());  //identifier
-            *output << " " << astNode->getId() << " ";
-            PyTranslate(output, context, astNode->getRight());  //expr
-
         } else if (astNode->getType() == "SCOPE") {
             if (astNode->getNext()) {
                 PyTranslate(output, context, astNode->getNext());
+            } else {
+                indent(output, context);
+                *output << "pass\n";
             }
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
-            std::string prevState = context.variableAssignmentState; 
+            std::string prevState = context.variableAssignmentState;
             context.variableAssignmentState = "VARIABLE_DECLARATION";
             PyTranslate(output, context, astNode->getRight());
-            if (prevState == "GLOBAL") { // If not within a function definition
+            if (prevState == "GLOBAL") {  // If not within a function definition
                 *output << "\n";
             }
 
         } else if (astNode->getType() == "return") {
+            context.variableAssignmentState = "RETURN";
             *output << "return ";
             // Returning a value
             if (astNode->getReturnValue()) {
                 PyTranslate(output, context, astNode->getReturnValue());
             }
+        } else if (astNode->getType() == "break") {
+            *output << "break";
+        } else if (astNode->getType() == "continue") {
+            *output << "continue";
         } else if (astNode->getType() == "void") {   // Do nothing
         } else if (astNode->getType() == "char") {   // Do nothing
         } else if (astNode->getType() == "short") {  // Do nothing
@@ -199,6 +212,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else if (astNode->getType() == "double") {    // Do nothing
         } else if (astNode->getType() == "signed") {    // Do nothing
         } else if (astNode->getType() == "unsigned") {  // Do nothing
+        } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
+                   astNode->getType() == "UNARY_OPERATOR") {
+            *output << " " << astNode->getId() << " ";
         } else if (astNode->getType() == "VARIABLE") {
             // If this variable is not a function declarator or a function argument
             if (!context.allFunctions.count(astNode->getId()) &&
@@ -218,6 +234,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             // }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << astNode->getVal();
+
+        } else if (astNode->getType() == "FLOAT_CONSTANT") {
+            *output << astNode->getFloat();
 
         } else if (astNode->getType() == "STRING_LITERAL") {
             *output << "\"" << astNode->getId() << "\"";

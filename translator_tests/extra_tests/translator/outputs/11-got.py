@@ -2,8 +2,8 @@ def f1():
 	return 10
 
 def f2():
-	x
-	x = x+20
+	x = 0
+	x = x + 20
 
 def main():
 	f1()

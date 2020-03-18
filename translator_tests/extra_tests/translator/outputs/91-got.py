@@ -1,8 +1,8 @@
 def f(a, b):
-	if(a):
+		if(a):
 		return 1
 	else:
-if(b-1):
+		if(b - 1):
 			return 15
 
 

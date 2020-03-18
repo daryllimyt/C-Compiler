@@ -1,14 +1,14 @@
 def f(a, b, c, d):
-	if(a):
+		if(a):
 		a = 1
 
-	if(b):
+		if(b):
 		a = 2
 
-	if(c):
+		if(c):
 		a = 3
 
-	if(d):
+		if(d):
 		a = 4
 
 	return a
