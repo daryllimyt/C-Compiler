@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
                     tempOut.open(destFilename);
                     if (!tempOut.is_open()) {
                         std::cerr << "[WARNING] Output file \"" << destFilename << "\" was not found\n";
-                        std::cerr << "Creating new file \"" << destFilename << "\"\n";
+                        std::cerr << "[INFO] Creating new file \"" << destFilename << "\"\n";
                     } else {
                         tempOut.close();
                     }
