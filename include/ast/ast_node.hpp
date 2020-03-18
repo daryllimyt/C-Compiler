@@ -92,4 +92,17 @@ class Frame : public Node {
     }
 };
 
+class Scope : public Node {
+   protected:
+    NodePtr next_;
+
+   public:
+    Scope(NodePtr next) {
+        type_ = "SCOPE";
+        next_ = next;
+    }
+    NodePtr getNext() const {
+        return next_;
+    }
+};
 #endif

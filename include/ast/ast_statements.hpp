@@ -6,20 +6,6 @@
 
 #include "ast_node.hpp"
 
-class Scope : public Node {
-   protected:
-    NodePtr next_;
-
-   public:
-    Scope(NodePtr next) {
-        type_ = "SCOPE";
-        next_ = next;
-    }
-    NodePtr getNext() const {
-        return next_;
-    }
-};
-
 class AssignmentStatement : public Node {
    protected:
     NodePtr identifier_;
@@ -36,10 +22,10 @@ class AssignmentStatement : public Node {
     NodePtr getIdentifier() const {
         return identifier_;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return current_;
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;
     }
 };
@@ -58,21 +44,21 @@ class JumpStatement : public Node {
     }
 };
 
-class WrappedArguments : public Node {
+class ParenthesisWrapper : public Node {
    protected:
     NodePtr current_;
     NodePtr next_;
 
    public:
-    WrappedArguments(NodePtr current, NodePtr next) {
-        type_ = "WRAPPED_ARGUMENTS";
+    ParenthesisWrapper(NodePtr current, NodePtr next) {
+        type_ = "PARENTHESIS_WRAPPER";
         current_ = current;
         next_ = next;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return current_;
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;
     }
 };
@@ -88,10 +74,10 @@ class WrappedParameters : public Node {
         current_ = current;
         next_ = next;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return current_;
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;
     }
 };
@@ -107,10 +93,10 @@ class MultipleArguments : public Node {
         current_ = current;
         next_ = next;
     }
-    NodePtr getLeft() const {
+    NodePtr getArgs() const {
         return current_;  // Current argument
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;  // Next argument
     }
 };
@@ -126,10 +112,10 @@ class MultipleParameters : public Node {
         current_ = current;
         next_ = next;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return current_;  // Current parameter
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;  // Next parameter
     }
 };
@@ -145,10 +131,10 @@ class MultipleStatements : public Node {
         current_ = current;
         next_ = next;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return current_;  // Current argument
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return next_;  // Next arguments
     }
 };
@@ -156,19 +142,19 @@ class MultipleStatements : public Node {
 class VariableDeclaration : public Node {
    protected:
     NodePtr typeSpecifier_;
-    NodePtr declarator_;
+    NodePtr statement_;
 
    public:
-    VariableDeclaration(NodePtr typeSpecifier, NodePtr declarator) {
+    VariableDeclaration(NodePtr typeSpecifier, NodePtr statement) {
         type_ = "VARIABLE_DECLARATION";
         typeSpecifier_ = typeSpecifier;
-        declarator_ = declarator;
+        statement_ = statement;
     }
-    NodePtr getLeft() const {
-        return typeSpecifier_;  // Current statement
+    NodePtr getTypeSpecifier() const {
+        return typeSpecifier_;  // Type specifier
     }
-    NodePtr getRight() const {
-        return declarator_;  // Next statement
+    NodePtr getStatements() const {
+        return statement_;  // Assignment statement
     }
 };
 
@@ -236,10 +222,10 @@ class IfStatement : public Node {
     NodePtr getCondition() const {
         return expression_;
     }
-    NodePtr getLeft() const {
+    NodePtr getStatements() const {
         return ifStatements_;
     }
-    NodePtr getRight() const {
+    NodePtr getNext() const {
         return elseStatements_;
     }
 };

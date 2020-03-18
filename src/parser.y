@@ -109,8 +109,8 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
-  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_R_PARENTHESIS  { $$ = new WrappedArguments($2, NULL); }
-  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new WrappedArguments(NULL, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
+  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new ParenthesisWrapper(NULL, NULL); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
@@ -145,8 +145,9 @@ SINGLE_STATEMENT//each line inside a scope
   ;
 
 SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {case x: do smth; break; case y: do smth; break; ...}
-  : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                          { $$ = new IfStatement($3, $5, NULL); }
-  | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT T_ELSE SINGLE_STATEMENT  { $$ = new IfStatement($3, $5, $7); }
+  : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                              { $$ = new IfStatement($3, $5, NULL); }
+  | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT SELECTION_STATEMENT   { $$ = new IfStatement($3, $5, $6); } //recursive
+  | T_ELSE SINGLE_STATEMENT                                                                              { $$ = $2; }
   // | T_SWITCH T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS WRAPPED_CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 
@@ -252,7 +253,7 @@ PRIMARY_EXPRESSION //a || 1 || a+1
   | T_FLOAT_CONST                         { $$ = new FloatConstant( $1 ); }
   // | T_CHARACTER_CONSTANT
   | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }
-  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = $2; }
+  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
   | DECLARATOR WRAPPED_PARAMETERS  { $$ = new FunctionCall($1, $2); } 
   ;
 
@@ -343,8 +344,8 @@ CONDITIONAL_EXPRESSION
 /* ============== END Arithmetic and logical expressions ordering */
 
 WRAPPED_PARAMETERS // (int i = 5, double j)
-  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new WrappedParameters($2, NULL); }
-	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new WrappedParameters(NULL, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
+	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParenthesisWrapper(NULL, NULL); }
   ;
 
 MULTIPLE_PARAMETERS //int i = 5, double j

@@ -38,7 +38,7 @@ fi
 
 have_compiler=0
 if [[ ! -f bin/c_compiler ]] ; then
-    >&2 echo "Warning : cannot find compiler at path ${compiler}. Only checking C reference against python reference."
+    >&2 echo "[WARNING] Cannot find compiler at path ${compiler}. Only checking C reference against python reference."
     have_compiler=1
 fi
 
@@ -51,11 +51,9 @@ mkdir -p ${out_dir}
 for i in ${input_dir}/*.c ; do
     base=$(echo $i | sed -E -e "s|${input_dir}/([^.]+)[.]c|\1|g");
     
-    echo ""
-    echo "==========================="
-    echo "          TEST $base       "
-    echo "==========================="
-    echo ""
+    echo "+---------------------------+"
+    echo "|          TEST $base       |"
+    echo "+---------------------------+"
 
     # Compile the reference C version
     gcc $i -o $out_dir/$base
@@ -79,23 +77,23 @@ for i in ${input_dir}/*.c ; do
     fi
     
     if [[ $REF_C_OUT -ne $REF_P_OUT ]] ; then
-        echo "$base, REF_FAIL, Expected ${REF_C_OUT}, got ${REF_P_OUT}"
+        echo "[TEST] $base, REF_FAIL, Expected ${REF_C_OUT}, got ${REF_P_OUT}"
 
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=${base};
 
     elif [[ ${have_compiler} -ne 0 ]] ; then
-        echo "$base, Fail, No C compiler/translator"
+        echo "[TEST] $base, Fail, No C compiler/translator"
 
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=${base};
 
     elif [[ $REF_C_OUT -ne $GOT_P_OUT ]] ; then
-        echo "FAILED! Expected ${REF_C_OUT}, got ${GOT_P_OUT}"
+        echo "[TEST] FAILED! Expected ${REF_C_OUT}, got ${GOT_P_OUT}"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=${base};
     else
-        echo "PASSED!"
+        echo "[TEST] PASSED!"
         PASSED=$(( ${PASSED}+1 ));
     fi
 
@@ -106,9 +104,9 @@ for i in ${input_dir}/*.c ; do
 done
 
 echo "########################################"
-echo "Passed ${PASSED} out of ${CHECKED}".
+echo "[INFO] Passed ${PASSED} out of ${CHECKED}".
 echo ""
-echo "Failed cases:"
+echo "[INFO] Failed cases:"
 for case in "${FAILARRAY[*]}"
 do
    echo $FAILARRAY[${case}]
