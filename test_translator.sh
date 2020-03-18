@@ -51,9 +51,9 @@ mkdir -p ${out_dir}
 for i in ${input_dir}/*.c ; do
     base=$(echo $i | sed -E -e "s|${input_dir}/([^.]+)[.]c|\1|g");
     
-    echo "+---------------------------+"
-    echo "|          TEST $base       |"
-    echo "+---------------------------+"
+    echo "============================"
+    echo "          TEST $base        "
+    echo "============================"
 
     # Compile the reference C version
     gcc $i -o $out_dir/$base
