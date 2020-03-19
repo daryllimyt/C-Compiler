@@ -1,32 +1,333 @@
-// This file generates the MIPS assembly code
-
 #include "../../include/ast.hpp"
 
+template <class T1, class T2>
+void addToHashedClass(T1 &container, const T2 &id);
+void clearRegisters(std::ostream *output);
+void storeRegisters(std::ostream *output);
+void loadRegisters(std::ostream *output);
+void indent(std::ostream *output, ProgramContext &context);
+int getSize(const NodePtr &astNode);
+int getVariableAddressOffset(ProgramContext &context, const std::string &id);
+std::string getReferenceRegister(ProgramContext &context, const std::string &id);
+std::string createLabel(ProgramContext &context);
+
 void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
-    if (astNode == NULL) {
-        throw std::runtime_error("Invalid AST node.\n");
-    } else if (astNode->getType() == "ROOT") {
-        // Calculate number of global variables for actual number, use CountGlobalVars(astNode->getNext())
-        // Push stack from by space needed for global variables
-        // Set end label of astNode
-        // Output some flag for qemu
-        Compile(output, context, astNode->getNext());  // First frame
-    } else if (astNode->getType() == "FRAME") {
-        Compile(output, context, astNode->getLeft());   // Previous frame
-        Compile(output, context, astNode->getRight());  // Current frame
-    } else if (astNode->getType() == "INT") {
-        context.typeSpecifier = "INT";
-    } else if (astNode->getType() == "FUNCTION_DEFINITION") {
-        // If function definition has no statements then it is a function declaration
+    try {
+        if (astNode == NULL) {
+            throw std::runtime_error("Unhandled NULL-type ast node \n");
+        } else if (astNode->getType() == "ROOT") {
+            /* STEPS
+            1. Count global vars
+            2. Init framesizes
+            3. Init all functions vector
+            4. Init all vars vector
+            5. Init end label for program
+            6. Init qemu flag .text
+            */
+            *output << ".text\n";  // qemu flag
+            Compile(output, context, astNode->getNext());
+            *output << context.endLabel << ":\n";  // Add end label
 
-    } else if (astNode->getType() == "FUNCTION_DECLARATION") {
-        context.variableAssignmentState = "FUNCTION_DECLARATION";
-        Compile(output, context, astNode->getLeft());
+        } else if (astNode->getType() == "FRAME") {
+            Compile(output, context, astNode->getLeft());
+            Compile(output, context, astNode->getRight());
 
-    }
+        } else if (astNode->getType() == "FUNCTION_DECLARATION") {
+            Compile(output, context, astNode->getIdentifier());
+        } else if (astNode->getType() == "FUNCTION_DEFINITION") {
+            // Get type specifier
+            std::string returnType = "INT";  // Default return type if no type specifier detected
+            if (astNode->getTypeSpecifier()) {
+                Compile(output, context, astNode->getTypeSpecifier());
+                returnType = context.typeSpecifier;
+            }
 
-    else {
-        throw std::runtime_error("Unknown ast type: \"" + astNode->getType() + "\"\n");
+            // Calculate required number of bytes for function on the stack
+            int bytes = getSize(astNode);
+
+            // Get declarator
+            context.variableAssignmentState = "FUNCTION_DEFINITION";
+            Compile(output, context, astNode->getIdentifier());  // Links to VARIABLE node
+            std::string id = context.identifier;
+            *output << id << ":\n";  // Label for function
+
+            // Get arguments
+            Compile(output, context, astNode->getArgs());
+
+            *output << "addiu $sp, $sp, -" << bytes << EndInstr(true);
+            storeRegisters(output);
+            clearRegisters(output);
+
+            // Get scope
+            Compile(output, context, astNode->getScope());
+
+            clearRegisters(output);
+            loadRegisters(output);
+            // Pop arguments, gp, fp, temp registers from stack
+
+        } else if (astNode->getType() == "FUNCTION_CALL") {
+            Compile(output, context, astNode->getIdentifier());
+            Compile(output, context, astNode->getArgs());
+
+        } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
+            *output << "(";
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());
+            }
+            *output << ")";
+
+        } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
+            if (astNode->getArgs()) {
+                if (!context.functionArgs.count(astNode->getArgs()->getStatements()->getId())) {  // Record function arg in context
+                    context.functionArgs.insert(astNode->getArgs()->getStatements()->getId());
+                }
+                Compile(output, context, astNode->getArgs());
+            }
+            if (astNode->getNext()) {
+                *output << ", ";
+                Compile(output, context, astNode->getNext());
+            }
+        } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
+            if (astNode->getNext()) {
+                *output << ", ";
+                Compile(output, context, astNode->getNext());
+            }
+        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
+            indent(output, context);
+            Compile(output, context, astNode->getStatements());  // Current statement
+            *output << "\n";
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());  // Any further statements
+            }
+
+        } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
+        } else if (astNode->getType() == "IF_STATEMENT") {
+        } else if (astNode->getType() == "WHILE_LOOP") {
+        } else if (astNode->getType() == "FOR_LOOP") {
+        } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
+            Compile(output, context, astNode->getLeft());
+            Compile(output, context, astNode->getIdentifier());
+            Compile(output, context, astNode->getRight());
+
+        } else if (astNode->getType() == "UNARY_EXPRESSION") {
+            Compile(output, context, astNode->getIdentifier());
+            Compile(output, context, astNode->getRight());
+
+        } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION" ||
+                   astNode->getType() == "ADDITIVE_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_AND_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_XOR_EXPRESSION" ||
+                   astNode->getType() == "BITWISE_OR_EXPRESSION" ||
+                   astNode->getType() == "BOOLEAN_EXPRESSION" ||
+                   astNode->getType() == "EQUALITY_EXPRESSION" ||
+                   astNode->getType() == "SHIFT_EXPRESSION" ||
+                   astNode->getType() == "RELATIONAL_EXPRESSION") {
+            Compile(output, context, astNode->getLeft());   //identifier
+            *output << " " << astNode->getId() << " ";      //arithmetic operator
+            Compile(output, context, astNode->getRight());  //expr
+
+        } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
+            Compile(output, context, astNode->getLeft());  //identifier
+            *output << astNode->getId();                   //operator
+
+        } else if (astNode->getType() == "SCOPE") {
+        } else if (astNode->getType() == "VARIABLE_DECLARATION") {
+        } else if (astNode->getType() == "RETURN") {
+        } else if (astNode->getType() == "BREAK") {
+        } else if (astNode->getType() == "CONTINUE") {
+        } else if (astNode->getType() == "VOID") {
+            context.typeSpecifier = "VOID";
+        } else if (astNode->getType() == "CHAR") {
+            context.typeSpecifier = "CHAR";
+        } else if (astNode->getType() == "SHORT") {
+            context.typeSpecifier = "SHORT";
+        } else if (astNode->getType() == "INT") {
+            context.typeSpecifier = "INT";
+        } else if (astNode->getType() == "LONG") {
+            context.typeSpecifier = "LONG";
+        } else if (astNode->getType() == "FLOAT") {
+            context.typeSpecifier = "FLOAT";
+        } else if (astNode->getType() == "DOUBLE") {
+            context.typeSpecifier = "DOUBLE";
+        } else if (astNode->getType() == "SIGNED") {
+            context.typeSpecifier = "SIGNED";
+        } else if (astNode->getType() == "UNSIGNED") {
+            context.typeSpecifier = "UNSIGNED";
+        } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
+                   astNode->getType() == "UNARY_OPERATOR") {
+        } else if (astNode->getType() == "VARIABLE") {
+            context.identifier = astNode->getId();
+            if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
+                if (context.allFunctions.count(context.identifier)) {
+                    throw std::runtime_error("Warning: function already declared");
+                } else {
+                    FunctionContext functionContext(context.scope, context.identifier);
+                    auto mappedValue = std::make_pair(context.identifier, functionContext);
+                    addToHashedClass(context.functionBindings, mappedValue);
+                    addToHashedClass(context.allFunctions, context.identifier);
+                }
+
+            } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
+            } else {
+            }
+
+        } else if (astNode->getType() == "INTEGER_CONSTANT") {
+        } else if (astNode->getType() == "FLOAT_CONSTANT") {
+        } else if (astNode->getType() == "STRING_LITERAL") {
+        } else {
+            throw std::runtime_error("Unknown type of " + astNode->getType() + "\n");
+        }
+    } catch (std::exception &e) {
+        std::cerr << e.what() << "\n";
+        exit(-1);
     }
 }
-// The name of the register to put the result in
+
+/******************** HELPER FUNCTIONS ********************/
+
+template <class T1, class T2>
+void addToHashedClass(T1 &container, const T2 &id) {
+    if (!container.count(id)) {
+        container.insert(id);
+    }
+}
+
+std::string createLabel(ProgramContext &context) {
+    return "label_" + std::to_string(context.labelCount++);
+}
+
+int getSize(const NodePtr &astNode) {
+    // Base cases
+    if (!astNode) {
+        return 0;
+    } else if (astNode->getType() == "VARIABLE" ||
+               astNode->getType() == "INTEGER_CONSTANT" ||
+               astNode->getType() == "FLOAT_CONSTANT") {
+        return 8;  // 8 bytes -> 64bits, keep stack pointer double word aligned
+    } else {
+        int bytes = 0;
+        bytes += getSize(astNode->getLeft());
+        bytes += getSize(astNode->getRight());
+        bytes += getSize(astNode->getNext());
+        bytes += getSize(astNode->getPointer());
+        bytes += getSize(astNode->getIdentifier());
+        bytes += getSize(astNode->getArgs());
+        bytes += getSize(astNode->getCondition());
+        bytes += getSize(astNode->getConditionOne());
+        bytes += getSize(astNode->getConditionTwo());
+        bytes += getSize(astNode->getConditionThree());
+        bytes += getSize(astNode->getReturnValue());
+        bytes += getSize(astNode->getIndex());
+        bytes += getSize(astNode->getTypeSpecifier());
+        bytes += getSize(astNode->getQualifiers());  // May not be used
+        bytes += getSize(astNode->getStatements());
+        bytes += getSize(astNode->getScope());
+        return bytes;
+    }
+}
+
+int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
+    try {
+        // variable not bound
+        if (!context.variableBindings.count(id)) {
+            throw std::runtime_error("Could not find binding associated to variable \"" + id + "\"\n");
+        } else {
+            // get address offset of the last context associated with id.
+            // unordered_map[id] -> vector[last_element] -> VariableContext
+            int addressOffset = context.variableBindings[id].back().addressOffset;
+            // verify address
+            if (addressOffset < 0) {
+                throw std::runtime_error("Invalid address offset associated to variable \"" + id + "\"\n");
+            }
+        }
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+    }
+}
+
+std::string getReferenceRegister(ProgramContext &context, const std::string &id) {
+    try {
+        // variable not bound
+        if (!context.variableBindings.count(id)) {
+            throw std::runtime_error("Could not find binding associated to variable \"" + id + "\"\n");
+        } else {
+            // get address offset of the last context associated with id
+            int scope = context.variableBindings[id].back().scope;
+            // verify address
+            if (scope < 0) {
+                throw std::runtime_error("Invalid address offset associated to variable \"" + id + "\"\n");
+            } else if (scope == 0) {
+                return "($gp)";  // global frame
+            } else {
+                return "($fp)";  // local frame
+            }
+        }
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+    }
+}
+
+void clearRegisters(std::ostream *output) {
+    *output << "addiu $t0, $0, 0\n";
+    *output << "addiu $t1, $0, 0\n";
+    *output << "addiu $t2, $0, 0\n";
+    *output << "addiu $t3, $0, 0\n";
+    *output << "addiu $t4, $0, 0\n";
+    *output << "addiu $t5, $0, 0\n";
+    *output << "addiu $t6, $0, 0\n";
+    *output << "addiu $t7, $0, 0\n";
+    *output << "addiu $t8, $0, 0\n";
+    *output << "addiu $s0, $0, 0\n";
+    *output << "addiu $s1, $0, 0\n";
+    *output << "addiu $s2, $0, 0\n";
+    *output << "addiu $s3, $0, 0\n";
+    *output << "addiu $s4, $0, 0\n";
+    *output << "addiu $s5, $0, 0\n";
+    *output << "addiu $s6, $0, 0\n";
+    *output << "addiu $s7, $0, 0\n";
+    *output << "addiu $v0, $0, 0\n";
+    *output << "addiu $v1, $0, 0\n";
+}
+
+void storeRegisters(std::ostream *output) {
+    // Store address of previous frame on stack at 0($sp)
+    *output << "sw $fp, 0($sp)\n";
+    *output << "add $fp, $sp, $0\n";
+    // Store return address in stack at 4($fp) also stores in $25/$t9
+    *output << "sw $ra, 4($sp)\n";
+    *output << "addiu $t9, $ra, 0\n";
+    // Store saved register values ($s0 - $s7) on stack at 8($fp) - 36($fp)
+    *output << "sw $s0, 8($sp)\n";
+    *output << "sw $s1, 12($sp)\n";
+    *output << "sw $s2, 16($sp)\n";
+    *output << "sw $s3, 20($sp)\n";
+    *output << "sw $s4, 24($sp)\n";
+    *output << "sw $s5, 28($sp)\n";
+    *output << "sw $s6, 32($sp)\n";
+    *output << "sw $s7, 36($sp)\n";
+    // Store value of $gp on stack
+    *output << "sw $gp, 40($gp)\n";
+    *output << ".cprestore 44\n";
+}
+
+void loadRegisters(std::ostream *output) {
+    // Load saved register values into ($s0 - $s7)
+    *output << "lw $s0, 8($fp)\n";
+    *output << "lw $s1, 12($fp)\n";
+    *output << "lw $s2, 16($fp)\n";
+    *output << "lw $s3, 20($fp)\n";
+    *output << "lw $s4, 24($fp)\n";
+    *output << "lw $s5, 28($fp)\n";
+    *output << "lw $s6, 32($fp)\n";
+    *output << "lw $s7, 36($fp)\n";
+    // Load return address into $ra
+    *output << "lw $ra, 4($fp)\n";
+    // Load previous frame into $fp
+    *output << "lw $fp, 0($fp)\n";
+}

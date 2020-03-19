@@ -8,17 +8,23 @@
 #include <unordered_set>
 
 struct VariableContext {
-    // Unique to each variable, create a new VariableContext for each variable
-    int address;       // Address in memory of where the variable is located
+    // Single variable name can have different contexts in each scope
+    int addressOffset;       // Address offset in memory of where the variable is located
     int scope;         // Scope in which the variable was defined
-    std::string type;  // Type specifier
+    std::string typeSpecifier;  // Type specifier
 };
 
 struct FunctionContext {
-    // Unique to each variable, create a new VariableContext for each variable
     int scope;         // Scope in which the variable was defined
-    std::string type;  // Type specifier
+    std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
+    FunctionContext(const int& scope_, const std::string &typeSpecifier_) {
+        scope = scope_;
+        typeSpecifier = typeSpecifier_;
+    }
+    void addArg(const std::string &arg) {
+        args.push_back(arg);
+    }
 };
 
 struct ProgramContext {
@@ -30,14 +36,14 @@ struct ProgramContext {
     int frameIndex = 0;  // Frame index of current function/scope
     std::string frameStart;
     std::string frameEnd;
-    std::vector<int> frameSizes;     // Tracks requred space for each frame (index)
-    std::vector<int> variableCount;  // Tracks # of vars in each frame (index)
+    std::vector<int> frameSizes = {0};     // Tracks requred space for each frame (index)
+    std::vector<int> variableCount = {0};  // Tracks # of vars in each frame (index)
 
     // Variables
     std::string identifier;
     std::string typeSpecifier;
     std::string typeQualifier; // const, volatile
-    std::unordered_map<std::string, VariableContext> variableBindings;
+    std::unordered_map<std::string, std::vector<VariableContext>> variableBindings; // Can be bound to different
     /* Variable assignment states (for variable nodes)
     None: NO_ASSIGN
     Variable declaration: VARIABLE_DECLARATION
@@ -54,6 +60,11 @@ struct ProgramContext {
     std::unordered_set<std::string> functionArgs;
     std::unordered_set<std::string> allFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
+
+    // Labels
+    int labelCount = 0;
+    std::string endLabel = "end";
+
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;

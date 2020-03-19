@@ -195,27 +195,27 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                 *output << "\n";
             }
 
-        } else if (astNode->getType() == "return") {
+        } else if (astNode->getType() == "RETURN") {
             context.variableAssignmentState = "RETURN";
             *output << "return ";
             // Returning a value
             if (astNode->getReturnValue()) {
                 PyTranslate(output, context, astNode->getReturnValue());
             }
-        } else if (astNode->getType() == "break") {
+        } else if (astNode->getType() == "BREAK") {
             *output << "break";
-        } else if (astNode->getType() == "continue") {
+        } else if (astNode->getType() == "CONTINUE") {
             *output << "continue";
-        } else if (astNode->getType() == "void") {   // Do nothing
-        } else if (astNode->getType() == "char") {   // Do nothing
-        } else if (astNode->getType() == "short") {  // Do nothing
-        } else if (astNode->getType() == "int") {    // Do nothing
+        } else if (astNode->getType() == "VOID") {   // Do nothing
+        } else if (astNode->getType() == "CHAR") {   // Do nothing
+        } else if (astNode->getType() == "SHORT") {  // Do nothing
+        } else if (astNode->getType() == "INT") {    // Do nothing
 
-        } else if (astNode->getType() == "long") {      // Do nothing
-        } else if (astNode->getType() == "float") {     // Do nothing
-        } else if (astNode->getType() == "double") {    // Do nothing
-        } else if (astNode->getType() == "signed") {    // Do nothing
-        } else if (astNode->getType() == "unsigned") {  // Do nothing
+        } else if (astNode->getType() == "LONG") {      // Do nothing
+        } else if (astNode->getType() == "FLOAT") {     // Do nothing
+        } else if (astNode->getType() == "DOUBLE") {    // Do nothing
+        } else if (astNode->getType() == "SIGNED") {    // Do nothing
+        } else if (astNode->getType() == "UNSIGNED") {  // Do nothing
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
                    astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "!") {
@@ -247,7 +247,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         }
     } catch (std::exception &e) {
         std::cerr << e.what() << "\n";
-        return -1;
+        exit(-1);
     }
 }
 

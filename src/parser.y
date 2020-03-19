@@ -187,10 +187,10 @@ ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   ; 
 
 JUMP_STATEMENT //return; || return x; || break; || continue;
-  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("return", NULL); }
-  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("return", $2); }
-  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("break", NULL); }
-  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("continue", NULL); }
+  : T_RETURN T_SEMICOLON            { $$ = new JumpStatement("RETURN", NULL); }
+  | T_RETURN EXPRESSION T_SEMICOLON { $$ = new JumpStatement("RETURN", $2); }
+  | T_BREAK T_SEMICOLON             { $$ = new JumpStatement("BREAK", NULL); }
+  | T_CONTINUE T_SEMICOLON          { $$ = new JumpStatement("CONTINUE", NULL); }
   ;
 
 EXPRESSION_STATEMENT
@@ -354,22 +354,22 @@ MULTIPLE_PARAMETERS //int i = 5, double j
   ;
 
 DECLARATOR //a || *a || a[1]
-  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "normal", NULL); delete $1; }
-  | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "pointer", NULL); delete $2; }
-  // | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "array", $3 ); delete $1; }
+  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
+  | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
+  // | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "ARRAY", $3 ); delete $1; }
   ;
 
 
 TYPE_SPECIFIER
-  : T_VOID     { $$ = new TypeSpecifier("void"); }
-	| T_CHAR     { $$ = new TypeSpecifier("char"); }
-	| T_SHORT    { $$ = new TypeSpecifier("short"); }
-	| T_INT      { $$ = new TypeSpecifier("int"); }
-	| T_LONG     { $$ = new TypeSpecifier("long"); }
-	| T_FLOAT    { $$ = new TypeSpecifier("float"); }
-	| T_DOUBLE   { $$ = new TypeSpecifier("double"); }
-	| T_SIGNED   { $$ = new TypeSpecifier("signed int"); }
-	| T_UNSIGNED { $$ = new TypeSpecifier("unsigned int"); }
+  : T_VOID     { $$ = new TypeSpecifier("VOID"); }
+	| T_CHAR     { $$ = new TypeSpecifier("CHAR"); }
+	| T_SHORT    { $$ = new TypeSpecifier("SHORT"); }
+	| T_INT      { $$ = new TypeSpecifier("INT"); }
+	| T_LONG     { $$ = new TypeSpecifier("LONG"); }
+	| T_FLOAT    { $$ = new TypeSpecifier("FLOAT"); }
+	| T_DOUBLE   { $$ = new TypeSpecifier("DOUBLE"); }
+	| T_SIGNED   { $$ = new TypeSpecifier("SIGNED"); }
+	| T_UNSIGNED { $$ = new TypeSpecifier("UNSIGNED"); }
   ;
 
 %%
