@@ -18,10 +18,6 @@ struct FunctionContext {
     int scope;         // Scope in which the variable was defined
     std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
-    FunctionContext(const int& scope_, const std::string &typeSpecifier_) {
-        scope = scope_;
-        typeSpecifier = typeSpecifier_;
-    }
     void addArg(const std::string &arg) {
         args.push_back(arg);
     }

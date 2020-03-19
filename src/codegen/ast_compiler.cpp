@@ -1,11 +1,10 @@
 #include "../../include/ast.hpp"
 
-template <class T1, class T2>
-void addToHashedClass(T1 &container, const T2 &id);
+// template <class T1, class T2>
+// void addToHashedClass(T1 &container, const std::string &key, const T2& value);
 void clearRegisters(std::ostream *output);
 void storeRegisters(std::ostream *output);
 void loadRegisters(std::ostream *output);
-void indent(std::ostream *output, ProgramContext &context);
 int getSize(const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
@@ -42,42 +41,66 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 returnType = context.typeSpecifier;
             }
 
-            // Calculate required number of bytes for function on the stack
+            // Calculate required number of bytes for this function on the stack
             int bytes = getSize(astNode);
+            /* Adjustments
+            -8  -> function's own identifier 
+            +32 -> saved registers $s0 - $s7 (8 x 4 bytes)
+            +4  -> return address in $ra
+            +4  -> previous frame address in $fp
+            +4  -> global address in $gp
+            +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
+            bytes += (36+(8-(bytes%8)));
 
-            // Get declarator
+            // Frame start
+            context.frameIndex++;
+
+            // Get identifier
             context.variableAssignmentState = "FUNCTION_DEFINITION";
             Compile(output, context, astNode->getIdentifier());  // Links to VARIABLE node
             std::string id = context.identifier;
-            *output << id << ":\n";  // Label for function
+            *output << id << ":\n";  // Label for function start
 
             // Get arguments
             Compile(output, context, astNode->getArgs());
 
-            *output << "addiu $sp, $sp, -" << bytes << EndInstr(true);
+            // Push to stack
+            *output << "addiu $sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
             clearRegisters(output);
 
             // Get scope
             Compile(output, context, astNode->getScope());
 
+            // Load from stack
             clearRegisters(output);
             loadRegisters(output);
-            // Pop arguments, gp, fp, temp registers from stack
+            *output << "addiu $sp, $sp, " << bytes << "\n";
+
+            // Frame end
+            context.frameIndex--;
+
+            // If $ra == 0 then jump to end of program 
+            *output << "beq $ra, $0 " << context.endLabel << "\n";
+
+            // Return to previous frame
+            *output << "jr $ra\n";
+            *output << "nop\n";
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-            Compile(output, context, astNode->getIdentifier());
-            Compile(output, context, astNode->getArgs());
+            
+        } else if (astNode->getType() == "SCOPE") {
+            context.scope++;
+            Compile(output, context, astNode->getNext());
+            context.scope--;
 
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
-            *output << "(";
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
             }
-            *output << ")";
 
         } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
             if (astNode->getArgs()) {
@@ -99,9 +122,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
-            indent(output, context);
             Compile(output, context, astNode->getStatements());  // Current statement
-            *output << "\n";
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -136,7 +157,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getLeft());  //identifier
             *output << astNode->getId();                   //operator
 
-        } else if (astNode->getType() == "SCOPE") {
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
         } else if (astNode->getType() == "RETURN") {
         } else if (astNode->getType() == "BREAK") {
@@ -167,10 +187,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (context.allFunctions.count(context.identifier)) {
                     throw std::runtime_error("Warning: function already declared");
                 } else {
-                    FunctionContext functionContext(context.scope, context.identifier);
-                    auto mappedValue = std::make_pair(context.identifier, functionContext);
-                    addToHashedClass(context.functionBindings, mappedValue);
-                    addToHashedClass(context.allFunctions, context.identifier);
+                    FunctionContext functionContext;
+                    functionContext.scope = context.scope;
+                    functionContext.typeSpecifier = context.typeSpecifier;
+                    context.functionBindings[context.identifier] = functionContext;
+                    context.allFunctions.insert(context.identifier);
                 }
 
             } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
@@ -191,12 +212,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
 /******************** HELPER FUNCTIONS ********************/
 
-template <class T1, class T2>
-void addToHashedClass(T1 &container, const T2 &id) {
-    if (!container.count(id)) {
-        container.insert(id);
-    }
-}
+// template <class T1, class T2>
+// void addToHashedClass(T1 &container, const std::string &key, const T2& value) {
+//     if (!container.count(key) && value != NULL) {
+//         container[key] = value;
+//     } else {
+//         container.insesrt(key);
+//     }
+// }
 
 std::string createLabel(ProgramContext &context) {
     return "label_" + std::to_string(context.labelCount++);
@@ -206,12 +229,14 @@ int getSize(const NodePtr &astNode) {
     // Base cases
     if (!astNode) {
         return 0;
-    } else if (astNode->getType() == "VARIABLE" ||
-               astNode->getType() == "INTEGER_CONSTANT" ||
-               astNode->getType() == "FLOAT_CONSTANT") {
-        return 8;  // 8 bytes -> 64bits, keep stack pointer double word aligned
+    }
+
+    int bytes = 0;
+    if (astNode->getType() == "VARIABLE" ||
+        astNode->getType() == "INTEGER_CONSTANT" ||
+        astNode->getType() == "FLOAT_CONSTANT") {
+        bytes += 8;  // 8 bytes -> 64bits, keep stack pointer double word aligned
     } else {
-        int bytes = 0;
         bytes += getSize(astNode->getLeft());
         bytes += getSize(astNode->getRight());
         bytes += getSize(astNode->getNext());
@@ -228,8 +253,8 @@ int getSize(const NodePtr &astNode) {
         bytes += getSize(astNode->getQualifiers());  // May not be used
         bytes += getSize(astNode->getStatements());
         bytes += getSize(astNode->getScope());
-        return bytes;
     }
+    return bytes;
 }
 
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
@@ -239,7 +264,6 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
             throw std::runtime_error("Could not find binding associated to variable \"" + id + "\"\n");
         } else {
             // get address offset of the last context associated with id.
-            // unordered_map[id] -> vector[last_element] -> VariableContext
             int addressOffset = context.variableBindings[id].back().addressOffset;
             // verify address
             if (addressOffset < 0) {
