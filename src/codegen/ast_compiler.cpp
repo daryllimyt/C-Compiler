@@ -193,6 +193,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
         } else if (astNode->getType() == "IF_STATEMENT") {
+            std::string start = createLabel(context, "if_");
+            std::string next = createLabel(context, "if_next_");
+            std::string end = createLabel(context, "if_end_");
+
+
+            *output << start << "\n";
+            Compile(output, context, astNode->getCondition()); //result in t0
+            *output <<"\t\t" <<"beq t0, 0, " << next << "\n";
+            *output <<"\t\t" <<"nop" << "\n";
+
+            Compile(output, context, astNode->getStatements());
+            *output <<"\t\t" <<"b " << end << "\n";
+            *output <<"\t\t" <<"nop"<< "\n";
+            *output << next << "\n";
+            if(astNode->getNext()){
+              Compile(output, context, astNode->getNext()); //else: regular statement - always execute when last cond not met
+            }
+
+            *output << end << "\n";
+
         } else if (astNode->getType() == "WHILE_LOOP") {
         } else if (astNode->getType() == "FOR_LOOP") {
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
