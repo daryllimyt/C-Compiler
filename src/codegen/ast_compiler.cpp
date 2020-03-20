@@ -6,6 +6,7 @@ void clearRegisters(std::ostream *output);
 void storeRegisters(std::ostream *output);
 void loadRegisters(std::ostream *output);
 void updateVariableBindings(ProgramContext &context);
+void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
 int getSize(const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
@@ -204,21 +205,116 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getRight());
 
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            if (astNode->getId() == "*") {
+                *output << "\t\t"
+                        << "mult\t$t0, $t1\n";
+                *output << "\t\t"
+                        << "mflo\t$t0\n";
+            } else if (astNode->getId() == "/") {
+                *output << "\t\t"
+                        << "div\t$t1, $t0\n";
+                *output << "\t\t"
+                        << "mflo\t$t0\n";
+            } else if (astNode->getId() == "%") {
+                *output << "\t\t"
+                        << "div\t$t1, $t0\n";
+                *output << "\t\t"
+                        << "mfhi\t$t0\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+
         } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            Compile(output, context, astNode->getLeft());  //identifier
-        
-            Compile(output, context, astNode->getRight());  //expr
+            evaluateExpression(output, context, astNode);
+            if (astNode->getId() == "+") {
+                *output << "\t\t"
+                        << "add\t$t0, $t0, $t1\n";
+            } else if (astNode->getId() == "-") {
+                *output << "\t\t"
+                        << "sub\t$t0, $t0, $t1\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            *output << "\t\t"
+                    << "and\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            *output << "\t\t"
+                    << "xor\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            *output << "\t\t"
+                    << "or\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            if (astNode->getId() == "and") {
+                *output << "\t\t"
+                        << "and\t$t0, $t0, $t1\n";
+
+            } else if (astNode->getId() == "or") {
+                *output << "\t\t"
+                        << "or\t$t0, $t0, $t1\n";
+
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+            *output << "\t\t"
+                    << "andi\t$t0, $t0, 1\n";  // Extract bits
+
         } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            *output << "\t\t"
+                    << "slt\t$v0, $t0, $t1\n"
+                    << "\t\t"
+                    << "slt\t$v1, $t1, $t0\n"
+                    << "\t\t"
+                    << "xor\t$t0, $v0, $v1\n"
+                    << "\t\t"
+                    << "subi\t$t0, $t0, 1\n"
+                    << "\t\t"
+                    << "andi\t$t0, $t0, 1\n"
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            if (astNode->getId() == "<<") {
+                *output << "\t\t"
+                        << "sll\t$t0, $t0, $t1\n";
+            } else if (astNode->getId() == ">>") {
+                *output << "\t\t"
+                        << "sra\t$t0, $t0, $t1\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+
         } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
-            Compile(output, context, astNode->getLeft());   //identifier
-            *output << " " << astNode->getId() << " ";      //arithmetic operator
-            Compile(output, context, astNode->getRight());  //expr
+            context.variableAssignmentState = "NO_ASSIGN";
+            evaluateExpression(output, context, astNode);
+            if (astNode->getId() == "<") {
+                *output << "\t\t"
+                        << "slt\t$t0, $t0, $t1\n";
+            } else if (astNode->getId() == ">") {
+                *output << "\t\t"
+                        << "slt\t$t0, $t1, $t0\n";
+            } else if (astNode->getId() == "<=") {
+                *output << "\t\t"
+                        << "slt\t$t0, $t0, $t1\n";
+            } else if (astNode->getId() == ">=") {
+                *output << "\t\t"
+                        << "slt\t$t0, $t1, $t0\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
 
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             Compile(output, context, astNode->getLeft());  //identifier
@@ -287,7 +383,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
                 } else {  // shadowing
                 }
-            } else if (context.variableAssignmentState == "NO_ASSIGN") { // Reading from existing variable
+            } else if (context.variableAssignmentState == "NO_ASSIGN") {  // Reading from existing variable
 
             } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Writing to existing variable
                 if (context.variableBindings.count(id) == 0) {                       // Varibale does not exist
@@ -419,6 +515,19 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
     }
+}
+
+void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
+    *output << "\t\t"
+            << "addiu\t$sp, $sp, -4\n";
+    Compile(output, context, astNode->getLeft());  //identifier
+    *output << "\t\t"
+            << "sw\t$t0, " << -4 * context.tempReg++ << "($fp)\n";
+    Compile(output, context, astNode->getRight());  //expr
+    *output << "\t\t"
+            << "lw\t$t1, " << -4 * context.tempReg-- << "($fp)\n";
+    *output << "\t\t"
+            << "addiu\t$sp, $sp, -4\n";
 }
 
 void clearRegisters(std::ostream *output) {

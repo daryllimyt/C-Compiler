@@ -93,6 +93,9 @@ class ProgramContext {
     std::unordered_set<std::string> allFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
 
+    // Registers
+    int tempReg = 1;
+
     // Labels
     int labelCount = 0;
     std::string endLabel = "end";
