@@ -14,11 +14,11 @@ main:
 		sw $s5, 28($sp)
 		sw $s6, 32($sp)
 		sw $s7, 36($sp)
-		sw $gp, 40($gp)
+		sw $gp, 40($sp)
 		.cprestore 44
 		li $t0, 10
 		add $v0, $t0, $0
-		b main_end_0
+		j main_end_0
 
 main_end_0:
 		lw $s0, 8($fp)

@@ -94,39 +94,7 @@ int main(int argc, char *argv[]) {
         }
         // PRINTING PROGRAM CONTEXT
         if (Util::DEBUG) {
-            std::cerr << "[INFO] *** Program Context ***\n";
-
-
-            /* Contextual information for MIPS code generator */
-            // Frame
-            std::cerr << "[INFO] * frameIndex: " << context.frameIndex << "\n";
-            std::cerr << "[INFO] * frameStart: " << context.frameStart << "\n";
-            std::cerr << "[INFO] * frameEnd: " << context.frameEnd << "\n";
-            std::cerr << "[INFO] * frameSizes: ";
-            printIterable(context.frameSizes);  // Tracks requred space for each frame (index)
-            std::cerr << "[INFO] * variableCount: ";
-            printIterable(context.variableCount);  // Tracks # of vars in each frame (index)
-
-            // // Variables
-            std::cerr << "[INFO] * identifier: " << context.identifier << "\n";
-            std::cerr << "[INFO] * typeSpecifier: " << context.typeSpecifier << "\n";
-            std::cerr << "[INFO] * typeQualifier: " << context.typeQualifier << "\n";  // const, volatile
-            std::cerr << "[INFO] * variableAssignmentState: " << context.variableAssignmentState << "\n";
-
-            // Functions
-            std::cerr << "[INFO] * functionArgs: ";
-            printIterable(context.functionArgs);
-            std::cerr << "[INFO] * allFunctions: ";
-            printIterable(context.allFunctions);
-
-            // Contextual information for Python translator
-            std::cerr << "[INFO] * globalVariables: ";
-            printIterable(context.globalVariables);
-            std::cerr << "[INFO] * allVariables: ";
-            printIterable(context.allVariables);
-
-            // Others
-            std::cerr << "[INFO] * identifier:\t" << context.scope << "\n";
+            std::cerr << context;
         }
 
         return 0;  // Successful execution

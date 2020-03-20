@@ -5,6 +5,7 @@
 void clearRegisters(std::ostream *output);
 void storeRegisters(std::ostream *output);
 void loadRegisters(std::ostream *output);
+void updateVariableBindings(ProgramContext &context);
 int getSize(const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
@@ -23,6 +24,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             5. Init end label for program
             6. Init qemu flag .text
             */
+            FrameContext globalFrame;
+            globalFrame.bytes = 0;
+            globalFrame.variableCount = 0;
+            context.frameTracker = {globalFrame};
             *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
             *output << "\n"
@@ -53,6 +58,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             // Frame start
             context.frameIndex++;
+
+            // Tracking frame sizes
+            if (context.frameIndex >= context.frameTracker.size()) {
+                FrameContext newFrame;
+                newFrame.bytes = bytes;
+                newFrame.variableCount = 0;
+                context.frameTracker.push_back(newFrame);
+            } else {
+                context.frameTracker[context.frameIndex].bytes = bytes;
+                context.frameTracker[context.frameIndex].variableCount = 0;
+            }
 
             // Get identifier
             context.variableAssignmentState = "FUNCTION_DEFINITION";
@@ -132,12 +148,36 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
-            Compile(output, context, astNode->getStatements());  // Current statement
+            Compile(output, context, astNode->getStatements());    // Current statement
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
 
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
+            if (!astNode->getStatements() && !astNode->getNext())  // Single declarator
+            {
+                if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
+                    Compile(output, context, astNode->getIdentifier());
+                    *output << "\t\t"
+                            << "nop\n";
+                } else {
+                    throw std::runtime_error("Variable needs type specifier");
+                }
+
+            } else {
+                context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
+                if (astNode->getStatements()) {
+                    Compile(output, context, astNode->getStatements());
+                    int offset = getVariableAddressOffset(context, context.identifier);
+                    std::string ref = getReferenceRegister(context, context.identifier);
+                    *output << "\t\t"
+                            << "sw $t0, " << offset << ref << "\n";
+                }
+                if (astNode->getNext()) {
+                    Compile(output, context, astNode->getNext());
+                }
+            }
+
         } else if (astNode->getType() == "IF_STATEMENT") {
         } else if (astNode->getType() == "WHILE_LOOP") {
         } else if (astNode->getType() == "FOR_LOOP") {
@@ -168,20 +208,27 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << astNode->getId();                   //operator
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
+            Compile(output, context, astNode->getTypeSpecifier());
+            context.variableAssignmentState = "VARIABLE_DECLARATION";
+            Compile(output, context, astNode->getStatements());
+
         } else if (astNode->getType() == "RETURN") {
             if (astNode->getReturnValue()) {
                 // if (astNode->getReturnValue()->getType() != context.returnType) {
                 //     throw std::runtime_error(context.returnType+" type function requires "+context.returnType+" return value, but got "+astNode->getReturnValue()->getType()+"\n");
                 // }
                 Compile(output, context, astNode->getReturnValue());
-                *output << "\t\t" << "add $v0, $t0, $0\n";
+                *output << "\t\t"
+                        << "add $v0, $t0, $0\n";
 
             } else if (context.returnType == "VOID") {
-                *output << "\t\t" << "nop\n";
+                *output << "\t\t"
+                        << "nop\n";
             } else {
                 throw std::runtime_error("Int type function requires integer return value");
             }
-            *output << "\t\t" << "b " << context.functionEnds.back() << "\n";
+            *output << "\t\t"
+                    << "j " << context.functionEnds.back() << "\n";
             context.functionEnds.pop_back();
         } else if (astNode->getType() == "BREAK") {
         } else if (astNode->getType() == "CONTINUE") {
@@ -206,16 +253,34 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
                    astNode->getType() == "UNARY_OPERATOR") {
         } else if (astNode->getType() == "VARIABLE") {
-            context.identifier = astNode->getId();
-            if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
-                if (context.allFunctions.count(context.identifier)) {
+            std::string id = context.identifier = astNode->getId();
+            if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
+                if (context.variableBindings.count(id) == 0) {  // Non-shadowing
+                    int index = context.frameIndex;
+                    if (context.scope == 0) {
+                        index = 0;  // For global variables
+                    }
+                    context.frameTracker[index].variableCount++;  // Increment number of variables in frame
+                    // context.frameTracker[index].addVariable(id);  // Track variable id
+                    VariableContext newVariable;
+                    newVariable.addressOffset = context.frameTracker[index].bytes - 8 * context.frameTracker[index].variableCount;  // Get next available memory address after vars
+                    newVariable.scope = context.scope;
+                    newVariable.typeSpecifier = context.typeSpecifier;
+                    context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
+
+                } else {  // shadowing
+                }
+
+            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {
+            } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
+                if (context.allFunctions.count(id)) {
                     throw std::runtime_error("Warning: function already declared");
                 } else {
-                    FunctionContext functionContext;
-                    functionContext.scope = context.scope;
-                    functionContext.typeSpecifier = context.typeSpecifier;
-                    context.functionBindings[context.identifier] = functionContext;
-                    context.allFunctions.insert(context.identifier);
+                    FunctionContext newFunction;
+                    newFunction.scope = context.scope;
+                    newFunction.typeSpecifier = context.typeSpecifier;
+                    context.functionBindings[id] = newFunction;
+                    context.allFunctions.insert(id);
                 }
 
             } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
@@ -223,7 +288,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
-            *output << "\t\t" << "li $t0, " << astNode->getVal() << "\n";
+            *output << "\t\t"
+                    << "li $t0, " << astNode->getVal() << "\n";
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
@@ -280,6 +346,17 @@ int getSize(const NodePtr &astNode) {
         bytes += getSize(astNode->getScope());
     }
     return bytes;
+}
+
+void updateVariableBindings(ProgramContext &context) {
+    for (auto &keyValuePair : context.variableBindings) {
+        if (keyValuePair.second.back().scope > context.scope) {
+            context.variableBindings[keyValuePair.first].pop_back(); // Remove scope bindings
+        }
+        if (keyValuePair.second.size() == 0) {
+            context.variableBindings.erase(keyValuePair.first); // Remove empty bindings
+        }
+    }
 }
 
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
@@ -393,7 +470,7 @@ void storeRegisters(std::ostream *output) {
             << "sw $s7, 36($sp)\n";
     // Store value of $gp on stack
     *output << "\t\t"
-            << "sw $gp, 40($gp)\n";
+            << "sw $gp, 40($sp)\n";
     *output << "\t\t"
             << ".cprestore 44\n";
 }

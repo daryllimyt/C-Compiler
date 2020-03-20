@@ -81,7 +81,7 @@ FRAME
   | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
   // | MULTIPLE_STATEMENTS FRAME               { $$ = new Frame($1, $2); }
-  | VARIABLE_DECLARATION T_SEMICOLON { $$ = $1; }
+  | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
   | VARIABLE_DECLARATION T_SEMICOLON FRAME { $$ = new Frame($1, $3); }
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
@@ -235,8 +235,8 @@ VARIABLE_DECLARATION //int a = 2, b = 5
 
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
-  // : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
-  : DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
+  : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
+  | DECLARATOR T_EQ_ASSIGN ASSIGNMENT_STATEMENT                                     { $$ = new AssignmentStatement($1, NULL, $3); }
   | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
   | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, NULL, NULL); }
   ;
