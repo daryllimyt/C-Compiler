@@ -283,7 +283,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\t\t"
                     << "subi\t$t0, $t0, 1\n"
                     << "\t\t"
-                    << "andi\t$t0, $t0, 1\n"
+                    << "andi\t$t0, $t0, 1\n";
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -332,16 +332,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string ref = getReferenceRegister(context, context.identifier);
             *output << "\t\t"
                     << "lw\t$t0, " << offset << ref << "\n";
-            if (astNode->getID() == "++") {
-                  *output << "\t\t"
-                          << "addi\t$t0, $t0, 1" << "\n";
-            } else if (astNode->getID() == "--" ){
-                  *output << "\t\t"
-                          << "subi\t$t0, $t0, 1" << "\n";
+            if (astNode->getId() == "++") {
+                *output << "\t\t"
+                        << "addi\t$t0, $t0, 1"
+                        << "\n";
+            } else if (astNode->getId() == "--") {
+                *output << "\t\t"
+                        << "subi\t$t0, $t0, 1"
+                        << "\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-      
+            *output << "\t\t"
+                    << "sw\t$t0, " << offset << ref << "\n";
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             Compile(output, context, astNode->getTypeSpecifier());
@@ -548,9 +551,9 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
             << "sw\t$t0, " << -4 * context.tempReg++ << "($fp)\n";
     Compile(output, context, astNode->getRight());  //expr
     *output << "\t\t"
-            << "lw\t$t1, " << -4 * context.tempReg-- << "($fp)\n";
+            << "lw\t$t1, " << -4 * (--context.tempReg)-- << "($fp)\n";
     *output << "\t\t"
-            << "addiu\t$sp, $sp, -4\n";
+            << "addiu\t$sp, $sp, 4\n";
 }
 
 void clearRegisters(std::ostream *output) {
