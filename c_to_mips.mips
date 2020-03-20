@@ -45,19 +45,21 @@ else {
 
 if_10:
     (expression1)
-    beq $t0, $0, else_if_1_10
+    beq $t0, $0, if_next_10
     nop
     (multistatements1)
     b if_end_10
     nop
+if_next_10:
 
-else_if_1_10:
+if_11:
     (expression2)
     beq $t0, $0, else_10
     nop
     (multistatements1)
     b if_end_10
     nop
+if_next_11:
 
 else_10:
     (expression3)
@@ -71,16 +73,16 @@ for(init; assi; cond){
 }
 
 (init) # int i = 0;
-while_10:
+for_10:
   (cond) -> $t0 #i < 2 = true/false
-  beq $t0, $0, while_end_10 #branch if cond = false
+  beq $t0, $0, for_end_10 #branch if cond = false
   nop
   (statement)
   (assi) #i++;
-  b while_10
+  b for_10
   nop
 
-while_end_10:
+for_end_10:
 
 while(cond){
   statement
