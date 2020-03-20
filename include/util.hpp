@@ -5,12 +5,11 @@
 
 class Util {
    public:
-    static const bool DEBUG = false;
+    static const bool DEBUG = true;
 
     static void abort() {
         if (DEBUG) {
-            std::cerr << std::endl
-                      << "Aborting." << std::endl;
+            std::cerr << "[INFO] Terminating program\n";
         }
         std::exit(-1);
     }

@@ -81,7 +81,7 @@ FRAME
   | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
   // | MULTIPLE_STATEMENTS FRAME               { $$ = new Frame($1, $2); }
-  | VARIABLE_DECLARATION T_SEMICOLON { $$ = $1; }
+  | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
   | VARIABLE_DECLARATION T_SEMICOLON FRAME { $$ = new Frame($1, $3); }
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
