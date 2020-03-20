@@ -31,7 +31,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
             *output << "\n"
-                    << context.endLabel << ":\n";  // Add end label
+                    << context.endLabel << ":\n";  // add\tend label
 
         } else if (astNode->getType() == "FRAME") {
             Compile(output, context, astNode->getLeft());
@@ -82,7 +82,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             // Push to stack
             *output << "\t\t"
-                    << "addiu $sp, $sp, " << -bytes << "\n";
+                    << "addiu\t$sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
             // clearRegisters(output);
             std::string functionEnd = createLabel(context, id + "_end_");
@@ -98,18 +98,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // clearRegisters(output);
             loadRegisters(output);
             *output << "\t\t"
-                    << "addiu $sp, $sp, " << bytes << "\n";
+                    << "addiu\t$sp, $sp, " << bytes << "\n";
 
             // Frame end
             context.frameIndex--;
 
             // If $ra == 0 then jump to end of program
             *output << "\t\t"
-                    << "beq $ra, $0, " << context.endLabel << "\n";
+                    << "beq\t$ra, $0, " << context.endLabel << "\n";
 
             // Return to previous frame
             *output << "\t\t"
-                    << "jr $ra\n";
+                    << "jr\t$ra\n";
             *output << "\t\t"
                     << "nop\n";
 
@@ -155,7 +155,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
-                if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
+                if (context.variableAssignmentState == "VARIABLE_DECLARATION" || context.variableAssignmentState == "NO_ASSIGN") {
                     Compile(output, context, astNode->getIdentifier());
                     // *output << "\t\t"
                     //         << "nop\n";
@@ -166,11 +166,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int offsetRight = getVariableAddressOffset(context, context.identifier);
                     std::string refRight = getReferenceRegister(context, context.identifier);
                     *output << "\t\t"
-                            << "lw $t0, " << offsetRight << refRight << "\n";
+                            << "lw\t$t0, " << offsetRight << refRight << "\n";
                     *output << "\t\t"
                             << "nop\n";
                     *output << "\t\t"
-                            << "sw $t0, " << offsetLeft << refLeft << "\n";
+                            << "sw\t$t0, " << offsetLeft << refLeft << "\n";
 
                 } else {
                     throw std::runtime_error("[ERROR] Detected standalone variable declarator. Variable needs type specifier");
@@ -184,7 +184,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int offset = getVariableAddressOffset(context, context.identifier);
                     std::string ref = getReferenceRegister(context, context.identifier);
                     *output << "\t\t"
-                            << "sw $t0, " << offset << ref << "\n";
+                            << "sw\t$t0, " << offset << ref << "\n";
                 }
                 if (astNode->getNext()) {
                     Compile(output, context, astNode->getNext());
@@ -203,15 +203,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());
             Compile(output, context, astNode->getRight());
 
-        } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION" ||
-                   astNode->getType() == "ADDITIVE_EXPRESSION" ||
-                   astNode->getType() == "BITWISE_AND_EXPRESSION" ||
-                   astNode->getType() == "BITWISE_XOR_EXPRESSION" ||
-                   astNode->getType() == "BITWISE_OR_EXPRESSION" ||
-                   astNode->getType() == "BOOLEAN_EXPRESSION" ||
-                   astNode->getType() == "EQUALITY_EXPRESSION" ||
-                   astNode->getType() == "SHIFT_EXPRESSION" ||
-                   astNode->getType() == "RELATIONAL_EXPRESSION") {
+        } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
+        } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
+            context.variableAssignmentState = "NO_ASSIGN";
+            Compile(output, context, astNode->getLeft());  //identifier
+        
+            Compile(output, context, astNode->getRight());  //expr
+        } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
+        } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
+        } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
+        } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
+        } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
+        } else if (astNode->getType() == "SHIFT_EXPRESSION") {
+        } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
             Compile(output, context, astNode->getLeft());   //identifier
             *output << " " << astNode->getId() << " ";      //arithmetic operator
             Compile(output, context, astNode->getRight());  //expr
@@ -232,16 +236,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // }
                 Compile(output, context, astNode->getReturnValue());
                 *output << "\t\t"
-                        << "add $v0, $t0, $0\n";
+                        << "add\t$v0, $t0, $0\n";
 
             } else if (context.returnType == "VOID") {
                 *output << "\t\t"
                         << "nop\n";
             } else {
-                throw std::runtime_error("[ERROR] Int type function requires integer return value");
+                throw std::runtime_error("[ERROR] Int type function requires return type INT, got \"" + context.returnType + "\" instead");
             }
             *output << "\t\t"
-                    << "j " << context.functionEnds.back() << "\n";
+                    << "j\t" << context.functionEnds.back() << "\n";
             context.functionEnds.pop_back();
         } else if (astNode->getType() == "BREAK") {
         } else if (astNode->getType() == "CONTINUE") {
@@ -267,8 +271,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                    astNode->getType() == "UNARY_OPERATOR") {
         } else if (astNode->getType() == "VARIABLE") {
             std::string id = context.identifier = astNode->getId();
-            if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
-                if (context.variableBindings.count(id) == 0) {  // Non-shadowing
+            if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
+                if (context.variableBindings.count(id) == 0) {                // Non-shadowing
                     int index = context.frameIndex;
                     if (context.scope == 0) {
                         index = 0;  // For global variables
@@ -283,9 +287,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
                 } else {  // shadowing
                 }
+            } else if (context.variableAssignmentState == "NO_ASSIGN") { // Reading from existing variable
 
-            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {
-                if (context.variableBindings.count(id) == 0) {  // Varibale does not exist
+            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Writing to existing variable
+                if (context.variableBindings.count(id) == 0) {                       // Varibale does not exist
                     throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
                 }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
@@ -305,15 +310,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << "\t\t"
-                    << "li $t0, " << astNode->getVal() << "\n";
+                    << "li\t$t0, " << astNode->getVal() << "\n";
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
-            throw std::runtime_error("[ERROR] Unknown type of " + astNode->getType() + "\n");
+            throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
         }
     } catch (std::exception &e) {
         std::cerr << e.what() << "\n";
-        exit(-1);
+        Util::abort();
     }
 }
 
@@ -418,76 +423,76 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 
 void clearRegisters(std::ostream *output) {
     *output << "\t\t"
-            << "addiu $t0, $0, 0\n";
+            << "addiu\t$t0, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t1, $0, 0\n";
+            << "addiu\t$t1, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t2, $0, 0\n";
+            << "addiu\t$t2, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t3, $0, 0\n";
+            << "addiu\t$t3, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t4, $0, 0\n";
+            << "addiu\t$t4, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t5, $0, 0\n";
+            << "addiu\t$t5, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t6, $0, 0\n";
+            << "addiu\t$t6, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t7, $0, 0\n";
+            << "addiu\t$t7, $0, 0\n";
     *output << "\t\t"
-            << "addiu $t8, $0, 0\n";
+            << "addiu\t$t8, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s0, $0, 0\n";
+            << "addiu\t$s0, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s1, $0, 0\n";
+            << "addiu\t$s1, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s2, $0, 0\n";
+            << "addiu\t$s2, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s3, $0, 0\n";
+            << "addiu\t$s3, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s4, $0, 0\n";
+            << "addiu\t$s4, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s5, $0, 0\n";
+            << "addiu\t$s5, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s6, $0, 0\n";
+            << "addiu\t$s6, $0, 0\n";
     *output << "\t\t"
-            << "addiu $s7, $0, 0\n";
+            << "addiu\t$s7, $0, 0\n";
     *output << "\t\t"
-            << "addiu $v0, $0, 0\n";
+            << "addiu\t$v0, $0, 0\n";
     *output << "\t\t"
-            << "addiu $v1, $0, 0\n";
+            << "addiu\t$v1, $0, 0\n";
 }
 
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
     *output << "\t\t"
-            << "sw $fp, 0($sp)\n";
+            << "sw\t$fp, 0($sp)\n";
     *output << "\t\t"
-            << "add $fp, $sp, $0\n";
+            << "add\t$fp, $sp, $0\n";
     // Store return address in stack at 4($fp) also stores in $25/$t9
     *output << "\t\t"
-            << "sw $ra, 4($sp)\n";
+            << "sw\t$ra, 4($sp)\n";
     *output << "\t\t"
-            << "addiu $t9, $ra, 0\n";
+            << "addiu\t$t9, $ra, 0\n";
     // Store saved register values ($s0 - $s7) on stack at 8($fp) - 36($fp)
     *output << "\t\t"
-            << "sw $s0, 8($sp)\n";
+            << "sw\t$s0, 8($sp)\n";
     *output << "\t\t"
-            << "sw $s1, 12($sp)\n";
+            << "sw\t$s1, 12($sp)\n";
     *output << "\t\t"
-            << "sw $s2, 16($sp)\n";
+            << "sw\t$s2, 16($sp)\n";
     *output << "\t\t"
-            << "sw $s3, 20($sp)\n";
+            << "sw\t$s3, 20($sp)\n";
     *output << "\t\t"
-            << "sw $s4, 24($sp)\n";
+            << "sw\t$s4, 24($sp)\n";
     *output << "\t\t"
-            << "sw $s5, 28($sp)\n";
+            << "sw\t$s5, 28($sp)\n";
     *output << "\t\t"
-            << "sw $s6, 32($sp)\n";
+            << "sw\t$s6, 32($sp)\n";
     *output << "\t\t"
-            << "sw $s7, 36($sp)\n";
+            << "sw\t$s7, 36($sp)\n";
     // Store value of $gp on stack
     *output << "\t\t"
-            << "sw $gp, 40($sp)\n";
+            << "sw\t$gp, 40($sp)\n";
     *output << "\t\t"
             << ".cprestore 44\n";
 }
@@ -495,25 +500,25 @@ void storeRegisters(std::ostream *output) {
 void loadRegisters(std::ostream *output) {
     // Load saved register values into ($s0 - $s7)
     *output << "\t\t"
-            << "lw $s0, 8($fp)\n";
+            << "lw\t$s0, 8($fp)\n";
     *output << "\t\t"
-            << "lw $s1, 12($fp)\n";
+            << "lw\t$s1, 12($fp)\n";
     *output << "\t\t"
-            << "lw $s2, 16($fp)\n";
+            << "lw\t$s2, 16($fp)\n";
     *output << "\t\t"
-            << "lw $s3, 20($fp)\n";
+            << "lw\t$s3, 20($fp)\n";
     *output << "\t\t"
-            << "lw $s4, 24($fp)\n";
+            << "lw\t$s4, 24($fp)\n";
     *output << "\t\t"
-            << "lw $s5, 28($fp)\n";
+            << "lw\t$s5, 28($fp)\n";
     *output << "\t\t"
-            << "lw $s6, 32($fp)\n";
+            << "lw\t$s6, 32($fp)\n";
     *output << "\t\t"
-            << "lw $s7, 36($fp)\n";
+            << "lw\t$s7, 36($fp)\n";
     // Load return address into $ra
     *output << "\t\t"
-            << "lw $ra, 4($fp)\n";
+            << "lw\t$ra, 4($fp)\n";
     // Load previous frame into $fp
     *output << "\t\t"
-            << "lw $fp, 0($fp)\n";
+            << "lw\t$fp, 0($fp)\n";
 }

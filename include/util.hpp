@@ -9,8 +9,7 @@ class Util {
 
     static void abort() {
         if (DEBUG) {
-            std::cerr << std::endl
-                      << "Aborting." << std::endl;
+            std::cerr << "[INFO] Terminating program\n";
         }
         std::exit(-1);
     }

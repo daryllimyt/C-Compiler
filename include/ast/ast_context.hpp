@@ -55,9 +55,21 @@ struct FrameContext {
     }
 };
 
-struct ProgramContext {
-    // General
+/* Variable assignment states (for variable nodes)
+    None: NO_ASSIGN
+    Variable declaration: VARIABLE_DECLARATION
+    Variable assignment to expression: VARIABLE_ASSIGNMENT
+    Function declaration: FUNCTION_DECLARATION
+    Function definition: FUNCTION_DEFINITION
+    Array declaration (sized): ARRAY_DECLARATION_SIZED
+    Array declaration (unsized): ARRAY_DECLARATION_UNSIZED
+    GLOBAL
+    */
 
+class ProgramContext {
+    // General
+    public:
+    ProgramContext(){}
     /* Contextual information for MIPS code generator */
     // Scope
     int scope = 0;
@@ -72,18 +84,8 @@ struct ProgramContext {
     std::string identifier;
     std::string typeSpecifier;
     std::string typeQualifier;                                                       // const, volatile
-    std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
-    /* Variable assignment states (for variable nodes)
-    None: NO_ASSIGN
-    Variable declaration: VARIABLE_DECLARATION
-    Variable assignment to expression: VARIABLE_ASSIGNMENT
-    Function declaration: FUNCTION_DECLARATION
-    Function definition: FUNCTION_DEFINITION
-    Array declaration (sized): ARRAY_DECLARATION_SIZED
-    Array declaration (unsized): ARRAY_DECLARATION_UNSIZED
-    GLOBAL
-    */
     std::string variableAssignmentState = "NO_ASSIGN";
+    std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
 
     // Functions
     std::string returnType = "VOID";
@@ -151,5 +153,6 @@ struct ProgramContext {
         out << "\n";
         return out;
     }
+    
 };
 #endif
