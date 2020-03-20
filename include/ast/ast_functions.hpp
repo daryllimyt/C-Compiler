@@ -21,7 +21,7 @@ class FunctionDefinition : public Node {
         args_ = args;
         scope_ = scope;
     }
-    NodePtr getSpecifier() const {
+    NodePtr getTypeSpecifier() const {
         return typeSpecifier_;  // type specifier
     }
     NodePtr getIdentifier() const {

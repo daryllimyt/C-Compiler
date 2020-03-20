@@ -1,7 +1,7 @@
 .text
 
 main:
-		addiu $sp, $sp, -52
+		addiu $sp, $sp, -60
 		sw $fp, 0($sp)
 		add $fp, $sp, $0
 		sw $ra, 4($sp)
@@ -16,7 +16,9 @@ main:
 		sw $s7, 36($sp)
 		sw $gp, 40($gp)
 		.cprestore 44
-		nop
+		li $t0, 10
+		add $v0, $t0, $0
+		b main_end_0
 
 main_end_0:
 		lw $s0, 8($fp)
@@ -29,7 +31,7 @@ main_end_0:
 		lw $s7, 36($fp)
 		lw $ra, 4($fp)
 		lw $fp, 0($fp)
-		addiu $sp, $sp, 52
+		addiu $sp, $sp, 60
 		beq $ra, $0, end
 		jr $ra
 		nop

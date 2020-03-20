@@ -36,12 +36,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());
         } else if (astNode->getType() == "FUNCTION_DEFINITION") {
             // Get type specifier
-            std::cerr << "[DEBUG] 1\n";
             if (astNode->getTypeSpecifier()) {
                 Compile(output, context, astNode->getTypeSpecifier());
                 context.returnType = context.typeSpecifier;
             }
-            std::cerr << "[DEBUG] 1\n";
             // Calculate required number of bytes for this function on the stack
             int bytes = getSize(astNode);
             /* Adjustments
@@ -71,7 +69,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "addiu $sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
             // clearRegisters(output);
-            std::string functionEnd = createLabel(context, id+"_end_");
+            std::string functionEnd = createLabel(context, id + "_end_");
             context.functionEnds.push_back(functionEnd);
 
             // Get scope
@@ -134,9 +132,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
-            std::cerr << "[DEBUG] A\n";
             Compile(output, context, astNode->getStatements());  // Current statement
-            std::cerr << "[DEBUG] B\n";
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -173,13 +169,20 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
         } else if (astNode->getType() == "RETURN") {
-            if (context.returnType == "INT") {
-                /* code */
-            } else {
-                /* code */
-            }
+            if (astNode->getReturnValue()) {
+                // if (astNode->getReturnValue()->getType() != context.returnType) {
+                //     throw std::runtime_error(context.returnType+" type function requires "+context.returnType+" return value, but got "+astNode->getReturnValue()->getType()+"\n");
+                // }
+                Compile(output, context, astNode->getReturnValue());
+                *output << "\t\t" << "add $v0, $t0, $0\n";
 
-            *output << "move $v0, $0\n";
+            } else if (context.returnType == "VOID") {
+                *output << "\t\t" << "nop\n";
+            } else {
+                throw std::runtime_error("Int type function requires integer return value");
+            }
+            *output << "\t\t" << "b " << context.functionEnds.back() << "\n";
+            context.functionEnds.pop_back();
         } else if (astNode->getType() == "BREAK") {
         } else if (astNode->getType() == "CONTINUE") {
         } else if (astNode->getType() == "VOID") {
@@ -220,6 +223,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
+            *output << "\t\t" << "li $t0, " << astNode->getVal() << "\n";
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
