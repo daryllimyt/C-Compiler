@@ -109,8 +109,8 @@ FUNCTION_DEFINITION //int foo(int i, string j) { do this; }
 
 
 WRAPPED_ARGUMENTS //(int i, string j) or ()
-  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
-  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new ParenthesisWrapper(NULL, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_ARGUMENTS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
+  | T_L_PARENTHESIS T_R_PARENTHESIS                     { $$ = new ParenthesisWrapper(NULL); }
   ;
 
 MULTIPLE_ARGUMENTS //int i, string j, or more...
@@ -253,7 +253,7 @@ PRIMARY_EXPRESSION //a || 1 || a+1
   | T_FLOAT_CONST                         { $$ = new FloatConstant( $1 ); }
   // | T_CHARACTER_CONSTANT
   | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }
-  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
+  | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
   | DECLARATOR WRAPPED_PARAMETERS  { $$ = new FunctionCall($1, $2); } 
   ;
 
@@ -344,8 +344,8 @@ CONDITIONAL_EXPRESSION
 /* ============== END Arithmetic and logical expressions ordering */
 
 WRAPPED_PARAMETERS // (int i = 5, double j)
-  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2, NULL); }
-	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParenthesisWrapper(NULL, NULL); }
+  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
+	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParenthesisWrapper(NULL); }
   ;
 
 MULTIPLE_PARAMETERS //int i = 5, double j

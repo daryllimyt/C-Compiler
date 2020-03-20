@@ -53,6 +53,7 @@ struct ProgramContext {
     std::string variableAssignmentState = "NO_ASSIGN";
 
     // Functions
+    std::string returnType = "VOID";
     std::unordered_set<std::string> functionArgs;
     std::unordered_set<std::string> allFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
@@ -60,6 +61,7 @@ struct ProgramContext {
     // Labels
     int labelCount = 0;
     std::string endLabel = "end";
+    std::vector<std::string> functionEnds;
 
 
     // Contextual information for Python translator

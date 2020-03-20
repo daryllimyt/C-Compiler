@@ -47,19 +47,14 @@ class JumpStatement : public Node {
 class ParenthesisWrapper : public Node {
    protected:
     NodePtr current_;
-    NodePtr next_;
 
    public:
-    ParenthesisWrapper(NodePtr current, NodePtr next) {
+    ParenthesisWrapper(NodePtr current) {
         type_ = "PARENTHESIS_WRAPPER";
         current_ = current;
-        next_ = next;
     }
     NodePtr getStatements() const {
         return current_;
-    }
-    NodePtr getNext() const {
-        return next_;
     }
 };
 

@@ -64,12 +64,14 @@ int main(int argc, char *argv[]) {
                 outfile.open(destFilename);
 
                 // Checking for extension .py
-                if (destFilename[destFilename.size() - 2] != 'p' && destFilename[destFilename.size() - 1] != 'y') {
+                if (DRIVER == "translator" && destFilename[destFilename.size() - 2] != 'p' && destFilename[destFilename.size() - 1] != 'y') {
                     std::cerr << "[WARNING] Output file is not of type .py\n";
+                } else if (DRIVER == "compiler" && destFilename[destFilename.size() - 1] != 's') {
+                    std::cerr << "[WARNING] Output file is not of type .s\n";
                 }
             } else {
                 std::cerr << "[WARNING] Unidentified flag \"" << SECOND_FLAG << "\"\n";
-                std::cerr << "Redirecting " << DRIVER << " output to command line...\n";
+                std::cerr << "[INFO] Redirecting " << DRIVER << " output to command line...\n";
                 output = &std::cout;
             }
         }

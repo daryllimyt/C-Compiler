@@ -8,7 +8,7 @@ void loadRegisters(std::ostream *output);
 int getSize(const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
-std::string createLabel(ProgramContext &context);
+std::string createLabel(ProgramContext &context, const std::string &name);
 
 void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     try {
@@ -25,7 +25,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             */
             *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
-            *output << context.endLabel << ":\n";  // Add end label
+            *output << "\n"
+                    << context.endLabel << ":\n";  // Add end label
 
         } else if (astNode->getType() == "FRAME") {
             Compile(output, context, astNode->getLeft());
@@ -35,12 +36,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());
         } else if (astNode->getType() == "FUNCTION_DEFINITION") {
             // Get type specifier
-            std::string returnType = "INT";  // Default return type if no type specifier detected
+            std::cerr << "[DEBUG] 1\n";
             if (astNode->getTypeSpecifier()) {
                 Compile(output, context, astNode->getTypeSpecifier());
-                returnType = context.typeSpecifier;
+                context.returnType = context.typeSpecifier;
             }
-
+            std::cerr << "[DEBUG] 1\n";
             // Calculate required number of bytes for this function on the stack
             int bytes = getSize(astNode);
             /* Adjustments
@@ -50,7 +51,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
-            bytes += (36+(8-(bytes%8)));
+            bytes += (36 + (8 - (bytes % 8)));
 
             // Frame start
             context.frameIndex++;
@@ -59,49 +60,60 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_DEFINITION";
             Compile(output, context, astNode->getIdentifier());  // Links to VARIABLE node
             std::string id = context.identifier;
-            *output << id << ":\n";  // Label for function start
+            *output << "\n"
+                    << id << ":\n";  // Label for function start
 
             // Get arguments
             Compile(output, context, astNode->getArgs());
 
             // Push to stack
-            *output << "addiu $sp, $sp, " << -bytes << "\n";
+            *output << "\t\t"
+                    << "addiu $sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
-            clearRegisters(output);
+            // clearRegisters(output);
+            std::string functionEnd = createLabel(context, id+"_end_");
+            context.functionEnds.push_back(functionEnd);
 
             // Get scope
             Compile(output, context, astNode->getScope());
 
+            *output << "\n"
+                    << functionEnd << ":\n";
+
             // Load from stack
-            clearRegisters(output);
+            // clearRegisters(output);
             loadRegisters(output);
-            *output << "addiu $sp, $sp, " << bytes << "\n";
+            *output << "\t\t"
+                    << "addiu $sp, $sp, " << bytes << "\n";
 
             // Frame end
             context.frameIndex--;
 
-            // If $ra == 0 then jump to end of program 
-            *output << "beq $ra, $0 " << context.endLabel << "\n";
+            // If $ra == 0 then jump to end of program
+            *output << "\t\t"
+                    << "beq $ra, $0, " << context.endLabel << "\n";
 
             // Return to previous frame
-            *output << "jr $ra\n";
-            *output << "nop\n";
+            *output << "\t\t"
+                    << "jr $ra\n";
+            *output << "\t\t"
+                    << "nop\n";
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-            
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
-            Compile(output, context, astNode->getNext());
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());
+            } else {
+                *output << "\t\t"
+                        << "nop\n";
+            }
             context.scope--;
 
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
             }
-            if (astNode->getNext()) {
-                Compile(output, context, astNode->getNext());
-            }
-
         } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
             if (astNode->getArgs()) {
                 if (!context.functionArgs.count(astNode->getArgs()->getStatements()->getId())) {  // Record function arg in context
@@ -122,7 +134,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
+            std::cerr << "[DEBUG] A\n";
             Compile(output, context, astNode->getStatements());  // Current statement
+            std::cerr << "[DEBUG] B\n";
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -159,6 +173,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
         } else if (astNode->getType() == "RETURN") {
+            if (context.returnType == "INT") {
+                /* code */
+            } else {
+                /* code */
+            }
+
+            *output << "move $v0, $0\n";
         } else if (astNode->getType() == "BREAK") {
         } else if (astNode->getType() == "CONTINUE") {
         } else if (astNode->getType() == "VOID") {
@@ -221,8 +242,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 //     }
 // }
 
-std::string createLabel(ProgramContext &context) {
-    return "label_" + std::to_string(context.labelCount++);
+std::string createLabel(ProgramContext &context, const std::string &name) {
+    return name + std::to_string(context.labelCount++);
 }
 
 int getSize(const NodePtr &astNode) {
@@ -298,60 +319,103 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void clearRegisters(std::ostream *output) {
-    *output << "addiu $t0, $0, 0\n";
-    *output << "addiu $t1, $0, 0\n";
-    *output << "addiu $t2, $0, 0\n";
-    *output << "addiu $t3, $0, 0\n";
-    *output << "addiu $t4, $0, 0\n";
-    *output << "addiu $t5, $0, 0\n";
-    *output << "addiu $t6, $0, 0\n";
-    *output << "addiu $t7, $0, 0\n";
-    *output << "addiu $t8, $0, 0\n";
-    *output << "addiu $s0, $0, 0\n";
-    *output << "addiu $s1, $0, 0\n";
-    *output << "addiu $s2, $0, 0\n";
-    *output << "addiu $s3, $0, 0\n";
-    *output << "addiu $s4, $0, 0\n";
-    *output << "addiu $s5, $0, 0\n";
-    *output << "addiu $s6, $0, 0\n";
-    *output << "addiu $s7, $0, 0\n";
-    *output << "addiu $v0, $0, 0\n";
-    *output << "addiu $v1, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t0, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t1, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t2, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t3, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t4, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t5, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t6, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t7, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $t8, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s0, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s1, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s2, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s3, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s4, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s5, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s6, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $s7, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $v0, $0, 0\n";
+    *output << "\t\t"
+            << "addiu $v1, $0, 0\n";
 }
 
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
-    *output << "sw $fp, 0($sp)\n";
-    *output << "add $fp, $sp, $0\n";
+    *output << "\t\t"
+            << "sw $fp, 0($sp)\n";
+    *output << "\t\t"
+            << "add $fp, $sp, $0\n";
     // Store return address in stack at 4($fp) also stores in $25/$t9
-    *output << "sw $ra, 4($sp)\n";
-    *output << "addiu $t9, $ra, 0\n";
+    *output << "\t\t"
+            << "sw $ra, 4($sp)\n";
+    *output << "\t\t"
+            << "addiu $t9, $ra, 0\n";
     // Store saved register values ($s0 - $s7) on stack at 8($fp) - 36($fp)
-    *output << "sw $s0, 8($sp)\n";
-    *output << "sw $s1, 12($sp)\n";
-    *output << "sw $s2, 16($sp)\n";
-    *output << "sw $s3, 20($sp)\n";
-    *output << "sw $s4, 24($sp)\n";
-    *output << "sw $s5, 28($sp)\n";
-    *output << "sw $s6, 32($sp)\n";
-    *output << "sw $s7, 36($sp)\n";
+    *output << "\t\t"
+            << "sw $s0, 8($sp)\n";
+    *output << "\t\t"
+            << "sw $s1, 12($sp)\n";
+    *output << "\t\t"
+            << "sw $s2, 16($sp)\n";
+    *output << "\t\t"
+            << "sw $s3, 20($sp)\n";
+    *output << "\t\t"
+            << "sw $s4, 24($sp)\n";
+    *output << "\t\t"
+            << "sw $s5, 28($sp)\n";
+    *output << "\t\t"
+            << "sw $s6, 32($sp)\n";
+    *output << "\t\t"
+            << "sw $s7, 36($sp)\n";
     // Store value of $gp on stack
-    *output << "sw $gp, 40($gp)\n";
-    *output << ".cprestore 44\n";
+    *output << "\t\t"
+            << "sw $gp, 40($gp)\n";
+    *output << "\t\t"
+            << ".cprestore 44\n";
 }
 
 void loadRegisters(std::ostream *output) {
     // Load saved register values into ($s0 - $s7)
-    *output << "lw $s0, 8($fp)\n";
-    *output << "lw $s1, 12($fp)\n";
-    *output << "lw $s2, 16($fp)\n";
-    *output << "lw $s3, 20($fp)\n";
-    *output << "lw $s4, 24($fp)\n";
-    *output << "lw $s5, 28($fp)\n";
-    *output << "lw $s6, 32($fp)\n";
-    *output << "lw $s7, 36($fp)\n";
+    *output << "\t\t"
+            << "lw $s0, 8($fp)\n";
+    *output << "\t\t"
+            << "lw $s1, 12($fp)\n";
+    *output << "\t\t"
+            << "lw $s2, 16($fp)\n";
+    *output << "\t\t"
+            << "lw $s3, 20($fp)\n";
+    *output << "\t\t"
+            << "lw $s4, 24($fp)\n";
+    *output << "\t\t"
+            << "lw $s5, 28($fp)\n";
+    *output << "\t\t"
+            << "lw $s6, 32($fp)\n";
+    *output << "\t\t"
+            << "lw $s7, 36($fp)\n";
     // Load return address into $ra
-    *output << "lw $ra, 4($fp)\n";
+    *output << "\t\t"
+            << "lw $ra, 4($fp)\n";
     // Load previous frame into $fp
-    *output << "lw $fp, 0($fp)\n";
+    *output << "\t\t"
+            << "lw $fp, 0($fp)\n";
 }
