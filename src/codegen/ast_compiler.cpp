@@ -14,7 +14,7 @@ std::string createLabel(ProgramContext &context, const std::string &name);
 void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     try {
         if (astNode == NULL) {
-            throw std::runtime_error("Unhandled NULL-type ast node \n");
+            throw std::runtime_error("[ERROR] Unhandled NULL-type ast node \n");
         } else if (astNode->getType() == "ROOT") {
             /* STEPS
             1. Count global vars
@@ -154,17 +154,30 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
-            if (!astNode->getStatements() && !astNode->getNext())  // Single declarator
-            {
+            if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
                 if (context.variableAssignmentState == "VARIABLE_DECLARATION") {
                     Compile(output, context, astNode->getIdentifier());
+                    // *output << "\t\t"
+                    //         << "nop\n";
+                } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {
+                    int offsetLeft = getVariableAddressOffset(context, context.identifier);
+                    std::string refLeft = getReferenceRegister(context, context.identifier);
+                    Compile(output, context, astNode->getIdentifier());
+                    int offsetRight = getVariableAddressOffset(context, context.identifier);
+                    std::string refRight = getReferenceRegister(context, context.identifier);
+                    *output << "\t\t"
+                            << "lw $t0, " << offsetRight << refRight << "\n";
                     *output << "\t\t"
                             << "nop\n";
+                    *output << "\t\t"
+                            << "sw $t0, " << offsetLeft << refLeft << "\n";
+
                 } else {
-                    throw std::runtime_error("Variable needs type specifier");
+                    throw std::runtime_error("[ERROR] Detected standalone variable declarator. Variable needs type specifier");
                 }
 
             } else {
+                Compile(output, context, astNode->getIdentifier());
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {
                     Compile(output, context, astNode->getStatements());
@@ -225,7 +238,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\t"
                         << "nop\n";
             } else {
-                throw std::runtime_error("Int type function requires integer return value");
+                throw std::runtime_error("[ERROR] Int type function requires integer return value");
             }
             *output << "\t\t"
                     << "j " << context.functionEnds.back() << "\n";
@@ -272,9 +285,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 }
 
             } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {
+                if (context.variableBindings.count(id) == 0) {  // Varibale does not exist
+                    throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
+                }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
                 if (context.allFunctions.count(id)) {
-                    throw std::runtime_error("Warning: function already declared");
+                    throw std::runtime_error("[ERROR] Function already declared");
                 } else {
                     FunctionContext newFunction;
                     newFunction.scope = context.scope;
@@ -293,7 +309,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
-            throw std::runtime_error("Unknown type of " + astNode->getType() + "\n");
+            throw std::runtime_error("[ERROR] Unknown type of " + astNode->getType() + "\n");
         }
     } catch (std::exception &e) {
         std::cerr << e.what() << "\n";
@@ -351,10 +367,10 @@ int getSize(const NodePtr &astNode) {
 void updateVariableBindings(ProgramContext &context) {
     for (auto &keyValuePair : context.variableBindings) {
         if (keyValuePair.second.back().scope > context.scope) {
-            context.variableBindings[keyValuePair.first].pop_back(); // Remove scope bindings
+            context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
         }
         if (keyValuePair.second.size() == 0) {
-            context.variableBindings.erase(keyValuePair.first); // Remove empty bindings
+            context.variableBindings.erase(keyValuePair.first);  // Remove empty bindings
         }
     }
 }
@@ -363,14 +379,15 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
     try {
         // variable not bound
         if (!context.variableBindings.count(id)) {
-            throw std::runtime_error("Could not find binding associated to variable \"" + id + "\"\n");
+            throw std::runtime_error("[ERROR] Could not find binding associated to variable \"" + id + "\"\n");
         } else {
             // get address offset of the last context associated with id.
             int addressOffset = context.variableBindings[id].back().addressOffset;
             // verify address
             if (addressOffset < 0) {
-                throw std::runtime_error("Invalid address offset associated to variable \"" + id + "\"\n");
+                throw std::runtime_error("[ERROR] Invalid address offset associated to variable \"" + id + "\"\n");
             }
+            return addressOffset;
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
@@ -381,13 +398,13 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
     try {
         // variable not bound
         if (!context.variableBindings.count(id)) {
-            throw std::runtime_error("Could not find binding associated to variable \"" + id + "\"\n");
+            throw std::runtime_error("[ERROR] Could not find binding associated to variable \"" + id + "\"\n");
         } else {
             // get address offset of the last context associated with id
             int scope = context.variableBindings[id].back().scope;
             // verify address
             if (scope < 0) {
-                throw std::runtime_error("Invalid address offset associated to variable \"" + id + "\"\n");
+                throw std::runtime_error("[ERROR] Invalid address offset associated to variable \"" + id + "\"\n");
             } else if (scope == 0) {
                 return "($gp)";  // global frame
             } else {
