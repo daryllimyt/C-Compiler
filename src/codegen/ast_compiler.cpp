@@ -49,7 +49,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // Calculate required number of bytes for this function on the stack
             int bytes = getSize(astNode);
             /* Adjustments
-            -8  -> function's own identifier 
+            -8  -> function's own identifier
             +32 -> saved registers $s0 - $s7 (8 x 4 bytes)
             +4  -> return address in $ra
             +4  -> previous frame address in $fp
@@ -257,7 +257,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
-            if (astNode->getId() == "and") {
+            if (astNode->getId() == "&& ") {
                 *output << "\t\t"
                         << "and\t$t0, $t0, $t1\n";
 
@@ -308,17 +308,40 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "slt\t$t0, $t1, $t0\n";
             } else if (astNode->getId() == "<=") {
                 *output << "\t\t"
-                        << "slt\t$t0, $t0, $t1\n";
+                        << "slt\t$t0, $t1, $t0\n"
+                        << "\t\t"
+                        << "subi\t$t0, $t0, 1\n"
+                        << "\t\t"
+                        << "andi\t$t0, $t0, 1\n";
+
             } else if (astNode->getId() == ">=") {
                 *output << "\t\t"
-                        << "slt\t$t0, $t1, $t0\n";
+                        << "slt\t$t0, $t0, $t1\n"
+                        << "\t\t"
+                        << "subi\t$t0, $t0, 1\n"
+                        << "\t\t"
+                        << "andi\t$t0, $t0, 1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
 
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             Compile(output, context, astNode->getLeft());  //identifier
-            *output << astNode->getId();                   //operator
+
+            int offset = getVariableAddressOffset(context, context.identifier);
+            std::string ref = getReferenceRegister(context, context.identifier);
+            *output << "\t\t"
+                    << "lw\t$t0, " << offset << ref << "\n";
+            if (astNode->getID() == "++") {
+                  *output << "\t\t"
+                          << "addi\t$t0, $t0, 1" << "\n";
+            } else if (astNode->getID() == "--" ){
+                  *output << "\t\t"
+                          << "subi\t$t0, $t0, 1" << "\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+      
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             Compile(output, context, astNode->getTypeSpecifier());
