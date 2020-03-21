@@ -90,6 +90,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "addiu\t$sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
             Compile(output, context, astNode->getArgs());
+            // For loop
 
             // Get scope
             Compile(output, context, astNode->getScope());
@@ -461,7 +462,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
                 std::string functionId = context.identifier;
-                // context.functionBindings[functionId];
+                Compile(output, context, astNode->getTypeSpecifier());
+
+                context.variableAssignmentState = "VARIABLE_DECLARATION";
+                context.scope++;
+                Compile(output, context, astNode->getStatements());
+                context.functionBindings[functionId].addArg(context.identifier); // Adding new variable id to function args
+                context.scope--;
+                context.variableAssignmentState = "FUNCTION_ARGUMENTS"; // Future arguments have same context
+
             } else {
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
