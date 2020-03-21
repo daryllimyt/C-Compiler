@@ -29,7 +29,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             globalFrame.bytes = 0;
             globalFrame.variableCount = 0;
             context.frameTracker = {globalFrame};
-            *output << ".text\n";  // qemu flag
+            // *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << context.endLabel << ":\n";  // add\tend label
@@ -76,8 +76,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());  // Links to VARIABLE node
             std::string id = context.identifier;
             *output << "\n"
-                    << id << ":\n";  // Label for function start
-
+                    << id << ":\n";
+            if(context.scope == 0){
+                *output << ".globl " << id << "\n";
+            }
             // Get arguments
             Compile(output, context, astNode->getArgs());
 
@@ -718,8 +720,8 @@ void storeRegisters(std::ostream *output) {
     // Store value of $gp on stack
     *output << "\t\t"
             << "sw\t$gp, 40($sp)\n";
-    *output << "\t\t"
-            << ".cprestore 44\n";
+    // *output << "\t\t"
+    //         << ".cprestore 44\n";
 }
 
 void loadRegisters(std::ostream *output) {
