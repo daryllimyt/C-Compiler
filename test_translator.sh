@@ -14,7 +14,7 @@ else
     # The code \x0D is the ASCII code of carriage-return,
     # so it the regex should delete any CRs at the end of
     # a line (or anywhere in a line)
-    DOS2UNIX="sed -e s/\x0D//g -"
+    DOS2UNIX="cat"
     # Tested for combinations of:
     # - Ubuntu
     # - Cygwin
@@ -72,7 +72,7 @@ for i in ${input_dir}/*.c ; do
         $compiler --translate $i -o ${out_dir}/$base-got.py
 
         # Run the DUT python version
-        python ${out_dir}/$base-got.py
+        python3 ${out_dir}/$base-got.py # CHANGED THIS LINE FROM "python" to "python3" to work in Vagrant VM
         GOT_P_OUT=$?
     fi
     

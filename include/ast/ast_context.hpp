@@ -61,8 +61,7 @@ struct FrameContext {
     Variable assignment to expression: VARIABLE_ASSIGNMENT
     Function declaration: FUNCTION_DECLARATION
     Function definition: FUNCTION_DEFINITION
-    Array declaration (sized): ARRAY_DECLARATION_SIZED
-    Array declaration (unsized): ARRAY_DECLARATION_UNSIZED
+    Array declaration (sized): ARRAY_DECLARATION
     GLOBAL
     */
 

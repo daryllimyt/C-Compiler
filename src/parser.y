@@ -119,12 +119,18 @@ MULTIPLE_ARGUMENTS //int i, string j, or more...
   ;
 
 SINGLE_ARGUMENT //int i
-  : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration(NULL, $2); }
-  // : TYPE_SPECIFIER DECLARATOR         { AssignmentStatement* node =
-  //                                       new AssignmentStatement($2, NULL, NULL); // Declarator only
-  //                                       $$ = new VariableDeclaration($1, node);
-  //                                       delete $1; } //check later
+  : TYPE_SPECIFIER DECLARATOR   { $$ = new VariableDeclaration($1, $2); }
 
+WRAPPED_PARAMETERS // (int i = 5, double j)
+: T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
+| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParenthesisWrapper(NULL); }
+;
+
+MULTIPLE_PARAMETERS //int i = 5, double j
+  : MATH_OR_BITWISE_EXPRESSION T_COMMA MULTIPLE_PARAMETERS { $$ = new MultipleParameters($1, $3); }
+  | MATH_OR_BITWISE_EXPRESSION                        { $$ = new MultipleParameters($1, NULL); }
+  ;
+ 
 SCOPE //scope {do smth;}
   : T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
   | T_L_BRACE T_R_BRACE                { $$ = new Scope(NULL); }
@@ -230,9 +236,26 @@ ASSIGNMENT_OPERATOR
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
  */
 
+DECLARATOR //a || *a || a[1]
+  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
+  | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
+  | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "ARRAY", $3 ); delete $1; }
+  ;
+
 VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
 
+TYPE_SPECIFIER
+  : T_VOID     { $$ = new TypeSpecifier("VOID"); }
+	| T_CHAR     { $$ = new TypeSpecifier("CHAR"); }
+	| T_SHORT    { $$ = new TypeSpecifier("SHORT"); }
+	| T_INT      { $$ = new TypeSpecifier("INT"); }
+	| T_LONG     { $$ = new TypeSpecifier("LONG"); }
+	| T_FLOAT    { $$ = new TypeSpecifier("FLOAT"); }
+	| T_DOUBLE   { $$ = new TypeSpecifier("DOUBLE"); }
+	| T_SIGNED   { $$ = new TypeSpecifier("SIGNED"); }
+	| T_UNSIGNED { $$ = new TypeSpecifier("UNSIGNED"); }
+  ;
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
   : DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION T_COMMA ASSIGNMENT_STATEMENT  { $$ = new AssignmentStatement($1, $3, $5); }
@@ -240,8 +263,6 @@ ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
   | DECLARATOR T_EQ_ASSIGN MATH_OR_BITWISE_EXPRESSION                               { $$ = new AssignmentStatement($1, $3, NULL); }
   | DECLARATOR                                                                      { $$ = new AssignmentStatement($1, NULL, NULL); }
   ;
-
-
 
 MATH_OR_BITWISE_EXPRESSION
   : CONDITIONAL_EXPRESSION  { $$ = $1; }
@@ -344,34 +365,7 @@ CONDITIONAL_EXPRESSION
 
 /* ============== END Arithmetic and logical expressions ordering */
 
-WRAPPED_PARAMETERS // (int i = 5, double j)
-  : T_L_PARENTHESIS MULTIPLE_PARAMETERS T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
-	| T_L_PARENTHESIS T_R_PARENTHESIS                 { $$ = new ParenthesisWrapper(NULL); }
-  ;
 
-MULTIPLE_PARAMETERS //int i = 5, double j
-  : MATH_OR_BITWISE_EXPRESSION T_COMMA MULTIPLE_PARAMETERS { $$ = new MultipleParameters($1, $3); }
-  | MATH_OR_BITWISE_EXPRESSION                        { $$ = new MultipleParameters($1, NULL); }
-  ;
-
-DECLARATOR //a || *a || a[1]
-  : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
-  | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
-  // | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "ARRAY", $3 ); delete $1; }
-  ;
-
-
-TYPE_SPECIFIER
-  : T_VOID     { $$ = new TypeSpecifier("VOID"); }
-	| T_CHAR     { $$ = new TypeSpecifier("CHAR"); }
-	| T_SHORT    { $$ = new TypeSpecifier("SHORT"); }
-	| T_INT      { $$ = new TypeSpecifier("INT"); }
-	| T_LONG     { $$ = new TypeSpecifier("LONG"); }
-	| T_FLOAT    { $$ = new TypeSpecifier("FLOAT"); }
-	| T_DOUBLE   { $$ = new TypeSpecifier("DOUBLE"); }
-	| T_SIGNED   { $$ = new TypeSpecifier("SIGNED"); }
-	| T_UNSIGNED { $$ = new TypeSpecifier("UNSIGNED"); }
-  ;
 
 %%
 

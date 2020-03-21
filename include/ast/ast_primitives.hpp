@@ -25,9 +25,9 @@ class Variable : public Node {
     const std::string getId() const {
         return id_;
     }
-    // const std::string get() const {
-    //     return id_;
-    // }
+    const std::string getVarType() const {
+        return varType_;
+    }
     NodePtr getStatements() const {
         return expression_;
     }
