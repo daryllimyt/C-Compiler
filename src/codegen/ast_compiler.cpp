@@ -199,30 +199,106 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
 
             *output << start << "\n";
-            Compile(output, context, astNode->getCondition()); //result in t0
-            *output <<"\t\t" <<"beq t0, 0, " << next << "\n";
+            Compile(output, context, astNode->getCondition());
+            *output <<"\t\t" <<"beq\tt0, 0, " << next << "\n";
             *output <<"\t\t" <<"nop" << "\n";
 
             Compile(output, context, astNode->getStatements());
-            *output <<"\t\t" <<"b " << end << "\n";
+            *output <<"\t\t" <<"b\t" << end << "\n";
             *output <<"\t\t" <<"nop"<< "\n";
             *output << next << "\n";
             if(astNode->getNext()){
-              Compile(output, context, astNode->getNext()); //else: regular statement - always execute when last cond not met
+              Compile(output, context, astNode->getNext());
             }
 
             *output << end << "\n";
 
         } else if (astNode->getType() == "WHILE_LOOP") {
+            std::string start = createLabel(context, "while_");
+            std::string end = createLabel(context, "while_end_");
+
+
+            *output << start << "\n";
+            Compile(output, context, astNode->getCondition()); //result in t0
+            *output <<"\t\t" <<"beq\tt0, 0, " << end << "\n";
+            *output <<"\t\t" <<"nop" << "\n";
+
+            Compile(output, context, astNode->getStatements());
+            *output <<"\t\t" <<"b\t" << end << "\n";
+            *output <<"\t\t" <<"nop"<< "\n";
+
+            Compile(output, context, astNode->getNext());
+
+            *output << end << "\n";
+
         } else if (astNode->getType() == "FOR_LOOP") {
+            std::string start = createLabel(context, "for_");
+            std::string end = createLabel(context, "for_end_");
+
+            Compile(output, context, astNode->getConditionOne());
+            *output << start << "\n";
+            Compile(output, context, astNode->getConditionTwo()); //result in t0
+            *output <<"\t\t" <<"beq\tt0, 0, " << end << "\n";
+            *output <<"\t\t" <<"nop" << "\n";
+            Compile(output, context, astNode->getNext());
+
+            Compile(output, context, astNode->getConditionThree());
+            *output <<"\t\t" <<"b\t" << start << "\n";
+            *output <<"\t\t" <<"nop"<< "\n";
+
+            *output << end << "\n";
+
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             Compile(output, context, astNode->getLeft());
             Compile(output, context, astNode->getIdentifier());
             Compile(output, context, astNode->getRight());
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
-            Compile(output, context, astNode->getIdentifier());
-            Compile(output, context, astNode->getRight());
+          Compile(output, context, astNode->getRight());  //identifier
+
+          int offset = getVariableAddressOffset(context, context.identifier);
+          std::string ref = getReferenceRegister(context, context.identifier);
+          *output << "\t\t"
+                  << "lw\t$t0, " << offset << ref << "\n";
+          if (astNode->getId() == "++") {
+              *output << "\t\t"
+                      << "addi\t$t0, $t0, 1"
+                      << "\n";
+          } else if (astNode->getId() == "--") {
+              *output << "\t\t"
+                      << "subi\t$t0, $t0, 1"
+                      << "\n";
+          } else if (astNode->getId() == "&") { //address
+              *output << "\t\t"
+                      << "addi\t$t0, $0, ref"
+                      << "\n";
+              *output << "\t\t"
+                      << "addi\t$t0, $t0, offset"
+                      << "\n";
+          } else if (astNode->getId() == "+") { //positive
+              *output << "\t\t"
+                      << "addu\t$t0, $t0, $0"
+                      << "\n";
+          } else if (astNode->getId() == "-") { //negative
+              *output << "\t\t"
+                      << "xori\t$t0, $t0, -1" //flip
+                      << "\n";
+              *output << "\t\t"
+                      << "addi\t$t0, $t0, 1" //add 1
+                      << "\n";
+          } else if (astNode->getId() == "~") { //ones complement
+              *output << "\t\t"
+                      << "xori\t$t0, $t0, -1"
+                      << "\n";
+          } else if (astNode->getId() == "!") { //logical NOT
+              *output << "\t\t"
+                      << "sltu\t$t0, $0, $t0" //if unsigned t0 is bigger than 0 set to 1
+                      << "\n";
+          } else {
+              throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+          }
+          *output << "\t\t"
+                  << "sw\t$t0, " << offset << ref << "\n";
 
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
@@ -301,9 +377,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\t\t"
                     << "xor\t$t0, $v0, $v1\n"
                     << "\t\t"
-                    << "subi\t$t0, $t0, 1\n"
-                    << "\t\t"
-                    << "andi\t$t0, $t0, 1\n";
+                    << "sltu\t$t0, $t0, 1\n";
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -330,17 +404,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\t"
                         << "slt\t$t0, $t1, $t0\n"
                         << "\t\t"
-                        << "subi\t$t0, $t0, 1\n"
-                        << "\t\t"
-                        << "andi\t$t0, $t0, 1\n";
+                        << "sltu\t$t0, $t0, 1\n";
 
             } else if (astNode->getId() == ">=") {
                 *output << "\t\t"
                         << "slt\t$t0, $t0, $t1\n"
                         << "\t\t"
-                        << "subi\t$t0, $t0, 1\n"
-                        << "\t\t"
-                        << "andi\t$t0, $t0, 1\n";
+                        << "sltu\t$t0, $t0, 1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
