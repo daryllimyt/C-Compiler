@@ -5,10 +5,13 @@
 
 class Util {
    public:
-    static const bool DEBUG = false;
+    static const bool debug = true;
+    static const bool viewStartTags = true;
+    static const bool viewEndTags = true;
+    static const bool viewAllNodesContext = true;
 
     static void abort() {
-        if (DEBUG) {
+        if (debug) {
             std::cerr << "[INFO] Terminating program\n";
         }
         std::exit(-1);

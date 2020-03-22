@@ -14,6 +14,8 @@ std::string createLabel(ProgramContext &context, const std::string &name);
 
 void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     try {
+        if (Util::viewStartTags) std::cerr << "\n[DEBUG] ENTERING << " << astNode->getType() << "_NODE >>\n";
+        if (Util::viewAllNodesContext) std::cerr << context;
         if (astNode == NULL) {
             throw std::runtime_error("[ERROR] Unhandled NULL-type ast node \n");
         } else if (astNode->getType() == "ROOT") {
@@ -89,25 +91,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\t"
                     << "addiu\t$sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
+            context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
-            int argCount =  context.virtualRegister;
+            int argCount = context.virtualRegisters;
             int tmpVirtualReg = 0;
             for (int i = 0; i < argCount; i++) {
-            	if(i < 4){
-	                  *output << "\t\t"
-	                          << "lw\t$a" << i << ", "
-	                          << -8*(argCount - (--context.virtualRegister))<<"($t9)\n";
-              }
-              else{
-                  *output << "\t\t"
-                          << "lw\t$t8" << ", "
-                          << -8*(argCount - (--context.virtualRegister))<<"($t9)\n";
-                  *output << "\t\t"
-                          << "sw\t$t8, "
-                          << -8*(++tmpVirtualReg)<<"($fp)\n";
-              }
+                if (i < 4) {
+                    *output << "\t\t"
+                            << "lw\t$a" << i << ", "
+                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9)\n";
+                } else {
+                    *output << "\t\t"
+                            << "lw\t$t8"
+                            << ", "
+                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9)\n";
+                    *output << "\t\t"
+                            << "sw\t$t8, "
+                            << -8 * (++tmpVirtualReg) << "($fp)\n";
+                }
             }
-              context.virtualRegister = tmpVirtualReg;
+            context.virtualRegisters = tmpVirtualReg;
 
             // Get scope
             Compile(output, context, astNode->getScope());
@@ -136,16 +139,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop\n";
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-          Compile(output, context, program->GetIdentifier());
+            Compile(output, context, astNode->getIdentifier());
+            std::string id = context.identifier;
 
-          if(program->GetArgs()){
+            if (astNode->getArgs()) {
+                Compile(output, context, astNode->getParameters());
 
-              Compile(output, context, program->getParameters());
-
-              *output << "\t\taddu\t$t4, $fp, $0\n";
+                *output << "\t\taddu\t$t4, $fp, $0\n";
             }
 
-        }  else if (astNode->getType() == "SCOPE") {
+        } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
@@ -154,7 +157,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "nop\n";
             }
             context.scope--;
-
+            // updateVariableBindings(context);  // Remove variable contexts created in this scope
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
@@ -163,19 +166,20 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             if (astNode->getArgs()) {
                 Compile(output, context, astNode->getArgs());
+                std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
+                std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
 
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
             if (astNode->getStatements()) {
-                Compile(output, context, astNode->getStatements()); //get in t0
+                Compile(output, context, astNode->getStatements());  //get in t0
                 *output << "\t\t"
                         << "addiu\t$sp, $sp, -8\n";
                 *output << "\t\t"
-                        << "sw\t$t0, " << -8 * ++context.virtualRegister << "($fp)\n";
-
+                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp)\n";
             }
 
             if (astNode->getNext()) {
@@ -205,10 +209,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "nop\n";
                     *output << "\t\t"
                             << "sw\t$t0, " << offsetLeft << refLeft << "\n";
-
-                } else {
-                    throw std::runtime_error("[ERROR] Detected standalone variable declarator. Variable needs type specifier");
                 }
+                // else {
+                //     throw std::runtime_error("[ERROR] Detected standalone variable declarator. Variable needs type specifier");
+                // }
 
             } else {
                 Compile(output, context, astNode->getIdentifier());
@@ -492,17 +496,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
-                std::string functionId = context.identifier;
+                std::string functionId = context.allFunctions.back();  // Gets last bound function
                 Compile(output, context, astNode->getTypeSpecifier());
 
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 context.scope++;
                 Compile(output, context, astNode->getStatements());
-                context.functionBindings[functionId].addArg(context.identifier); // Adding new variable id to function args
+                context.functionBindings[functionId].addArg(context.identifier);  // Adding new variable id to function args
                 context.scope--;
-                context.variableAssignmentState = "FUNCTION_ARGUMENTS"; // Future arguments have same context
 
-            } else { // Coming from ASSIGNMENT_STATEMENT
+            } else {  // Coming from ASSIGNMENT_STATEMENT
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
                 Compile(output, context, astNode->getStatements());
@@ -549,6 +552,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
                    astNode->getType() == "UNARY_OPERATOR") {
         } else if (astNode->getType() == "VARIABLE") {
+            if (Util::debug) std::cerr << "[DEBUG] VAR_NODE D: " << context.variableAssignmentState << "\n";
             std::string id = context.identifier = astNode->getId();
             std::string type = astNode->getVarType();                         // Normal, array, pointer
             if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
@@ -569,8 +573,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     } else {  // shadowing
                     }
                 } else if (type == "ARRAY") {
-                    Compile(output, context, astNode->getType())
-                    
                 } else if (type == "POINTER") {
                     /* code */
                 } else {
@@ -593,14 +595,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
                 }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
-                if (context.allFunctions.count(id)) {
+                if (context.functionBindings.count(id)) {
                     throw std::runtime_error("[ERROR] Function already declared");
                 } else {
+                    if (Util::debug) std::cerr << "[DEBUG] NEW_FUNCTION E: " << id << std::endl;
                     FunctionContext newFunction;
                     newFunction.scope = context.scope;
                     newFunction.typeSpecifier = context.typeSpecifier;
                     context.functionBindings[id] = newFunction;
-                    context.allFunctions.insert(id);
+                    context.allFunctions.push_back(id);
                 }
 
             } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
@@ -615,6 +618,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
         }
+        if (Util::viewEndTags) std::cerr << "\n[DEBUG] EXITING << " << astNode->getType() << "_NODE >>\n";
     } catch (std::exception &e) {
         std::cerr << e.what() << "\n";
         Util::abort();
@@ -665,7 +669,6 @@ int getSize(const NodePtr &astNode) {
         bytes += getSize(astNode->getStatements());
         bytes += getSize(astNode->getScope());
         bytes += getSize(astNode->getParameters());
-
     }
     return bytes;
 }
@@ -727,17 +730,15 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
             << "addiu\t$sp, $sp, -8\n";
     Compile(output, context, astNode->getLeft());  //identifier
     *output << "\t\t"
-            << "sw\t$t0, " << -8 * ++context.virtualRegister << "($fp)\n";
+            << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp)\n";
     Compile(output, context, astNode->getRight());  //expr
     *output << "\t\t"
-            << "lw\t$t1, " << -8 * context.virtualRegister-- << "($fp)\n"
+            << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp)\n"
             << "\t\t"
             << "nop\n";
     *output << "\t\t"
             << "addiu\t$sp, $sp, 8\n";
 }
-
-
 
 void clearRegisters(std::ostream *output) {
     *output << "\t\t"

@@ -23,8 +23,8 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             // Function has arguments
             if (astNode->getArgs()) {
                 *output << "def ";
-                if (!context.allFunctions.count(astNode->getIdentifier()->getId())) {  // Record function name in context
-                    context.allFunctions.insert(astNode->getIdentifier()->getId());
+                if (!context.allFunctionsTranslator.count(astNode->getIdentifier()->getId())) {  // Record function name in context
+                    context.allFunctionsTranslator.insert(astNode->getIdentifier()->getId());
                 }
                 PyTranslate(output, context, astNode->getIdentifier());
                 PyTranslate(output, context, astNode->getArgs());
@@ -225,7 +225,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
         } else if (astNode->getType() == "VARIABLE") {
             // If this variable is not a function declarator or a function argument
-            if (!context.allFunctions.count(astNode->getId()) &&
+            if (!context.allFunctionsTranslator.count(astNode->getId()) &&
                 !context.functionArgs.count(astNode->getId())) {
                 if (context.scope == 0) {
                     addVarToGlobal(context, astNode->getId());  // Add all global variables at start of

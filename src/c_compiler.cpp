@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                 std::cerr << "[INFO] Translation complete\n";
             }
             // PRINTING PROGRAM CONTEXT
-            if (Util::DEBUG) {
+            if (Util::debug) {
                 std::cerr << context;
             }
 
