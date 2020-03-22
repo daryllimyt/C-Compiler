@@ -40,6 +40,7 @@ class Node {
     virtual NodePtr getPointer() const { return NULL; }
     virtual NodePtr getIdentifier() const { return NULL; }
     virtual NodePtr getArgs() const { return NULL; }
+    virtual NodePtr getParameters() const { return NULL; }
     virtual NodePtr getCondition() const { return NULL; }
     virtual NodePtr getConditionOne() const { return NULL; }
     virtual NodePtr getConditionTwo() const { return NULL; }

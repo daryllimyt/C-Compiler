@@ -90,7 +90,24 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "addiu\t$sp, $sp, " << -bytes << "\n";
             storeRegisters(output);
             Compile(output, context, astNode->getArgs());
-            // For loop
+            int argCount =  context.virtualRegister;
+            int tmpVirtualReg = 0;
+            for (int i = 0; i < argCount; i++) {
+            	if(i < 4){
+	                  *output << "\t\t"
+	                          << "lw\t$a" << i << ", "
+	                          << -8*(argCount - (--context.virtualRegister))<<"($t9)\n";
+              }
+              else{
+                  *output << "\t\t"
+                          << "lw\t$t8" << ", "
+                          << -8*(argCount - (--context.virtualRegister))<<"($t9)\n";
+                  *output << "\t\t"
+                          << "sw\t$t8, "
+                          << -8*(++tmpVirtualReg)<<"($fp)\n";
+              }
+            }
+              context.virtualRegister = tmpVirtualReg;
 
             // Get scope
             Compile(output, context, astNode->getScope());
@@ -119,7 +136,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop\n";
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-        } else if (astNode->getType() == "SCOPE") {
+          Compile(output, context, program->GetIdentifier());
+
+          if(program->GetArgs()){
+
+              Compile(output, context, program->getParameters());
+
+              *output << "\t\taddu\t$t4, $fp, $0\n";
+            }
+
+        }  else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
@@ -144,10 +170,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
             if (astNode->getStatements()) {
-                Compile(output, context, astNode->getStatements());
+                Compile(output, context, astNode->getStatements()); //get in t0
+                *output << "\t\t"
+                        << "addiu\t$sp, $sp, -8\n";
+                *output << "\t\t"
+                        << "sw\t$t0, " << -8 * ++context.virtualRegister << "($fp)\n";
+
             }
+
             if (astNode->getNext()) {
-                *output << ", ";
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
@@ -632,6 +663,8 @@ int getSize(const NodePtr &astNode) {
         bytes += getSize(astNode->getQualifiers());  // May not be used
         bytes += getSize(astNode->getStatements());
         bytes += getSize(astNode->getScope());
+        bytes += getSize(astNode->getParameters());
+
     }
     return bytes;
 }
@@ -690,18 +723,20 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
-            << "addiu\t$sp, $sp, -4\n";
+            << "addiu\t$sp, $sp, -8\n";
     Compile(output, context, astNode->getLeft());  //identifier
     *output << "\t\t"
-            << "sw\t$t0, " << -4 * context.tempReg++ << "($fp)\n";
+            << "sw\t$t0, " << -8 * ++context.virtualRegister << "($fp)\n";
     Compile(output, context, astNode->getRight());  //expr
     *output << "\t\t"
-            << "lw\t$t1, " << -4 * (--context.tempReg)-- << "($fp)\n"
+            << "lw\t$t1, " << -8 * context.virtualRegister-- << "($fp)\n"
             << "\t\t"
             << "nop\n";
     *output << "\t\t"
-            << "addiu\t$sp, $sp, 4\n";
+            << "addiu\t$sp, $sp, 8\n";
 }
+
+
 
 void clearRegisters(std::ostream *output) {
     *output << "\t\t"

@@ -42,7 +42,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             }
         } else if (astNode->getType() == "FUNCTION_CALL") {
             PyTranslate(output, context, astNode->getIdentifier());
-            PyTranslate(output, context, astNode->getArgs());
+            PyTranslate(output, context, astNode->getParameters());
 
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
             *output << "(";
