@@ -234,7 +234,7 @@ ASSIGNMENT_OPERATOR
  *           TYPE_SPECIFIER             ASSIGNMENT_STATEMENT
  *                                      /          |           \
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
- */
+ */ 
 
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }

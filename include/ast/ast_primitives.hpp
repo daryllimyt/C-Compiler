@@ -6,13 +6,10 @@
 
 #include "ast_node.hpp"
 
-
-
 class Variable : public Node {
-    // Normal, pointer, array
    private:
     std::string id_;
-    std::string varType_;
+    std::string varType_; // Normal, pointer, array
     NodePtr expression_;
 
    public:

@@ -471,7 +471,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.scope--;
                 context.variableAssignmentState = "FUNCTION_ARGUMENTS"; // Future arguments have same context
 
-            } else {
+            } else { // Coming from ASSIGNMENT_STATEMENT
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
                 Compile(output, context, astNode->getStatements());
@@ -538,7 +538,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     } else {  // shadowing
                     }
                 } else if (type == "ARRAY") {
-                    /* code */
+                    Compile(output, context, astNode->getType())
+                    
                 } else if (type == "POINTER") {
                     /* code */
                 } else {
