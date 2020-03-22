@@ -73,7 +73,7 @@ class FunctionCall : public Node {
     NodePtr getIdentifier() const {
         return identifier_;  // variable name
     }
-    NodePtr getArgs() const {
+    NodePtr getParameters() const {
         return args_;
     }
 };
