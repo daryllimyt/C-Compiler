@@ -52,12 +52,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int bytes = getSize(astNode);
             /* Adjustments
             -8  -> function's own identifier
-            +32 -> saved registers $s0 - $s7 (8 x 4 bytes)
+            +48 -> saved registers $s0 - $s7 + $a0 - a3 (12 x 4 bytes)
             +4  -> return address in $ra
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
-            bytes += (36 + (8 - (bytes % 8)));
+            bytes += (52 + (8 - (bytes % 8)));
 
             // Frame start
             context.frameIndex++;
@@ -145,7 +145,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getArgs()) {
                 Compile(output, context, astNode->getParameters());
 
-                *output << "\t\taddu\t$t4, $fp, $0\n";
+                *output << "\t\tmove\t$t9, $fp\n"; //storing current fp into t4
+				*output << "\t\tjal\tid";
             }
 
         } else if (astNode->getType() == "SCOPE") {
@@ -809,9 +810,17 @@ void storeRegisters(std::ostream *output) {
             << "sw\t$s6, 32($sp)\n";
     *output << "\t\t"
             << "sw\t$s7, 36($sp)\n";
+    *output << "\t\t"
+            << "sw\t$a0, 40($sp)\n";
+    *output << "\t\t"
+            << "sw\t$a1, 44($sp)\n";
+    *output << "\t\t"
+            << "sw\t$a2, 48($sp)\n";
+    *output << "\t\t"
+            << "sw\t$a3, 52($sp)\n";
     // Store value of $gp on stack
     *output << "\t\t"
-            << "sw\t$gp, 40($sp)\n";
+            << "sw\t$gp, 56($sp)\n";
     *output << "\t\t"
             << "nop\n";
 }
@@ -834,6 +843,14 @@ void loadRegisters(std::ostream *output) {
             << "lw\t$s6, 32($fp)\n";
     *output << "\t\t"
             << "lw\t$s7, 36($fp)\n";
+    *output << "\t\t"
+            << "lw\t$a0, 40($fp)\n";
+    *output << "\t\t"
+            << "lw\t$a1, 44($fp)\n";
+    *output << "\t\t"
+            << "lw\t$a2, 48($fp)\n";
+    *output << "\t\t"
+            << "lw\t$a3, 52($fp)\n";
     // Load return address into $ra
     *output << "\t\t"
             << "lw\t$ra, 4($fp)\n";
