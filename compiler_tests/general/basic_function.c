@@ -1,8 +1,5 @@
 int add(int i, int j, int k){
-    int x = 1;
-    int y = 2;
-    int z = 3;
-    return 0;
+    return i+j+k;
 }
 
 int main() {
