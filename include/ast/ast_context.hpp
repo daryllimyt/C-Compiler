@@ -90,7 +90,7 @@ struct ProgramContext {
     std::string returnType = "VOID";
     std::unordered_set<std::string> functionArgs;
     std::vector<std::string> allFunctions;
-    std::map<std::string, FunctionContext> functionBindings;
+    std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Registers
     int virtualRegisters = 0;

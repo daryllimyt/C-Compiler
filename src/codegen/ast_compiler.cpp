@@ -177,9 +177,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());  //get in t0
                 *output << "\t\t"
-                        << "addiu\t$sp, $sp, -8\n";
+                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
                 *output << "\t\t"
-                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp)\n";
+                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) storing in virtual\n";
             }
 
             if (astNode->getNext()) {
@@ -216,13 +216,21 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             } else {
                 Compile(output, context, astNode->getIdentifier());
+                std::string id = context.identifier;  // type id = statements = next;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {
-                    Compile(output, context, astNode->getStatements());
-                    int offset = getVariableAddressOffset(context, context.identifier);
-                    std::string ref = getReferenceRegister(context, context.identifier);
-                    *output << "\t\t"
-                            << "sw\t$t0, " << offset << ref << "\n";
+                    Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
+                    std::cerr << context;
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror B\n";
+                    int offset = getVariableAddressOffset(context, id);
+                    std::string ref = getReferenceRegister(context, id);
+                    if (context.functionBindings.count(context.identifier)) {  // From function call
+                        *output << "\t\t"
+                                << "sw\t$v0, " << offset << ref << "\t\t# (assign) storing function result\n";
+                    } else if (context.variableBindings.count(context.identifier)) {  // Normal variable
+                        *output << "\t\t"
+                                << "sw\t$t0, " << offset << ref << "\t\t# (assign) storing var result\n";
+                    }
                 }
                 if (astNode->getNext()) {
                     Compile(output, context, astNode->getNext());
@@ -505,7 +513,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.functionBindings[functionId].addArg(context.identifier);  // Adding new variable id to function args
                 context.scope--;
 
-            } else {  // Coming from ASSIGNMENT_STATEMENT
+            } else {  // Coming from ASSIGNMENT_STATEMENT or FUNCTION_CALL
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
                 Compile(output, context, astNode->getStatements());
@@ -590,10 +598,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\t"
                         << "nop\n";
 
-            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Writing to existing variable
-                if (context.variableBindings.count(id) == 0) {                       // Varibale does not exist
+            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {                        // Writing to existing variable
+                if (context.variableBindings.count(id) == 0 && context.functionBindings.count(id) == 0) {  // Varibale does not exist
                     throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
-                }
+                } 
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
                 if (context.functionBindings.count(id)) {
                     throw std::runtime_error("[ERROR] Function already declared");
