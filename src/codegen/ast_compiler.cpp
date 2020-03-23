@@ -142,11 +142,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
 
-            if (astNode->getArgs()) {
+            if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
 
-                *output << "\t\tmove\t$t9, $fp\n"; //storing current fp into t4
-				*output << "\t\tjal\tid";
+                *output << "\t\tmove\t$t9, $fp\n";  //storing current fp into t4
+                *output << "\t\tjal\t" << id << "\t# (fn call) enter fn def\n"
+                        << "\t\tnop\n";
             }
 
         } else if (astNode->getType() == "SCOPE") {
@@ -187,22 +188,28 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
+            context.variableAssignmentState = "NO_ASSIGN";         // Clear any previous variableAssignContext
             Compile(output, context, astNode->getStatements());    // Current statement
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
 
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
+            // type id = statements = next;
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
+                
                 if (context.variableAssignmentState == "VARIABLE_DECLARATION" || context.variableAssignmentState == "NO_ASSIGN") {
+                    // temp : no assign comes from expressions
+                    if(Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror A\n";
                     Compile(output, context, astNode->getIdentifier());
                     // *output << "\t\t"
                     //         << "nop\n";
-                } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {
-                    int offsetLeft = getVariableAddressOffset(context, context.identifier);
+                } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Recursive assignment
+                    if(Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror B\n";
+                    int offsetLeft = getVariableAddressOffset(context, context.identifier);  // Previous id
                     std::string refLeft = getReferenceRegister(context, context.identifier);
                     Compile(output, context, astNode->getIdentifier());
-                    int offsetRight = getVariableAddressOffset(context, context.identifier);
+                    int offsetRight = getVariableAddressOffset(context, context.identifier);  // New id
                     std::string refRight = getReferenceRegister(context, context.identifier);
                     *output << "\t\t"
                             << "lw\t$t0, " << offsetRight << refRight << "\n";
@@ -217,12 +224,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             } else {
                 Compile(output, context, astNode->getIdentifier());
-                std::string id = context.identifier;  // type id = statements = next;
+                std::string id = context.identifier;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {
                     Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
                     std::cerr << context;
-                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror B\n";
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror A\n";
                     int offset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     if (context.functionBindings.count(context.identifier)) {  // From function call
@@ -234,6 +241,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     }
                 }
                 if (astNode->getNext()) {
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror B, recursive\n";
                     Compile(output, context, astNode->getNext());
                 }
             }
@@ -527,7 +535,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // }
                 Compile(output, context, astNode->getReturnValue());
                 *output << "\t\t"
-                        << "add\t$v0, $t0, $0\n";
+                        << "add\t$v0, $t0, $0 \t# return value\n";
 
             } else if (context.returnType == "VOID") {
                 *output << "\t\t"
@@ -602,7 +610,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {                        // Writing to existing variable
                 if (context.variableBindings.count(id) == 0 && context.functionBindings.count(id) == 0) {  // Varibale does not exist
                     throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
-                } 
+                }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
                 if (context.functionBindings.count(id)) {
                     throw std::runtime_error("[ERROR] Function already declared");
