@@ -41,6 +41,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getRight());
 
         } else if (astNode->getType() == "FUNCTION_DECLARATION") {
+            context.variableAssignmentState = "FUNCTION_DECLARATION";
             Compile(output, context, astNode->getIdentifier());
         } else if (astNode->getType() == "FUNCTION_DEFINITION") {
             // Get type specifier
@@ -89,25 +90,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             // Push to stack
             *output << "\t\t"
-                    << "addiu\t$sp, $sp, " << -bytes << "\n";
+                    << "addiu\t$sp, $sp, " << -bytes << " \t\t# (frame start) Move sp to end of new frame\n";
             storeRegisters(output);
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
+            if (Util::debug) std::cerr << context;
             int argCount = context.virtualRegisters;
             int tmpVirtualReg = 0;
             for (int i = 0; i < argCount; i++) {
                 if (i < 4) {
                     *output << "\t\t"
                             << "lw\t$a" << i << ", "
-                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9)\n";
+                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9) \t\t# (fn args) Load fn call args from virtual to $aX\n";
                 } else {
                     *output << "\t\t"
                             << "lw\t$t8"
                             << ", "
-                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9)\n";
+                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n";
                     *output << "\t\t"
                             << "sw\t$t8, "
-                            << -8 * (++tmpVirtualReg) << "($fp)\n";
+                            << -8 * (++tmpVirtualReg) << "($fp) \t\t# (fn args) Store fn call args from $t8 to new virtual\n";
                 }
             }
             context.virtualRegisters = tmpVirtualReg;
@@ -121,7 +123,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // Load from stack
             loadRegisters(output);
             *output << "\t\t"
-                    << "addiu\t$sp, $sp, " << bytes << "\n";
+                    << "addiu\t$sp, $sp, " << bytes << " \t\t# (frame end) Move sp to end of previous frame\n";
 
             // Frame end
             context.frameIndex--;
@@ -146,7 +148,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getParameters());
 
                 *output << "\t\tmove\t$t9, $fp\n";  //storing current fp into t4
-                *output << "\t\tjal\t" << id << "\t# (fn call) enter fn def\n"
+                *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"
                         << "\t\tnop\n";
             }
 
@@ -168,11 +170,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             if (astNode->getArgs()) {
                 Compile(output, context, astNode->getArgs());
-                std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
+                if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
+                *output << "\t\t"
+                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
+                *output << "\t\t"
+                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) store in virtual\n";
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
-                std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
+                if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
 
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
@@ -181,7 +187,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\t"
                         << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
                 *output << "\t\t"
-                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) storing in virtual\n";
+                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
             }
 
             if (astNode->getNext()) {
@@ -197,15 +203,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
             // type id = statements = next;
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
-                
+
                 if (context.variableAssignmentState == "VARIABLE_DECLARATION" || context.variableAssignmentState == "NO_ASSIGN") {
                     // temp : no assign comes from expressions
-                    if(Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror A\n";
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror A\n";
                     Compile(output, context, astNode->getIdentifier());
                     // *output << "\t\t"
                     //         << "nop\n";
                 } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Recursive assignment
-                    if(Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror B\n";
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror B\n";
                     int offsetLeft = getVariableAddressOffset(context, context.identifier);  // Previous id
                     std::string refLeft = getReferenceRegister(context, context.identifier);
                     Compile(output, context, astNode->getIdentifier());
@@ -234,10 +240,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string ref = getReferenceRegister(context, id);
                     if (context.functionBindings.count(context.identifier)) {  // From function call
                         *output << "\t\t"
-                                << "sw\t$v0, " << offset << ref << "\t\t# (assign) storing function result\n";
+                                << "sw\t$v0, " << offset << ref << "\t\t# (assign) store function result\n";
                     } else if (context.variableBindings.count(context.identifier)) {  // Normal variable
                         *output << "\t\t"
-                                << "sw\t$t0, " << offset << ref << "\t\t# (assign) storing var result\n";
+                                << "sw\t$t0, " << offset << ref << "\t\t# (assign) store var result\n";
                     }
                 }
                 if (astNode->getNext()) {
@@ -535,7 +541,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // }
                 Compile(output, context, astNode->getReturnValue());
                 *output << "\t\t"
-                        << "add\t$v0, $t0, $0 \t# return value\n";
+                        << "add\t$v0, $t0, $0 \t\t# return value\n";
 
             } else if (context.returnType == "VOID") {
                 *output << "\t\t"
@@ -607,8 +613,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\t"
                         << "nop\n";
 
-            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {                        // Writing to existing variable
-                if (context.variableBindings.count(id) == 0 && context.functionBindings.count(id) == 0) {  // Varibale does not exist
+            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Writing to existing variable
+                if (!context.variableBindings.count(id) &&
+                    !context.functionBindings.count(id) &&
+                    !context.declaredFunctions.count(id)) {  // Varibale does not exist
                     throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
                 }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
@@ -624,7 +632,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 }
 
             } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
-            } else {
+                if (!context.functionBindings.count(id)) {  // Function not found in bindings
+                    context.declaredFunctions.insert(id);
+                }
+            } else if (context.variableAssignmentState == "FUNCTION_CALL") {
+                if (!context.declaredFunctions.count(id)) {              // Undeclared function
+                    if (findInVector(context.allFunctions, id).first) {  // Function is defined
+                        std::cerr << "[WARNING] Call to undeclared function \"" + id + "\" before definition\n";
+                    } else {  // Function is undefined
+                        throw std::runtime_error("[ERROR] Call to undeclared and undefined function \"" + id + "\"\n");
+                    }
+                }
             }
 
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
@@ -801,17 +819,15 @@ void clearRegisters(std::ostream *output) {
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
     *output << "\t\t"
-            << "sw\t$fp, 0($sp)\n";
+            << "sw\t$fp, 0($sp) \t\t# Store addr of old fp on stack\n";
     *output << "\t\t"
-            << "add\t$fp, $sp, $0\n";
-    // Store return address in stack at 4($fp) also stores in $25/$t9
+            << "add\t$fp, $sp, $0 \t\t# Move fp to new sp\n";
     *output << "\t\t"
-            << "sw\t$ra, 4($sp)\n";
+            << "sw\t$ra, 4($sp) \t\t# Store ra on stack\n";
     *output << "\t\t"
-            << "addiu\t$t9, $ra, 0\n";
-    // Store saved register values ($s0 - $s7) on stack at 8($fp) - 36($fp)
+            << "addiu\t$t9, $ra, 0 \t\t# Store ra in $t9\n";
     *output << "\t\t"
-            << "sw\t$s0, 8($sp)\n";
+            << "sw\t$s0, 8($sp) \t\t# Store save regs $s0-$s7 on stack\n";
     *output << "\t\t"
             << "sw\t$s1, 12($sp)\n";
     *output << "\t\t"
@@ -827,24 +843,22 @@ void storeRegisters(std::ostream *output) {
     *output << "\t\t"
             << "sw\t$s7, 36($sp)\n";
     *output << "\t\t"
-            << "sw\t$a0, 40($sp)\n";
+            << "sw\t$a0, 40($sp) \t\t# Store prev fn args $a0-$a3 on stack\n";
     *output << "\t\t"
             << "sw\t$a1, 44($sp)\n";
     *output << "\t\t"
             << "sw\t$a2, 48($sp)\n";
     *output << "\t\t"
             << "sw\t$a3, 52($sp)\n";
-    // Store value of $gp on stack
     *output << "\t\t"
-            << "sw\t$gp, 56($sp)\n";
+            << "sw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
     *output << "\t\t"
             << "nop\n";
 }
 
 void loadRegisters(std::ostream *output) {
-    // Load saved register values into ($s0 - $s7)
     *output << "\t\t"
-            << "lw\t$s0, 8($fp)\n";
+            << "lw\t$s0, 8($fp) \t\t# Load saved regs into $s0-$s7\n";
     *output << "\t\t"
             << "lw\t$s1, 12($fp)\n";
     *output << "\t\t"
@@ -862,17 +876,15 @@ void loadRegisters(std::ostream *output) {
     *output << "\t\t"
             << "lw\t$a0, 40($fp)\n";
     *output << "\t\t"
-            << "lw\t$a1, 44($fp)\n";
+            << "lw\t$a1, 44($fp) \t\t# Load prev fn args into $a0-$a3\n";
     *output << "\t\t"
             << "lw\t$a2, 48($fp)\n";
     *output << "\t\t"
             << "lw\t$a3, 52($fp)\n";
-    // Load return address into $ra
     *output << "\t\t"
-            << "lw\t$ra, 4($fp)\n";
-    // Load previous frame into $fp
+            << "lw\t$ra, 4($fp) \t\t# Load return address into $ra\n";
     *output << "\t\t"
-            << "lw\t$fp, 0($fp)\n";
+            << "lw\t$fp, 0($fp) \t\t# Load prev fp into $fp\n";
     *output << "\t\t"
             << "nop\n";
 }
