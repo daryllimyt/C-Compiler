@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
 #include <vector>
 
@@ -20,7 +21,6 @@ struct VariableContext {
     // Single variable name can have different contexts in each scope
     int addressOffset;          // Address offset in memory of where the variable is located
     int scope;                  // Scope in which the variable was defined
-	int value;                  // Value of the variable
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
         out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << " }";
@@ -66,10 +66,9 @@ struct FrameContext {
     GLOBAL
     */
 
-class ProgramContext {
+struct ProgramContext {
     // General
-    public:
-    ProgramContext(){}
+  
     /* Contextual information for MIPS code generator */
     // Scope
     int scope = 0;
@@ -78,7 +77,7 @@ class ProgramContext {
     int frameIndex = 0;  // Frame index of current function/scope
     std::string frameStart;
     std::string frameEnd;
-    std::vector<FrameContext> frameTracker;  // Tracks requred bytes & num of vars for each frame (indexed by frameIndex)
+    std::vector<FrameContext> frameTracker;  // Tracks requred bytes & num of vars for ecah frame (global = 0, current = 1)
 
     // Variables
     std::string identifier;
@@ -90,11 +89,11 @@ class ProgramContext {
     // Functions
     std::string returnType = "VOID";
     std::unordered_set<std::string> functionArgs;
-    std::unordered_set<std::string> allFunctions;
+    std::vector<std::string> allFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Registers
-    int virtualRegister = 0;
+    int virtualRegisters = 0;
 
     // Labels
     int labelCount = 0;
@@ -104,9 +103,10 @@ class ProgramContext {
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;
     std::unordered_set<std::string> allVariables;
+    std::unordered_set<std::string> allFunctionsTranslator;
 
     friend std::ostream& operator<<(std::ostream& out, const ProgramContext& p) {
-        out << "[INFO] *** Program Context ***\n";
+        out << "\n[INFO] *** Program Context ***\n";
 
         /* Contextual information for MIPS code generator */
         // Others
@@ -124,14 +124,13 @@ class ProgramContext {
         out << "[INFO] * typeSpecifier: " << p.typeSpecifier << "\n";
         out << "[INFO] * typeQualifier: " << p.typeQualifier << "\n";  // const, volatile
         out << "[INFO] * variableAssignmentState: " << p.variableAssignmentState << "\n";
-        out << "[INFO] * variableBindings: ";
-        out << "[ ";
+        out << "[INFO] * variableBindings:\n";
         for (auto& it : p.variableBindings) {
-            out << "{" << it.first << "->";
+            out << "[INFO] | {" << it.first << "->";
             printIterable(out, it.second);
-            out << "}";
+            out << "}\n";
         }
-        out << "]\n";
+        out << "[INFO] *\n";
 
         // Functions
         out << "[INFO] * functionArgs: ";
@@ -140,12 +139,12 @@ class ProgramContext {
         out << "[INFO] * allFunctions: ";
         printIterable(out, p.allFunctions);
         out << "\n";
-        out << "[INFO] * functionBindings: ";
-        out << "[ ";
+        out << "[INFO] * functionBindings:\n";
+        
         for (auto& it : p.functionBindings) {
-            out << "{" << it.first << "->" << it.second << "} ";
+            out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
         }
-        out << "]\n";
+        out << "[INFO] *\n";
 
         // Contextual information for Python translator
         out << "[INFO] * globalVariables: ";
@@ -156,6 +155,6 @@ class ProgramContext {
         out << "\n";
         return out;
     }
-
+    
 };
 #endif
