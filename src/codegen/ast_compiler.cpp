@@ -838,15 +838,15 @@ int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
 
         if (astNode->getId() == "++") {
             value = ++value;
-        } else if (astNode->getId() == "--") {
+        } else if (astNode->getIdentifier()->getId() == "--") {
             value = --value;
-        } else if (astNode->getId() == "+") {  //positive
+        } else if (astNode->getIdentifier()->getId() == "+") {  //positive
             value = +value;
-        } else if (astNode->getId() == "-") {  //negative
+        } else if (astNode->getIdentifier()->getId() == "-") {  //negative
             value = -value;
-        } else if (astNode->getId() == "~") {  //ones complement
+        } else if (astNode->getIdentifier()->getId() == "~") {  //ones complement
             value = ~value;
-        } else if (astNode->getId() == "!") {  //logical NOT
+        } else if (astNode->getIdentifier()->getId() == "!") {  //logical NOT
             value = !value;
         } else {
             throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
