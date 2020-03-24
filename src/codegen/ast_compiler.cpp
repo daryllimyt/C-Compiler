@@ -7,7 +7,7 @@ void storeRegisters(std::ostream *output);
 void loadRegisters(std::ostream *output);
 void updateVariableBindings(ProgramContext &context);
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
-int getSize(const NodePtr &astNode);
+int getSize(ProgramContext &context, const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
@@ -51,7 +51,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.returnType = context.typeSpecifier;
             }
             // Calculate required number of bytes for this function on the stack
-            int bytes = getSize(astNode);
+            int bytes = getSize(context, astNode);
             /* Adjustments
             -8  -> function's own identifier
             +48 -> saved registers $s0 - $s7 + $a0 - a3 (12 x 4 bytes)
@@ -323,7 +323,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << end << "\n";
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
-            std::string id = astNode->getLeft()->getId(); // LHS Variable ID
+            std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
             Compile(output, context, astNode->getIdentifier());  // Evaluate result in $t0
             // x += y
@@ -333,7 +333,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tsw\t$t0, " << offset << ref << " \t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
-			Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
+            Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
 
             int offset = getVariableAddressOffset(context, context.identifier);
@@ -471,7 +471,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "lw\t$t0, " << offset << ref << "\n"
                     << "\t\t"
                     << "nop\n";
-			*output << "\t\tmove\t$t1, $t0\n";
+            *output << "\t\tmove\t$t1, $t0\n";
             if (astNode->getId() == "++") {
                 *output << "\t\t"
                         << "addi\t$t0, $t0, 1"
@@ -485,7 +485,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\n";
-			*output << "\t\tmove\t$t0, $t1\n";
+            *output << "\t\tmove\t$t0, $t1\n";
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
                 std::string functionId = context.allFunctions.back();  // Gets last bound function
@@ -729,17 +729,21 @@ std::string createLabel(ProgramContext &context, const std::string &name) {
     return name + std::to_string(context.labelCount++);
 }
 
-int getSize(const NodePtr &astNode) {
+int getSize(ProgramContext &context, const NodePtr &astNode) {
     // Base cases
     if (!astNode) {
         return 0;
     }
 
     int bytes = 0;
-    if (astNode->getType() == "VARIABLE" ||
-        astNode->getType() == "INTEGER_CONSTANT" ||
-        astNode->getType() == "FLOAT_CONSTANT") {
+    if (astNode->getType() == "INTEGER_CONSTANT" || astNode->getType() == "FLOAT_CONSTANT") {
         bytes += 8;  // 8 bytes -> 64bits, keep stack pointer double word aligned
+    } else if (astNode->getType() == "VARIABLE") {
+        if (astNode->getVarType() == "NORMAL" || astNode->getVarType() == "POINTER") {
+            bytes += 8;
+        } else if (astNode->getVarType() == "ARRAY") {
+            bytes += 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+        }
     } else {
         bytes += getSize(astNode->getLeft());
         bytes += getSize(astNode->getRight());
@@ -826,12 +830,12 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
                 << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
     }
 
-    Compile(output, context, astNode->getLeft());  //expr - LHS result stored in $t0
+    Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) lhs from fn call\n";
     }
-    *output << "\t\t"                              //RHS is loaded to $t1
+    *output << "\t\t"  //RHS is loaded to $t1
             << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
             << "\t\t"
             << "nop\n";
@@ -848,8 +852,7 @@ int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
         value = context.getVariableIntValue(id);
     } else if (astNode->getType() == "UNARY_EXPRESSION") {
         value = evalArrayIndexOrSize(context, astNode->getRight());  //identifier
-
-        if (astNode->getId() == "++") {
+        if (astNode->getIdentifier()->getId() == "++") {
             value = ++value;
         } else if (astNode->getIdentifier()->getId() == "--") {
             value = --value;
