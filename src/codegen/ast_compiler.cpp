@@ -352,10 +352,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\n";
             } else if (astNode->getId() == "-") {  //negative
                 *output << "\t\t"
-                        << "xori\t$t0, $t0, -1"  //flip
-                        << "\n";
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, 1"  //add 1
+                        << "sub\t$t0, $0, $t0"
                         << "\n";
             } else if (astNode->getId() == "~") {  //ones complement
                 *output << "\t\t"
@@ -759,11 +756,12 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
             << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
-    Compile(output, context, astNode->getRight());  // identifier - RHS result stored in $t0
+<<<<<<< HEAD
+    Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
     *output << "\t\t"
             << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
-    Compile(output, context, astNode->getLeft());  //expr - LHS result stored in $t1
-    *output << "\t\t"
+    Compile(output, context, astNode->getLeft());  //expr - LHS result stored in $t0
+    *output << "\t\t" //RHS is loaded to $t1
             << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
             << "\t\t"
             << "nop\n";
