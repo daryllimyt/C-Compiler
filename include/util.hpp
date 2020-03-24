@@ -8,7 +8,7 @@ class Util {
     static const bool debug = false;
     static const bool viewStartTags = false;
     static const bool viewEndTags = false;
-    static const bool viewAllNodesContext = true;
+    static const bool viewAllNodesContext = false;
 
     static void abort() {
         if (debug) {
