@@ -35,42 +35,17 @@ std::pair<bool, int> findInVector(const std::vector<T>& vecOfElements, const T& 
     return result;
 }
 
-// union FlexType {
-//     int intValue;
-//     double doubleValue;
-//     float floatValue;
-//     char charValue;
-//     char active;
-//     void setActive(const char& type) {
-//         active = type;
-//     }
-//     template <typename T>
-//     void set(const T& val) {
-//         std::cerr << "val is of type " << typeid(val).name() << std::endl;
-//         if (typeid(val).name() == typeid(0).name()) {
-//             setActive('i');
-//             intValue = val;
-//         } else if (typeid(val).name() == typeid(0.0).name()) {
-//             setActive('d');
-//             doubleValue = val;
-//         } else if (typeid(val).name() == typeid(0.0f).name()) {
-//             setActive('f');
-//             floatValue = val;
-//         } else if (typeid(val).name() == typeid('0').name()) {
-//             setActive('c');
-//             charValue = val;
-//         }
-//     }
-// };
-
 struct VariableContext {
     // Single variable name can have different contexts in each scope
-    int addressOffset;  // Address offset in memory of where the variable is located
+    int addressOffset;  // Address offset in memory of where the variable is located relative to $fp
     int scope;          // Scope in which the variable was defined
-    int intValue;
+    int intValue = 0;
+    int size;  // Size of the variable, default is 8 for regular variables, arrays 8*arraysize
+    std::string varType;
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
-        out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << " }";
+        out << "{varType: " << v.varType << ", size: " << v.size << ", addrOffset: " << v.addressOffset << ", scope: "
+            << v.scope << ", typeSpec: " << v.typeSpecifier << ", intValue: " << v.intValue << " }";
         return out;
     }
 };
@@ -91,14 +66,14 @@ struct FunctionContext {
 };
 
 struct FrameContext {
-    int bytes;
-    int variableCount;
+    int totalBytes;
+    int variableBytes;
     // std::vector<std::string> frameVariables;
     // void addVariable(const std::string &id) {
     //     frameVariables.push_back(id);
     // }
     friend std::ostream& operator<<(std::ostream& out, const FrameContext& f) {
-        out << "{bytes: " << f.bytes << ", vars: " << f.variableCount << " }";
+        out << "{totalBytes: " << f.totalBytes << ", varBytes: " << f.variableBytes << " }";
         return out;
     }
 };
@@ -124,7 +99,7 @@ struct ProgramContext {
     int frameIndex = 0;  // Frame index of current function/scope
     std::string frameStart;
     std::string frameEnd;
-    std::vector<FrameContext> frameTracker;  // Tracks requred bytes & num of vars for ecah frame (global = 0, current = 1)
+    std::vector<FrameContext> frameTracker;  // Tracks requred totalBytes & num of vars for ecah frame (global = 0, current = 1)
 
     // Variables
     std::string identifier;
