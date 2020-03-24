@@ -326,11 +326,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // x = x + y
             int offset = getVariableAddressOffset(context, id);
             std::string ref = getReferenceRegister(context, id);
-            *output << "\t\tsw\t$t0, " << offset << ref << " \t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n"; 
+            *output << "\t\tsw\t$t0, " << offset << ref << " \t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
-            // Compile(output, context, astNode->getIdentifier());  // Operator
-            Compile(output, context, astNode->getRight());       //identifier
+			Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
+            Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
 
             int offset = getVariableAddressOffset(context, context.identifier);
             std::string ref = getReferenceRegister(context, context.identifier);
@@ -338,40 +338,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "lw\t$t0, " << offset << ref << "\n"
                     << "\t\t"
                     << "nop\n";
-            if (astNode->getIdentifier()->getId() == "++") {
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, 1"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "--") {
-                *output << "\t\t"
-                        << "subi\t$t0, $t0, 1"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "&") {  //address
-                *output << "\t\t"
-                        << "addi\t$t0, $0, ref"
-                        << "\n";
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, offset"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "+") {  //positive
-                *output << "\t\t"
-                        << "addu\t$t0, $t0, $0"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "-") {  //negative
-                *output << "\t\t"
-                        << "sub\t$t0, $0, $t0"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "~") {  //ones complement
-                *output << "\t\t"
-                        << "xori\t$t0, $t0, -1"
-                        << "\n";
-            } else if (astNode->getIdentifier()->getId() == "!") {  //logical NOT
-                *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0"  //if unsigned t0 is bigger than 0 set to 1
-                        << "\n";
-            } else {
-                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-            }
+
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\n";
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
@@ -493,6 +460,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "lw\t$t0, " << offset << ref << "\n"
                     << "\t\t"
                     << "nop\n";
+			*output << "\t\tmove\t$t1, $t0\n";
             if (astNode->getId() == "++") {
                 *output << "\t\t"
                         << "addi\t$t0, $t0, 1"
@@ -506,6 +474,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\n";
+			*output << "\t\tmove\t$t0, $t1\n";
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
                 std::string functionId = context.allFunctions.back();  // Gets last bound function
@@ -600,7 +569,40 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "or\t$t0, $t0, $t1 \t\t# (assign op node) lhs |= rhs\n";
             }
         } else if (astNode->getType() == "UNARY_OPERATOR") {
-            // See unary expression
+            if (astNode->getIdentifier()->getId() == "++") {
+                *output << "\t\t"
+                        << "addi\t$t0, $t0, 1"
+                        << "\n";
+            } else if (astNode->getId() == "--") {
+                *output << "\t\t"
+                        << "subi\t$t0, $t0, 1"
+                        << "\n";
+            } else if (astNode->getId() == "&") {  //address
+                *output << "\t\t"
+                        << "addi\t$t0, $0, ref"
+                        << "\n";
+                *output << "\t\t"
+                        << "addi\t$t0, $t0, offset"
+                        << "\n";
+            } else if (astNode->getId() == "+") {  //positive
+                *output << "\t\t"
+                        << "addu\t$t0, $t0, $0"
+                        << "\n";
+            } else if (astNode->getId() == "-") {  //negative
+                *output << "\t\t"
+                        << "sub\t$t0, $0, $t0"
+                        << "\n";
+            } else if (astNode->getId() == "~") {  //ones complement
+                *output << "\t\t"
+                        << "xori\t$t0, $t0, -1"
+                        << "\n";
+            } else if (astNode->getId() == "!") {  //logical NOT
+                *output << "\t\t"
+                        << "sltu\t$t0, $0, $t0"  //if unsigned t0 is bigger than 0 set to 1
+                        << "\n";
+            } else {
+                throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
         } else if (astNode->getType() == "VARIABLE") {
             if (Util::debug) std::cerr << "[DEBUG] VAR_NODE D: " << context.variableAssignmentState << "\n";
             std::string id = context.identifier = astNode->getId();
