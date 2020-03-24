@@ -33,6 +33,7 @@ DECIMAL_INTEGER [1-9]{DEC}*{INTSUFFIX}?
 OCTAL_INTEGER 	0{OCT}*{INTSUFFIX}?
 HEXA_INTEGER 		0[xX]{HEX}*{INTSUFFIX}?
 
+
 INTEGER_CONSTANT 	(BINARY_INTEGER|DECIMAL_INTEGER|OCTAL_INTEGER|HEXA_INTEGER)
 FLOAT_CONSTANT 		({DEC}+{EXPO}{FLOATSUFFIX}?|{DEC}*"."{DEC}+({EXPO})?{FLOATSUFFIX}?|{DEC}+"."{DEC}*({EXPO})?{FLOATSUFFIX}?)
 
@@ -138,6 +139,9 @@ MULTIPLE_LINE_COMMENT ([/]\*(.|{NEW_LINE})*\*[/])
 ")"					{ return T_R_PARENTHESIS; }
 ("["|"<:")	{ return T_L_BRACKET; }
 ("]"|":>")	{ return T_R_BRACKET; }
+
+"true"				{yylval.integer_constant = 1; return T_INT_CONST;}
+"false"				{yylval.integer_constant = 0; return T_INT_CONST;}
 
 {BINARY_INTEGER} 	{yylval.integer_constant = std::stoi(yytext, nullptr, 2); return T_INT_CONST;}
 {OCTAL_INTEGER} 	{yylval.integer_constant = std::stoi(yytext, nullptr, 8); return T_INT_CONST;}
