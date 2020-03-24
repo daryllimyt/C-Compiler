@@ -7,7 +7,7 @@ void storeRegisters(std::ostream *output);
 void loadRegisters(std::ostream *output);
 void updateVariableBindings(ProgramContext &context);
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
-int getSize(ProgramContext &context, const NodePtr &astNode);
+int getSize(ProgramContext &context, NodePtr astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
@@ -29,8 +29,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             6. Init qemu flag .text
             */
             FrameContext globalFrame;
-            globalFrame.bytes = 0;
-            globalFrame.variableCount = 0;
+            globalFrame.totalBytes = 0;
+            globalFrame.variableBytes = 0;
             context.frameTracker = {globalFrame};
             // *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
@@ -67,12 +67,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // Tracking frame sizes
             if (context.frameIndex >= context.frameTracker.size()) {
                 FrameContext newFrame;
-                newFrame.bytes = bytes;
-                newFrame.variableCount = 0;
+                newFrame.totalBytes = bytes;
+                newFrame.variableBytes = 0;
                 context.frameTracker.push_back(newFrame);
             } else {
-                context.frameTracker[context.frameIndex].bytes = bytes;
-                context.frameTracker[context.frameIndex].variableCount = 0;
+                context.frameTracker[context.frameIndex].totalBytes = bytes;
+                context.frameTracker[context.frameIndex].variableBytes = 0;
             }
 
             // Get identifier
@@ -622,31 +622,48 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string type = astNode->getVarType();                         // Normal, array, pointer
             if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
                 if (type == "NORMAL") {
+                    int index = context.frameIndex;
                     if (context.variableBindings.count(id) == 0) {  // Non-shadowing
-                        int index = context.frameIndex;
                         if (context.scope == 0) {
                             index = 0;  // For global variables
                         }
-                        context.frameTracker[index].variableCount++;  // Increment number of variables in frame
+                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
                         // context.frameTracker[index].addVariable(id);  // Track variable id
                         VariableContext newVariable;
-                        newVariable.addressOffset = context.frameTracker[index].bytes - 8 * context.frameTracker[index].variableCount;  // Get next available memory address after vars
+                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.varType = type;
+                        newVariable.size = 8;
                         newVariable.scope = context.scope;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
 
-                    } else {  // shadowing
+                    } else {                                                        // shadowing
+                        int lastScope = context.variableBindings[id].back().scope;  // check if variable has been declared in this scope
+                        if (lastScope == context.scope) {
+                            throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
+                        }
+                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
+                        // context.frameTracker[index].addVariable(id);  // Track variable id
+                        VariableContext newVariable;
+                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.varType = type;
+                        newVariable.size = 8;
+                        newVariable.scope = context.scope;
+                        newVariable.typeSpecifier = context.typeSpecifier;
+                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
                     }
                 } else if (type == "ARRAY") {
                     int index = context.frameIndex;
                     if (context.scope == 0) {
                         index = 0;  // For global variables
                     }
-                    int arraySize = 8 * evalArrayIndexOrSize(context, astNode->getStatements());
-                    context.frameTracker[index].variableCount++;  // Increment number of variables in frame
-                    // context.frameTracker[index].addVariable(id);  // Track variable id
+                    int arrayBytes = 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+                    context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
                     VariableContext newVariable;
-                    newVariable.addressOffset = context.frameTracker[index].bytes - 8 * context.frameTracker[index].variableCount;  // Get next available memory address after vars
+                    // Array base offset is at the bottom of the array block in memory
+                    newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                    newVariable.varType = type;
+                    newVariable.size = arrayBytes;
                     newVariable.scope = context.scope;
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
@@ -727,9 +744,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
 std::string createLabel(ProgramContext &context, const std::string &name) {
     return name + std::to_string(context.labelCount++);
-}
+} 
 
-int getSize(ProgramContext &context, const NodePtr &astNode) {
+int getSize(ProgramContext &context, NodePtr astNode) {
     // Base cases
     if (!astNode) {
         return 0;
@@ -745,23 +762,23 @@ int getSize(ProgramContext &context, const NodePtr &astNode) {
             bytes += 8 * evalArrayIndexOrSize(context, astNode->getStatements());
         }
     } else {
-        bytes += getSize(astNode->getLeft());
-        bytes += getSize(astNode->getRight());
-        bytes += getSize(astNode->getNext());
-        bytes += getSize(astNode->getPointer());
-        bytes += getSize(astNode->getIdentifier());
-        bytes += getSize(astNode->getArgs());
-        bytes += getSize(astNode->getCondition());
-        bytes += getSize(astNode->getConditionOne());
-        bytes += getSize(astNode->getConditionTwo());
-        bytes += getSize(astNode->getConditionThree());
-        bytes += getSize(astNode->getReturnValue());
-        bytes += getSize(astNode->getIndex());
-        bytes += getSize(astNode->getTypeSpecifier());
-        bytes += getSize(astNode->getQualifiers());  // May not be used
-        bytes += getSize(astNode->getStatements());
-        bytes += getSize(astNode->getScope());
-        bytes += getSize(astNode->getParameters());
+        bytes += getSize(context, astNode->getLeft());
+        bytes += getSize(context, astNode->getRight());
+        bytes += getSize(context, astNode->getNext());
+        bytes += getSize(context, astNode->getPointer());
+        bytes += getSize(context, astNode->getIdentifier());
+        bytes += getSize(context, astNode->getArgs());
+        bytes += getSize(context, astNode->getCondition());
+        bytes += getSize(context, astNode->getConditionOne());
+        bytes += getSize(context, astNode->getConditionTwo());
+        bytes += getSize(context, astNode->getConditionThree());
+        bytes += getSize(context, astNode->getReturnValue());
+        bytes += getSize(context, astNode->getIndex());
+        bytes += getSize(context, astNode->getTypeSpecifier());
+        bytes += getSize(context, astNode->getQualifiers());  // May not be used
+        bytes += getSize(context, astNode->getStatements());
+        bytes += getSize(context, astNode->getScope());
+        bytes += getSize(context, astNode->getParameters());
     }
     return bytes;
 }

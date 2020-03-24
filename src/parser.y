@@ -240,7 +240,7 @@ ASSIGNMENT_OPERATOR
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
   | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
-  | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_L_BRACKET  { $$ = new Variable(*$1, "ARRAY", $3 ); delete $1; }
+  | T_IDENTIFIER T_L_BRACKET MATH_OR_BITWISE_EXPRESSION T_R_BRACKET  { $$ = new Variable(*$1, "ARRAY", $3 ); delete $1; }
   ;
 
 VARIABLE_DECLARATION //int a = 2, b = 5

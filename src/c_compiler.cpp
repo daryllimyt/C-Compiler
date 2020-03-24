@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
                         std::cerr << "[WARNING] Output file is not of type .py\n";
                     } else if (DRIVER == "compiler" && destFilename[destFilename.size() - 1] != 's') {
                         std::cerr << "[WARNING] Output file is not of type .s\n";
-                    } 
+                    }
                 } else {
                     std::cerr << "[WARNING] Unidentified flag \"" << SECOND_FLAG << "\"\n";
                     std::cerr << "[INFO] Redirecting " << DRIVER << " output to command line...\n";
