@@ -319,12 +319,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << end << "\n";
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
-            Compile(output, context, astNode->getLeft());
-            Compile(output, context, astNode->getIdentifier()); // Operator
-            Compile(output, context, astNode->getRight());
+            std::string id = astNode->getLeft()->getId(); // LHS Variable ID
+            evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
+            Compile(output, context, astNode->getIdentifier());  // Evaluate result in $t0
+            // x += y
+            // x = x + y
+            int offset = getVariableAddressOffset(context, id);
+            std::string ref = getReferenceRegister(context, id);
+            *output << "\t\tsw\t$t0, " << offset << ref << " \t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n"; 
+
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
-            Compile(output, context, astNode->getIdentifier()); // Operator
-            Compile(output, context, astNode->getRight());  //identifier
+            // Compile(output, context, astNode->getIdentifier());  // Operator
+            Compile(output, context, astNode->getRight());       //identifier
 
             int offset = getVariableAddressOffset(context, context.identifier);
             std::string ref = getReferenceRegister(context, context.identifier);
@@ -332,34 +338,34 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "lw\t$t0, " << offset << ref << "\n"
                     << "\t\t"
                     << "nop\n";
-            if (astNode->getId() == "++") {
+            if (astNode->getIdentifier()->getId() == "++") {
                 *output << "\t\t"
                         << "addi\t$t0, $t0, 1"
                         << "\n";
-            } else if (astNode->getId() == "--") {
+            } else if (astNode->getIdentifier()->getId() == "--") {
                 *output << "\t\t"
                         << "subi\t$t0, $t0, 1"
                         << "\n";
-            } else if (astNode->getId() == "&") {  //address
+            } else if (astNode->getIdentifier()->getId() == "&") {  //address
                 *output << "\t\t"
                         << "addi\t$t0, $0, ref"
                         << "\n";
                 *output << "\t\t"
                         << "addi\t$t0, $t0, offset"
                         << "\n";
-            } else if (astNode->getId() == "+") {  //positive
+            } else if (astNode->getIdentifier()->getId() == "+") {  //positive
                 *output << "\t\t"
                         << "addu\t$t0, $t0, $0"
                         << "\n";
-            } else if (astNode->getId() == "-") {  //negative
+            } else if (astNode->getIdentifier()->getId() == "-") {  //negative
                 *output << "\t\t"
                         << "sub\t$t0, $0, $t0"
                         << "\n";
-            } else if (astNode->getId() == "~") {  //ones complement
+            } else if (astNode->getIdentifier()->getId() == "~") {  //ones complement
                 *output << "\t\t"
                         << "xori\t$t0, $t0, -1"
                         << "\n";
-            } else if (astNode->getId() == "!") {  //logical NOT
+            } else if (astNode->getIdentifier()->getId() == "!") {  //logical NOT
                 *output << "\t\t"
                         << "sltu\t$t0, $0, $t0"  //if unsigned t0 is bigger than 0 set to 1
                         << "\n";
@@ -378,12 +384,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "mflo\t$t0\n";
             } else if (astNode->getId() == "/") {
                 *output << "\t\t"
-                        << "div\t$t1, $t0\n";
+                        << "div\t$t0, $t1\n";
                 *output << "\t\t"
                         << "mflo\t$t0\n";
             } else if (astNode->getId() == "%") {
                 *output << "\t\t"
-                        << "div\t$t1, $t0\n";
+                        << "div\t$t0, $t1\n";
                 *output << "\t\t"
                         << "mfhi\t$t0\n";
             } else {
@@ -554,28 +560,47 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.typeSpecifier = "SIGNED";
         } else if (astNode->getType() == "UNSIGNED") {
             context.typeSpecifier = "UNSIGNED";
-        } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
-                   astNode->getType() == "UNARY_OPERATOR") {
-            if (astNode->getId() == "*=" ) {
-            } else if (astNode->getId() == "/=" ) {
-            } else if (astNode->getId() == "%=" ) {
-            } else if (astNode->getId() == "+=" ) {
-            } else if (astNode->getId() == "-=" ) {
-            } else if (astNode->getId() == "<<=" ) {
-            } else if (astNode->getId() == ">>=" ) {
-            } else if (astNode->getId() == "&=" ) {
-            } else if (astNode->getId() == "^=" ) {
-            } else if (astNode->getId() == "|=" ) {
-            } else if (astNode->getId() == "++" ) {
-            } else if (astNode->getId() == "--" ) {
-            } else if (astNode->getId() == "&" ) {
-            } else if (astNode->getId() == "+" ) {
-            } else if (astNode->getId() == "-" ) {
-            } else if (astNode->getId() == "~" ) {
-            } else if (astNode->getId() == "!" ) {
+        } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
+            // $t0 = LHS, $t1 = RHS
+            if (astNode->getId() == "*=") {
+                *output << "\t\t"
+                        << "mult\t$t0, $t1 \t\t# (assign op node) lhs *= rhs\n";
+                *output << "\t\t"
+                        << "mflo\t$t0\n";
+            } else if (astNode->getId() == "/=") {
+                *output << "\t\t"
+                        << "div\t$t0, $t1 \t\t# (assign op node) lhs /= rhs\n";
+                *output << "\t\t"
+                        << "mflo\t$t0\n";
+            } else if (astNode->getId() == "%=") {
+                *output << "\t\t"
+                        << "div\t$t0, $t1 \t\t# (assign op node) lhs %= rhs\n";
+                *output << "\t\t"
+                        << "mfhi\t$t0\n";
+            } else if (astNode->getId() == "+=") {
+                *output << "\t\t"
+                        << "add\t$t0, $t0, $t1 \t\t# (assign op node) lhs += rhs\n";
+            } else if (astNode->getId() == "-=") {
+                *output << "\t\t"
+                        << "sub\t$t0, $t0, $t1 \t\t# (assign op node) lhs -= rhs\n";
+            } else if (astNode->getId() == "<<=") {
+                *output << "\t\t"
+                        << "sll\t$t0, $t0, $t1 \t\t# (assign op node) lhs <<= rhs\n";
+            } else if (astNode->getId() == ">>=") {
+                *output << "\t\t"
+                        << "sra\t$t0, $t0, $t1 \t\t# (assign op node) lhs >>= rhs\n";
+            } else if (astNode->getId() == "&=") {
+                *output << "\t\t"
+                        << "and\t$t0, $t0, $t1 \t\t# (assign op node) lhs &= rhs\n";
+            } else if (astNode->getId() == "^=") {
+                *output << "\t\t"
+                        << "xor\t$t0, $t0, $t1 \t\t# (assign op node) lhs ^= rhs\n";
+            } else if (astNode->getId() == "|=") {
+                *output << "\t\t"
+                        << "or\t$t0, $t0, $t1 \t\t# (assign op node) lhs |= rhs\n";
             }
-            
-
+        } else if (astNode->getType() == "UNARY_OPERATOR") {
+            // See unary expression
         } else if (astNode->getType() == "VARIABLE") {
             if (Util::debug) std::cerr << "[DEBUG] VAR_NODE D: " << context.variableAssignmentState << "\n";
             std::string id = context.identifier = astNode->getId();
@@ -777,11 +802,21 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
             << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
-    Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
-    *output << "\t\t"
-            << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+    Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
+    if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+        *output << "\t\t"
+                << "sw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+    } else {  // Normal variable
+        *output << "\t\t"
+                << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+    }
+
     Compile(output, context, astNode->getLeft());  //expr - LHS result stored in $t0
-    *output << "\t\t" //RHS is loaded to $t1
+    if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+        *output << "\t\t"
+                << "move\t$t0, $v0 \t\t# (eval expr) lhs from fn call\n";
+    }
+    *output << "\t\t"                              //RHS is loaded to $t1
             << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
             << "\t\t"
             << "nop\n";
