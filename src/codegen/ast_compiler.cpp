@@ -95,24 +95,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
             if (Util::debug) std::cerr << context;
-            int argCount = context.virtualRegisters;
-            int tmpVirtualReg = 0;
-            for (int i = 0; i < argCount; i++) {
-                if (i < 4) {
-                    *output << "\t\t"
-                            << "lw\t$a" << i << ", "
-                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9) \t\t# (fn args) Load fn call args from virtual to $aX\n";
-                } else {
-                    *output << "\t\t"
-                            << "lw\t$t8"
-                            << ", "
-                            << -8 * (argCount - (--context.virtualRegisters)) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n";
-                    *output << "\t\t"
-                            << "sw\t$t8, "
-                            << -8 * (++tmpVirtualReg) << "($fp) \t\t# (fn args) Store fn call args from $t8 to new virtual\n";
-                }
+
+            for (int i = 0; i < context.virtualRegisters; i++) {  // Load fn args to registers, save if more than 4
+                int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
+                std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
+                *output << "\t\t"
+                        << "lw\t$t8, "
+                        << -8 * (1 + i) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n";
+                *output << "\t\t"
+                        << "sw\t$t8, "
+                        << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
             }
-            context.virtualRegisters = tmpVirtualReg;
+
+            // All function parameters are now in virtual regs of the new frame
 
             // Get scope
             Compile(output, context, astNode->getScope());
@@ -139,7 +134,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "jr\t$ra\n";
             *output << "\t\t"
                     << "nop\n";
-
         } else if (astNode->getType() == "FUNCTION_CALL") {
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
@@ -147,11 +141,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
 
-                *output << "\t\tmove\t$t9, $fp\n";  //storing current fp into t4
-                *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"
+                *output << "\t\tmove\t$t9, $fp \t\t# Store current fp in $f9\n";      //storing current fp into t4
+                *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
             }
-
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -170,17 +163,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             if (astNode->getArgs()) {
                 Compile(output, context, astNode->getArgs());
-                if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
-                *output << "\t\t"
-                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
-                *output << "\t\t"
-                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) store in virtual\n";
+                // if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
+                // *output << "\t\t"
+                //         << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
+                // *output << "\t\t"
+                //         << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) store in virtual\n";
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
                 if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
-
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());  //get in t0
@@ -199,7 +191,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
-
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
             // type id = statements = next;
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
@@ -234,7 +225,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {
                     Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
-                    std::cerr << context;
+                    if (Util::viewAllNodesContext) std::cerr << context;
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror A\n";
                     int offset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
@@ -251,7 +242,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     Compile(output, context, astNode->getNext());
                 }
             }
-
         } else if (astNode->getType() == "IF_STATEMENT") {
             std::string label = createLabel(context, "_");
             std::string start = "if_start" + label;
@@ -278,7 +268,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
             *output << end << "\n";
-
         } else if (astNode->getType() == "WHILE_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
@@ -300,7 +289,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\n";
 
             *output << end << "\n";
-
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
@@ -324,12 +312,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\n";
 
             *output << end << "\n";
-
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             Compile(output, context, astNode->getLeft());
             Compile(output, context, astNode->getIdentifier());
             Compile(output, context, astNode->getRight());
-
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
             Compile(output, context, astNode->getRight());  //identifier
 
@@ -378,7 +364,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\n";
-
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -400,20 +385,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-
         } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "+") {
                 *output << "\t\t"
-                        << "add\t$t0, $t0, $t1\n";
+                        << "add\t$t0, $t0, $t1 \t\t# (add node) lhs + rhs\n";
             } else if (astNode->getId() == "-") {
                 *output << "\t\t"
-                        << "sub\t$t0, $t0, $t1\n";
+                        << "sub\t$t0, $t0, $t1 \t\t# (add node) lhs - rhs\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -445,7 +428,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "andi\t$t0, $t0, 1\n";  // Extract bits
-
         } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -469,7 +451,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-
         } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -493,7 +474,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             Compile(output, context, astNode->getLeft());  //identifier
 
@@ -516,7 +496,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\n";
-
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
                 std::string functionId = context.allFunctions.back();  // Gets last bound function
@@ -533,7 +512,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getTypeSpecifier());
                 Compile(output, context, astNode->getStatements());
             }
-
         } else if (astNode->getType() == "RETURN") {
             if (astNode->getReturnValue()) {
                 // if (astNode->getReturnValue()->getType() != context.returnType) {
@@ -541,7 +519,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // }
                 Compile(output, context, astNode->getReturnValue());
                 *output << "\t\t"
-                        << "add\t$v0, $t0, $0 \t\t# return value\n";
+                        << "add\t$v0, $t0, $0 \t\t# (return node) put return val in $v0\n";
 
             } else if (context.returnType == "VOID") {
                 *output << "\t\t"
@@ -609,7 +587,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 int addrOffset = getVariableAddressOffset(context, id);
                 std::string ref = getReferenceRegister(context, id);
                 *output << "\t\t"
-                        << "lw\t$t0, " << addrOffset << ref << "\n"
+                        << "lw\t$t0, " << addrOffset << ref << " \t\t# Reading from variable\n"
                         << "\t\t"
                         << "nop\n";
 
@@ -644,7 +622,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     }
                 }
             }
-
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << "\t\t"
                     << "li\t$t0, " << astNode->getVal() << "\n";
@@ -762,17 +739,17 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
-            << "addiu\t$sp, $sp, -8\n";
-    Compile(output, context, astNode->getLeft());  //identifier
+            << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
+    Compile(output, context, astNode->getLeft());  // identifier - LHS result stored in $t0
     *output << "\t\t"
-            << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp)\n";
-    Compile(output, context, astNode->getRight());  //expr
+            << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+    Compile(output, context, astNode->getRight());  //expr - RHS result stored in $t0
     *output << "\t\t"
-            << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp)\n"
+            << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
             << "\t\t"
             << "nop\n";
     *output << "\t\t"
-            << "addiu\t$sp, $sp, 8\n";
+            << "addiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
 }
 
 void clearRegisters(std::ostream *output) {
@@ -824,8 +801,8 @@ void storeRegisters(std::ostream *output) {
             << "add\t$fp, $sp, $0 \t\t# Move fp to new sp\n";
     *output << "\t\t"
             << "sw\t$ra, 4($sp) \t\t# Store ra on stack\n";
-    *output << "\t\t"
-            << "addiu\t$t9, $ra, 0 \t\t# Store ra in $t9\n";
+    // *output << "\t\t"
+    //         << "addiu\t$t9, $ra, 0 \t\t# Store ra in $t9\n";
     *output << "\t\t"
             << "sw\t$s0, 8($sp) \t\t# Store save regs $s0-$s7 on stack\n";
     *output << "\t\t"

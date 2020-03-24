@@ -35,42 +35,41 @@ std::pair<bool, int> findInVector(const std::vector<T>& vecOfElements, const T& 
     return result;
 }
 
-union FlexType {
-    int intValue;
-    double doubleValue;
-    float floatValue;
-    char charValue;
-    char active;
-    void setActive(const char& type) {
-        active = type;
-    }
-    template <typename T>
-    void set(const T& val) {
-        std::cerr << "val is of type " << typeid(val).name() << std::endl;
-        if (typeid(val).name() == typeid(0).name()) {
-            setActive('i');
-            intValue = val;
-        } else if (typeid(val).name() == typeid(0.0).name()) {
-            setActive('d');
-            doubleValue = val;
-        } else if (typeid(val).name() == typeid(0.0f).name()) {
-            setActive('f');
-            floatValue = val;
-        } else if (typeid(val).name() == typeid('0').name()) {
-            setActive('c');
-            charValue = val;
-        }
-    }
-};
+// union FlexType {
+//     int intValue;
+//     double doubleValue;
+//     float floatValue;
+//     char charValue;
+//     char active;
+//     void setActive(const char& type) {
+//         active = type;
+//     }
+//     template <typename T>
+//     void set(const T& val) {
+//         std::cerr << "val is of type " << typeid(val).name() << std::endl;
+//         if (typeid(val).name() == typeid(0).name()) {
+//             setActive('i');
+//             intValue = val;
+//         } else if (typeid(val).name() == typeid(0.0).name()) {
+//             setActive('d');
+//             doubleValue = val;
+//         } else if (typeid(val).name() == typeid(0.0f).name()) {
+//             setActive('f');
+//             floatValue = val;
+//         } else if (typeid(val).name() == typeid('0').name()) {
+//             setActive('c');
+//             charValue = val;
+//         }
+//     }
+// };
 
 struct VariableContext {
     // Single variable name can have different contexts in each scope
     int addressOffset;  // Address offset in memory of where the variable is located
     int scope;          // Scope in which the variable was defined
-    FlexType value;
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
-        out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << ", intVal: " << intValue <<" }";
+        out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << " }";
         return out;
     }
 };
@@ -154,18 +153,6 @@ struct ProgramContext {
     std::unordered_set<std::string> allFunctionsTranslator;
 
     // Helper methods
-    int getVariableIntValue(const std::string& id) {
-        if (!variableBindings.count(id)) {
-            throw std::runtime_error("[ERROR] Unable to retrieve intValue for undeclared variable \"" + id + "\"\n");
-        }
-        return variableBindings[id].back().intValue;
-    }
-    void setVariableIntValue(const std::string& id, const int& val) {
-        if (!variableBindings.count(id)) {
-            throw std::runtime_error("[ERROR] Unable to set intValue for undeclared variable \"" + id + "\"\n");
-        }
-        variableBindings[id].back().intValue = val;
-    }
 
     friend std::ostream& operator<<(std::ostream& out, const ProgramContext& p) {
         out << "\n[INFO] *** Program Context ***\n";

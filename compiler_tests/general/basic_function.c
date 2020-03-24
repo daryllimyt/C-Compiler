@@ -1,12 +1,12 @@
-int add(int i, int j, int k);
+int add(int i, int j);
 
 int main() {
-    int a = add(1, 2, 3);
+    int a = add(1, 2);
     return a;
 }
 
-int add(int i, int j, int k){
-    return i+j+k;
+int add(int i, int j){
+    return i+j;
 }
 
 
