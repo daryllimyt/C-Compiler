@@ -157,6 +157,7 @@ class WhileLoop : public Node {
    protected:
     NodePtr condition_;  //condition
     NodePtr next_;       //statement
+	int do;
 
    public:
     WhileLoop(NodePtr condition, NodePtr next) {
@@ -169,6 +170,9 @@ class WhileLoop : public Node {
     }
     NodePtr getNext() const {
         return next_;  // Next statement
+    }
+    int getVal() const {
+        return do;  // 0 for while 1 for do while
     }
 };
 

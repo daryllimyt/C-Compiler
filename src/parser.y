@@ -130,7 +130,7 @@ MULTIPLE_PARAMETERS //int i = 5, double j
   : MATH_OR_BITWISE_EXPRESSION T_COMMA MULTIPLE_PARAMETERS { $$ = new MultipleParameters($1, $3); }
   | MATH_OR_BITWISE_EXPRESSION                        { $$ = new MultipleParameters($1, NULL); }
   ;
- 
+
 SCOPE //scope {do smth;}
   : T_L_BRACE MULTIPLE_STATEMENTS T_R_BRACE { $$ = new Scope($2); }
   | T_L_BRACE T_R_BRACE                { $$ = new Scope(NULL); }
@@ -187,8 +187,9 @@ SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {c
 
 // //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
-  : T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5); }
-  | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForLoop($3, $4, $5, $7); }
+  	: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5, 0); }
+ 	| T_DO SINGLE_STATEMENT T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS                                      { $$ = new WhileLoop($5, $2, 1); }
+	| T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForLoop($3, $4, $5, $7); }
 //   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
   ;
 
@@ -234,7 +235,7 @@ ASSIGNMENT_OPERATOR
  *           TYPE_SPECIFIER             ASSIGNMENT_STATEMENT
  *                                      /          |           \
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
- */ 
+ */
 
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }

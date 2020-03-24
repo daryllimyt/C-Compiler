@@ -275,6 +275,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << end << "\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
+			if(astNode->getVal == 1){ //if loop is a do while loop - do an iteration before checking conditions
+				Compile(output, context, astNode->getStatements());
+			}
+
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
@@ -394,11 +398,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "and") {
                 *output << "\t\t"
-                        << "and\t$t0, $t0, $t1\n";
-
+                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                *output << "\t\t"
+                        << "sltu\t$t1, $0, $t1\n"; //set t1 to 1 if t1 > 0
+                *output << "\t\t"
+                        << "and\t$t0, $t0, $t1\n"; //set t0 to (t0 && t1)
             } else if (astNode->getId() == "or") {
                 *output << "\t\t"
-                        << "or\t$t0, $t0, $t1\n";
+                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                *output << "\t\t"
+                        << "sltu\t$t1, $0, $t1\n"; //set t1 to 1 if t1 > 0
+                *output << "\t\t"
+                        << "or\t$t0, $t0, $t1\n"; //set t0 to (t0 || t1)
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -598,8 +609,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\n";
             } else if (astNode->getId() == "!") {  //logical NOT
                 *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0"  //if unsigned t0 is bigger than 0 set to 1
-                        << "\n";
+                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                *output << "\t\t"
+                        << "xor\t$t0, $t0, $t0\n"; //inverse bits
+
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
