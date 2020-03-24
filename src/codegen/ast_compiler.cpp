@@ -9,6 +9,7 @@ void updateVariableBindings(ProgramContext &context);
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
 int getSize(const NodePtr &astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
+int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
 std::string createLabel(ProgramContext &context, const std::string &name);
 
@@ -84,9 +85,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionEnds.push_back(functionEnd);
             *output << "\n"
                     << id << ":\n";
-            // if (context.scope == 0) {
-            //     *output << ".globl " << id << "\n";  // Global flag for mips gcc
-            // }
+            if (context.scope == 0) {
+                *output << ".globl " << id << "\n";  // Global flag for mips gcc
+            }
 
             // Push to stack
             *output << "\t\t"
@@ -229,7 +230,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     // if (Util::viewAllNodesContext) std::cerr << context;
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A\n";
                     Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
-                    
+
                     int offset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -579,6 +580,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     } else {  // shadowing
                     }
                 } else if (type == "ARRAY") {
+                    int index = context.frameIndex;
+                    if (context.scope == 0) {
+                        index = 0;  // For global variables
+                    }
+                    int arraySize = 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+                    context.frameTracker[index].variableCount++;  // Increment number of variables in frame
+                    // context.frameTracker[index].addVariable(id);  // Track variable id
+                    VariableContext newVariable;
+                    newVariable.addressOffset = context.frameTracker[index].bytes - 8 * context.frameTracker[index].variableCount;  // Get next available memory address after vars
+                    newVariable.scope = context.scope;
+                    newVariable.typeSpecifier = context.typeSpecifier;
+                    context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
+
                 } else if (type == "POINTER") {
                     /* code */
                 } else {
@@ -745,10 +759,10 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
             << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
-    Compile(output, context, astNode->getLeft());  // identifier - LHS result stored in $t0
+    Compile(output, context, astNode->getRight());  // identifier - RHS result stored in $t0
     *output << "\t\t"
             << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
-    Compile(output, context, astNode->getRight());  //expr - RHS result stored in $t0
+    Compile(output, context, astNode->getLeft());  //expr - LHS result stored in $t1
     *output << "\t\t"
             << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
             << "\t\t"
@@ -757,136 +771,136 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
             << "addiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
 }
 
-int evalArrayIndexOrSize(const FrameContext& context, NodePtr astNode, int value){
-	int value;
-	if (astNode->getType() == "INTEGER_CONSTANT") {
-		 value =  astNode->getVal();
-	} else if (astNode->getType() == "VARIABLE") {
+int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
+    int value;
+    if (astNode->getType() == "INTEGER_CONSTANT") {
+        value = astNode->getVal();
+    } else if (astNode->getType() == "VARIABLE") {
         std::string id = astNode->getId();
-		value = context.getVariableValue(id);
-	} else if (astNode->getType() == "UNARY_EXPRESSION") {
-		value = evalArrayIndexOrSize(context, astNode->getRight(), value);  //identifier
+        value = context.getVariableIntValue(id);
+    } else if (astNode->getType() == "UNARY_EXPRESSION") {
+        value = evalArrayIndexOrSize(context, astNode->getRight());  //identifier
 
-		if (astNode->getId() == "++") {
-			value = ++value;
-		} else if (astNode->getId() == "--") {
-			value = --value;
-		} else if (astNode->getId() == "+") {  //positive
-			value = +value;
-		} else if (astNode->getId() == "-") {  //negative
-			value = -value;
-		} else if (astNode->getId() == "~") {  //ones complement
-			value = ~value;
-		} else if (astNode->getId() == "!") {  //logical NOT
-			value = !value;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
-	} else if (astNode->getType() == "POSTFIX_EXPRESSION") {
-		value = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		if (astNode->getId() == "++") {
-			return(value++);
-		} else if (astNode->getId() == "--") {
-			return(value--);
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
+        if (astNode->getId() == "++") {
+            value = ++value;
+        } else if (astNode->getId() == "--") {
+            value = --value;
+        } else if (astNode->getId() == "+") {  //positive
+            value = +value;
+        } else if (astNode->getId() == "-") {  //negative
+            value = -value;
+        } else if (astNode->getId() == "~") {  //ones complement
+            value = ~value;
+        } else if (astNode->getId() == "!") {  //logical NOT
+            value = !value;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
+    } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
+        value = evalArrayIndexOrSize(context, astNode->getLeft());
+        if (astNode->getId() == "++") {
+            return (value++);
+        } else if (astNode->getId() == "--") {
+            return (value--);
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
 
-	} else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
-		if (astNode->getId() == "*") {
-			value = left * right;
-		} else if (astNode->getId() == "/") {
-			value = left / right;
-		} else if (astNode->getId() == "%") {
-			value = left % right;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
+    } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
+        if (astNode->getId() == "*") {
+            value = left * right;
+        } else if (astNode->getId() == "/") {
+            value = left / right;
+        } else if (astNode->getId() == "%") {
+            value = left % right;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
 
-	} else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
-		if (astNode->getId() == "+") {
-			value = left + right;
-		} else if (astNode->getId() == "-") {
-			value = left - right;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
+    } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
+        if (astNode->getId() == "+") {
+            value = left + right;
+        } else if (astNode->getId() == "-") {
+            value = left - right;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
 
-	} else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
+    } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
 
-		value = left & right;
+        value = left & right;
 
-	} else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
+    } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
 
-		value = left ^ right;
+        value = left ^ right;
 
-	} else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
+    } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
 
-		value = left | right;
-	} else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
-		if (astNode->getId() == "and") {
-		value = left && right;
-		} else if (astNode->getId() == "or") {
-		value = left || right;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
-		value = value & 1; //extracting LSB
+        value = left | right;
+    } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
+        if (astNode->getId() == "and") {
+            value = left && right;
+        } else if (astNode->getId() == "or") {
+            value = left || right;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
 
-	} else if (astNode->getType() == "EQUALITY_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
+    } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
 
-		value = (left == right);
-	} else if (astNode->getType() == "SHIFT_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);
-		if (astNode->getId() == "<<") {
-			value = left << right;
-		} else if (astNode->getId() == ">>") {
-			value = left >> right;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
+        value = (left == right);
+    } else if (astNode->getType() == "SHIFT_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
+        if (astNode->getId() == "<<") {
+            value = left << right;
+        } else if (astNode->getId() == ">>") {
+            value = left >> right;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
 
-	} else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
-		int left, right;
-		left = evalArrayIndexOrSize(context, astNode->getLeft(), value);
-		right = evalArrayIndexOrSize(context, astNode->getRight(), value);	;
-		if (astNode->getId() == "<") {
-			value = left < right;
-		} else if (astNode->getId() == ">") {
-			value = left < right;
-		} else if (astNode->getId() == "<=") {
-			value = left <= right;
-		} else if (astNode->getId() == ">=") {
-			value = left >= right;
-		} else {
-			throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
-		}
-	return value;
+    } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
+        int left, right;
+        left = evalArrayIndexOrSize(context, astNode->getLeft());
+        right = evalArrayIndexOrSize(context, astNode->getRight());
+        ;
+        if (astNode->getId() == "<") {
+            value = left < right;
+        } else if (astNode->getId() == ">") {
+            value = left < right;
+        } else if (astNode->getId() == "<=") {
+            value = left <= right;
+        } else if (astNode->getId() == ">=") {
+            value = left >= right;
+        } else {
+            throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+        }
+    }
+    return value;
 }
-
 
 void clearRegisters(std::ostream *output) {
     *output << "\t\t"

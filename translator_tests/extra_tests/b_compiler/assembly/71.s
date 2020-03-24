@@ -1,1508 +1,189 @@
-.text
-.globl f
+
 f:
-.ent f
-addiu $t5, $gp, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.frame $sp, 160, $ra
-.set noreorder
-.cpload $t8
-.set reorder
-addiu $sp, $sp, -160
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $fp, 0($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $fp, $sp, $0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $ra, 4($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t9, $ra, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s0, 8($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s1, 12($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s2, 16($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s3, 20($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s4, 24($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s5, 28($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s6, 32($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s7, 36($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $gp, 40($gp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.cprestore 44
-addiu $gp, $t5, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $a0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 152($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $a1, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 144($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $a2, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 136($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $a3, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 128($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, -40($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 120($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, -48($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 112($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, -56($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 104($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t8, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $v0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $v1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, -4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 152($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -24($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 144($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -24($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -20($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 136($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -20($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -16($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 128($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -16($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -12($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 120($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -12($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -8($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 112($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -8($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -4($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 104($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t1, -4($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $t0, $t1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $v0, $t0, $0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-j label_1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-label_1:
-addiu $t0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t8, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s0, 8($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s1, 12($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s2, 16($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s3, 20($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s4, 24($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s5, 28($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s6, 32($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s7, 36($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $ra, 4($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $fp, 0($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 160
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-beq $ra, $0, label_0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-jr $ra
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.end f
-.globl fmain
+.globl f
+		addiu	$sp, $sp, -180 		# (frame start) Move sp to end of new frame
+		sw	$fp, 0($sp) 		# Store addr of old fp on stack
+		add	$fp, $sp, $0 		# Move fp to new sp
+		sw	$ra, 4($sp) 		# Store ra on stack
+		sw	$s0, 8($sp) 		# Store save regs $s0-$s7 on stack
+		sw	$s1, 12($sp)
+		sw	$s2, 16($sp)
+		sw	$s3, 20($sp)
+		sw	$s4, 24($sp)
+		sw	$s5, 28($sp)
+		sw	$s6, 32($sp)
+		sw	$s7, 36($sp)
+		sw	$a0, 40($sp) 		# Store prev fn args $a0-$a3 on stack
+		sw	$a1, 44($sp)
+		sw	$a2, 48($sp)
+		sw	$a3, 52($sp)
+		sw	$gp, 56($sp) 		# Store value of $gp on stack
+		nop
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 124($fp) 		# Reading from variable
+		nop
+		sw	$t0, -8($fp) 		# (eval expr) store lhs in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 132($fp) 		# Reading from variable
+		nop
+		sw	$t0, -16($fp) 		# (eval expr) store lhs in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 140($fp) 		# Reading from variable
+		nop
+		sw	$t0, -24($fp) 		# (eval expr) store lhs in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 148($fp) 		# Reading from variable
+		nop
+		sw	$t0, -32($fp) 		# (eval expr) store lhs in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 156($fp) 		# Reading from variable
+		nop
+		sw	$t0, -40($fp) 		# (eval expr) store lhs in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		lw	$t0, 164($fp) 		# Reading from variable
+		nop
+		sw	$t0, -48($fp) 		# (eval expr) store lhs in virtual
+		lw	$t0, 172($fp) 		# Reading from variable
+		nop
+		lw	$t1, -48($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		lw	$t1, -40($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		lw	$t1, -32($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		lw	$t1, -24($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		lw	$t1, -16($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		lw	$t1, -8($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		add	$v0, $t0, $0 		# (return node) put return val in $v0
+		j	f_end_0
+
+f_end_0:
+		lw	$s0, 8($fp) 		# Load saved regs into $s0-$s7
+		lw	$s1, 12($fp)
+		lw	$s2, 16($fp)
+		lw	$s3, 20($fp)
+		lw	$s4, 24($fp)
+		lw	$s5, 28($fp)
+		lw	$s6, 32($fp)
+		lw	$s7, 36($fp)
+		lw	$a0, 40($fp)
+		lw	$a1, 44($fp) 		# Load prev fn args into $a0-$a3
+		lw	$a2, 48($fp)
+		lw	$a3, 52($fp)
+		lw	$ra, 4($fp) 		# Load return address into $ra
+		lw	$fp, 0($fp) 		# Load prev fp into $fp
+		nop
+		addiu	$sp, $sp, 180 		# (frame end) Move sp to end of previous frame
+		beq	$ra, $0, end
+		nop
+		jr	$ra
+		nop
+
 fmain:
-.ent fmain
-addiu $t5, $gp, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.frame $sp, 224, $ra
-.set noreorder
-.cpload $t8
-.set reorder
-addiu $sp, $sp, -224
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $fp, 0($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $fp, $sp, $0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $ra, 4($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t9, $ra, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s0, 8($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s1, 12($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s2, 16($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s3, 20($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s4, 24($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s5, 28($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s6, 32($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $s7, 36($sp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $gp, 40($gp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.cprestore 44
-addiu $gp, $t5, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t8, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $v0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $v1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 1
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 216($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 2
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 208($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 3
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 200($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 4
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 192($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 5
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 184($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 6
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 176($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lui $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addi $t0, $t0, 7
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 168($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 216($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 44($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 208($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 52($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 200($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 60($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 192($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 68($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 184($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 76($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 176($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 84($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 168($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, 92($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t4, $fp, 44
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t3, $sp, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 0($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a0, $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 8($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a1, $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 16($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a2, $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 24($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a3, $t0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 32($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -40($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 40($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -48($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $t0, 48($t4)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sw $t0, -56($t3)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-jal f
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $t0, $v0, $0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-add $v0, $t0, $0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-j label_2
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-label_2:
-addiu $t0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $t8, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s4, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s5, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s6, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $s7, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a0, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a1, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a2, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $a3, $0, 0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s0, 8($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s1, 12($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s2, 16($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s3, 20($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s4, 24($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s5, 28($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s6, 32($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $s7, 36($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $ra, 4($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-lw $fp, 0($fp)
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-addiu $sp, $sp, 224
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-beq $ra, $0, label_0
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-jr $ra
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-.end fmain
-label_0:
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0 
-sll $0, $0, 0
-sll $0, $0, 0
-sll $0, $0, 0
-sll $0, $0, 0
-sll $0, $0, 0
+.globl fmain
+		addiu	$sp, $sp, -244 		# (frame start) Move sp to end of new frame
+		sw	$fp, 0($sp) 		# Store addr of old fp on stack
+		add	$fp, $sp, $0 		# Move fp to new sp
+		sw	$ra, 4($sp) 		# Store ra on stack
+		sw	$s0, 8($sp) 		# Store save regs $s0-$s7 on stack
+		sw	$s1, 12($sp)
+		sw	$s2, 16($sp)
+		sw	$s3, 20($sp)
+		sw	$s4, 24($sp)
+		sw	$s5, 28($sp)
+		sw	$s6, 32($sp)
+		sw	$s7, 36($sp)
+		sw	$a0, 40($sp) 		# Store prev fn args $a0-$a3 on stack
+		sw	$a1, 44($sp)
+		sw	$a2, 48($sp)
+		sw	$a3, 52($sp)
+		sw	$gp, 56($sp) 		# Store value of $gp on stack
+		nop
+		li	$t0, 1
+		sw	$t0, 172($fp)		# (assign) store var result
+		li	$t0, 2
+		sw	$t0, 164($fp)		# (assign) store var result
+		li	$t0, 3
+		sw	$t0, 156($fp)		# (assign) store var result
+		li	$t0, 4
+		sw	$t0, 148($fp)		# (assign) store var result
+		li	$t0, 5
+		sw	$t0, 140($fp)		# (assign) store var result
+		li	$t0, 6
+		sw	$t0, 132($fp)		# (assign) store var result
+		li	$t0, 7
+		sw	$t0, 124($fp)		# (assign) store var result
+		lw	$t0, 132($fp) 		# Reading from variable
+		nop
+		lw	$t0, 172($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -8($fp) 		# (fn call params) store in virtual
+		lw	$t0, 164($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -16($fp) 		# (fn call params) store in virtual
+		lw	$t0, 156($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -24($fp) 		# (fn call params) store in virtual
+		lw	$t0, 148($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -32($fp) 		# (fn call params) store in virtual
+		lw	$t0, 140($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -40($fp) 		# (fn call params) store in virtual
+		lw	$t0, 132($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -48($fp) 		# (fn call params) store in virtual
+		lw	$t0, 124($fp) 		# Reading from variable
+		nop
+		addiu	$sp, $sp, -8 		# Expanding stack
+		sw	$t0, -56($fp) 		# (fn call params) store in virtual
+		move	$t9, $fp 		# Store current fp in $f9
+		jal	f				# (fn call) enter fn def
+		nop
+		add	$v0, $t0, $0 		# (return node) put return val in $v0
+		j	fmain_end_1
+
+fmain_end_1:
+		lw	$s0, 8($fp) 		# Load saved regs into $s0-$s7
+		lw	$s1, 12($fp)
+		lw	$s2, 16($fp)
+		lw	$s3, 20($fp)
+		lw	$s4, 24($fp)
+		lw	$s5, 28($fp)
+		lw	$s6, 32($fp)
+		lw	$s7, 36($fp)
+		lw	$a0, 40($fp)
+		lw	$a1, 44($fp) 		# Load prev fn args into $a0-$a3
+		lw	$a2, 48($fp)
+		lw	$a3, 52($fp)
+		lw	$ra, 4($fp) 		# Load return address into $ra
+		lw	$fp, 0($fp) 		# Load prev fp into $fp
+		nop
+		addiu	$sp, $sp, 244 		# (frame end) Move sp to end of previous frame
+		beq	$ra, $0, end
+		nop
+		jr	$ra
+		nop
+
+end:
