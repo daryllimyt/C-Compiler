@@ -320,9 +320,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << end << "\n";
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             Compile(output, context, astNode->getLeft());
-            Compile(output, context, astNode->getIdentifier());
+            Compile(output, context, astNode->getIdentifier()); // Operator
             Compile(output, context, astNode->getRight());
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
+            Compile(output, context, astNode->getIdentifier()); // Operator
             Compile(output, context, astNode->getRight());  //identifier
 
             int offset = getVariableAddressOffset(context, context.identifier);
@@ -558,6 +559,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.typeSpecifier = "UNSIGNED";
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR" ||
                    astNode->getType() == "UNARY_OPERATOR") {
+            if (astNode->getId() == "*=" ) {
+            } else if (astNode->getId() == "/=" ) {
+            } else if (astNode->getId() == "%=" ) {
+            } else if (astNode->getId() == "+=" ) {
+            } else if (astNode->getId() == "-=" ) {
+            } else if (astNode->getId() == "<<=" ) {
+            } else if (astNode->getId() == ">>=" ) {
+            } else if (astNode->getId() == "&=" ) {
+            } else if (astNode->getId() == "^=" ) {
+            } else if (astNode->getId() == "|=" ) {
+            } else if (astNode->getId() == "++" ) {
+            } else if (astNode->getId() == "--" ) {
+            } else if (astNode->getId() == "&" ) {
+            } else if (astNode->getId() == "+" ) {
+            } else if (astNode->getId() == "-" ) {
+            } else if (astNode->getId() == "~" ) {
+            } else if (astNode->getId() == "!" ) {
+            }
+            
+
         } else if (astNode->getType() == "VARIABLE") {
             if (Util::debug) std::cerr << "[DEBUG] VAR_NODE D: " << context.variableAssignmentState << "\n";
             std::string id = context.identifier = astNode->getId();
