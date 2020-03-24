@@ -67,6 +67,7 @@ struct VariableContext {
     // Single variable name can have different contexts in each scope
     int addressOffset;  // Address offset in memory of where the variable is located
     int scope;          // Scope in which the variable was defined
+    int intValue;
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
         out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << " }";
@@ -153,6 +154,18 @@ struct ProgramContext {
     std::unordered_set<std::string> allFunctionsTranslator;
 
     // Helper methods
+    int getVariableIntValue(const std::string& id) {
+        if (!variableBindings.count(id)) {
+            throw std::runtime_error("[ERROR] Unable to retrieve intValue for undeclared variable \"" + id + "\"\n");
+        }
+        return variableBindings[id].back().intValue;
+    }
+    void setVariableIntValue(const std::string& id, const int& val) {
+        if (!variableBindings.count(id)) {
+            throw std::runtime_error("[ERROR] Unable to set intValue for undeclared variable \"" + id + "\"\n");
+        }
+        variableBindings[id].back().intValue = val;
+    }
 
     friend std::ostream& operator<<(std::ostream& out, const ProgramContext& p) {
         out << "\n[INFO] *** Program Context ***\n";

@@ -56,6 +56,9 @@ clean :
 	rm -f include/ast/*.gch
 	rm -f translator_tests/output/*
 	rm -f translator_tests/extra_tests/translator/outputs/*
+	rm -f translator_tests/extra_tests/b_compiler/assembly/*
+	rm -f translator_tests/extra_tests/b_compiler/objects/*
+	rm -f translator_tests/extra_tests/b_compiler/outputs/*
 	rm -f compiler_tests/output/*.o
 	rm -f compiler_tests/output/*.s
 	

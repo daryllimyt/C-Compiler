@@ -5,10 +5,10 @@
 
 class Util {
    public:
-    static const bool debug = true;
-    static const bool viewStartTags = true;
-    static const bool viewEndTags = true;
-    static const bool viewAllNodesContext = true;
+    static const bool debug = false;
+    static const bool viewStartTags = false;
+    static const bool viewEndTags = false;
+    static const bool viewAllNodesContext = false;
 
     static void abort() {
         if (debug) {
