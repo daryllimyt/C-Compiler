@@ -13,6 +13,7 @@
 #include "util.hpp"
 
 #include <exception>
+#include <algorithm>
 
 extern const Node *parseAST();
 extern void yyset_in(FILE *fd);

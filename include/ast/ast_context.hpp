@@ -2,9 +2,9 @@
 #define AST_CONTEXT_HPP_
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <unordered_map>
-#include <map>
 #include <unordered_set>
 #include <vector>
 
@@ -17,10 +17,56 @@ void printIterable(std::ostream& out, const T& iterable) {
     out << "]";
 }
 
+template <typename T>
+std::pair<bool, int> findInVector(const std::vector<T>& vecOfElements, const T& element) {
+    std::pair<bool, int> result;
+
+    // Find given element in vector
+    auto it = std::find(vecOfElements.begin(), vecOfElements.end(), element);
+
+    if (it != vecOfElements.end()) {
+        result.second = distance(vecOfElements.begin(), it);
+        result.first = true;
+    } else {
+        result.first = false;
+        result.second = -1;
+    }
+
+    return result;
+}
+
+// union FlexType {
+//     int intValue;
+//     double doubleValue;
+//     float floatValue;
+//     char charValue;
+//     char active;
+//     void setActive(const char& type) {
+//         active = type;
+//     }
+//     template <typename T>
+//     void set(const T& val) {
+//         std::cerr << "val is of type " << typeid(val).name() << std::endl;
+//         if (typeid(val).name() == typeid(0).name()) {
+//             setActive('i');
+//             intValue = val;
+//         } else if (typeid(val).name() == typeid(0.0).name()) {
+//             setActive('d');
+//             doubleValue = val;
+//         } else if (typeid(val).name() == typeid(0.0f).name()) {
+//             setActive('f');
+//             floatValue = val;
+//         } else if (typeid(val).name() == typeid('0').name()) {
+//             setActive('c');
+//             charValue = val;
+//         }
+//     }
+// };
+
 struct VariableContext {
     // Single variable name can have different contexts in each scope
-    int addressOffset;          // Address offset in memory of where the variable is located
-    int scope;                  // Scope in which the variable was defined
+    int addressOffset;  // Address offset in memory of where the variable is located
+    int scope;          // Scope in which the variable was defined
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
         out << "{addrOffset: " << v.addressOffset << ", scope: " << v.scope << ", type: " << v.typeSpecifier << " }";
@@ -68,7 +114,7 @@ struct FrameContext {
 
 struct ProgramContext {
     // General
-  
+
     /* Contextual information for MIPS code generator */
     // Scope
     int scope = 0;
@@ -82,7 +128,7 @@ struct ProgramContext {
     // Variables
     std::string identifier;
     std::string typeSpecifier;
-    std::string typeQualifier;                                                       // const, volatile
+    std::string typeQualifier;  // const, volatile
     std::string variableAssignmentState = "NO_ASSIGN";
     std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
 
@@ -90,6 +136,7 @@ struct ProgramContext {
     std::string returnType = "VOID";
     std::unordered_set<std::string> functionArgs;
     std::vector<std::string> allFunctions;
+    std::unordered_set<std::string> declaredFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Registers
@@ -104,6 +151,8 @@ struct ProgramContext {
     std::unordered_set<std::string> globalVariables;
     std::unordered_set<std::string> allVariables;
     std::unordered_set<std::string> allFunctionsTranslator;
+
+    // Helper methods
 
     friend std::ostream& operator<<(std::ostream& out, const ProgramContext& p) {
         out << "\n[INFO] *** Program Context ***\n";
@@ -120,6 +169,7 @@ struct ProgramContext {
         out << "\n";
 
         // // Variables
+        out << "[INFO] * virtualRegisters: " << p.virtualRegisters << "\n";
         out << "[INFO] * identifier: " << p.identifier << "\n";
         out << "[INFO] * typeSpecifier: " << p.typeSpecifier << "\n";
         out << "[INFO] * typeQualifier: " << p.typeQualifier << "\n";  // const, volatile
@@ -136,11 +186,14 @@ struct ProgramContext {
         out << "[INFO] * functionArgs: ";
         printIterable(out, p.functionArgs);
         out << "\n";
+        out << "[INFO] * declaredFunctions: ";
+        printIterable(out, p.declaredFunctions);
+        out << "\n";
         out << "[INFO] * allFunctions: ";
         printIterable(out, p.allFunctions);
         out << "\n";
         out << "[INFO] * functionBindings:\n";
-        
+
         for (auto& it : p.functionBindings) {
             out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
         }
@@ -155,6 +208,5 @@ struct ProgramContext {
         out << "\n";
         return out;
     }
-    
 };
 #endif
