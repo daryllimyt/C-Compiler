@@ -68,6 +68,7 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
         FAILARRAY[${FAILED}]=$N;
     else
         echo "[INFO] PASSED!"
+        PASSED=$(( ${PASSED}+1 ));
     fi
 
     CHECKED=$(( $CHECKED+1 ));

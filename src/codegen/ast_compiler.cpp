@@ -249,10 +249,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string next = "if_next" + label;
             std::string end = "if_end" + label;
 
-            *output << start << "\n";
+            *output << "\n" << start << ":\n";
             Compile(output, context, astNode->getCondition());  // Condition result stored in $t0
             *output << "\t\t"
-                    << "beq\tt0, 0, " << next << "\n";  // If $t0==0 skip to else branch
+                    << "beq\t$t0, $0, " << next << "\n";  // If $t0==0 skip to else branch
             *output << "\t\t"
                     << "nop"
                     << "\n";
@@ -263,12 +263,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\t"
                     << "nop"
                     << "\n";
-            *output << next << "\n";
+            *output << "\n" << next << ":\n";
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Else or else if statement
             }
 
-            *output << end << "\n";
+            *output << "\n" << end << ":\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
 			if(astNode->getVal() == 1){ //if loop is a do while loop - do an iteration before checking conditions
 				Compile(output, context, astNode->getStatements());
@@ -278,10 +278,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
 
-            *output << start << "\n";
+            *output << "\n" << start << ":\n";
             Compile(output, context, astNode->getCondition());  //result in t0
             *output << "\t\t"
-                    << "beq\tt0, 0, " << end << "\n";  // condition returns 0 (false), exit while loop
+                    << "beq\t$t0, $0, " << end << "\n";  // condition returns 0 (false), exit while loop
             *output << "\t\t"
                     << "nop"
                     << "\n";
@@ -293,17 +293,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop"
                     << "\n";
 
-            *output << end << "\n";
+            *output << "\n" << end << ":\n";
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
 
             Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
-            *output << start << "\n";
+            *output << "\n" << start << ":\n";
             Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
             *output << "\t\t"
-                    << "beq\tt0, 0, " << end << "\n";
+                    << "beq\t$t0, $0, " << end << "\n";
             *output << "\t\t"
                     << "nop"
                     << "\n";
@@ -316,30 +316,29 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop"
                     << "\n";
 
-            *output << end << "\n";
+            *output << "\n" << end << ":\n";
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
             Compile(output, context, astNode->getIdentifier());  // Evaluate result in $t0
             // x += y
             // x = x + y
-            int offset = getVariableAddressOffset(context, id);
-            std::string ref = getReferenceRegister(context, id);
+            std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getLeft());
+            int offset = addressInfo.first;
+            std::string ref = addressInfo.second;
             *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
+
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
 
-            int offset = getVariableAddressOffset(context, context.identifier);
-            std::string ref = getReferenceRegister(context, context.identifier);
+            std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
+            int offset = addressInfo.first;
+            std::string ref = addressInfo.second;
+        
             *output << "\t\t"
-                    << "lw\t$t0, " << offset << ref << "\n"
-                    << "\t\t"
-                    << "nop\n";
-
-            *output << "\t\t"
-                    << "sw\t$t0, " << offset << ref << "\n";
+                    << "sw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -578,7 +577,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "or\t$t0, $t0, $t1 \t\t# (assign op node) lhs |= rhs\n";
             }
         } else if (astNode->getType() == "UNARY_OPERATOR") {
-            if (astNode->getIdentifier()->getId() == "++") {
+            if (astNode->getId() == "++") {
                 *output << "\t\t"
                         << "addi\t$t0, $t0, 1"
                         << "\n";
@@ -603,7 +602,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\n";
             } else if (astNode->getId() == "~") {  //ones complement
                 *output << "\t\t"
-                        << "xori\t$t0, $t0, -1"
+                        << "li\t$t1, -1\n"
+                        << "xor\t$t0, $t0, $t1"
                         << "\n";
             } else if (astNode->getId() == "!") {  //logical NOT
                 *output << "\t\t"

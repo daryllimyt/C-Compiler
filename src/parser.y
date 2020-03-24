@@ -297,7 +297,7 @@ UNARY_OPERATOR
   | T_AND_OP    { $$ = new UnaryOperator("&"); }
   | T_PLUS      { $$ = new UnaryOperator("+"); }
   | T_MINUS     { $$ = new UnaryOperator("-"); }
-  | T_XOR       { $$ = new UnaryOperator("~"); }
+  | T_INVERT       { $$ = new UnaryOperator("~"); }
   | T_NOT       { $$ = new UnaryOperator("!"); }
   ;
 
