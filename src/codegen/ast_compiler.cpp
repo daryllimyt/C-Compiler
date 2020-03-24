@@ -756,7 +756,6 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
     *output << "\t\t"
             << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
-<<<<<<< HEAD
     Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
     *output << "\t\t"
             << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
