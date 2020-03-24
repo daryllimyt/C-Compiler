@@ -84,9 +84,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionEnds.push_back(functionEnd);
             *output << "\n"
                     << id << ":\n";
-            if (context.scope == 0) {
-                *output << ".globl " << id << "\n";  // Global flag for mips gcc
-            }
+            // if (context.scope == 0) {
+            //     *output << ".globl " << id << "\n";  // Global flag for mips gcc
+            // }
 
             // Push to stack
             *output << "\t\t"
@@ -107,7 +107,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
             }
 
-            // All function parameters are now in virtual regs of the new frame
+            // All function parameters are now in their respective variables in the new frame
 
             // Get scope
             Compile(output, context, astNode->getScope());
@@ -145,6 +145,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
             }
+            context.variableAssignmentState = "FUNCTION_CALL";
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -220,25 +221,29 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // }
 
             } else {
+                if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator\n";
                 Compile(output, context, astNode->getIdentifier());
                 std::string id = context.identifier;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {
+                    // if (Util::viewAllNodesContext) std::cerr << context;
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A\n";
                     Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
-                    if (Util::viewAllNodesContext) std::cerr << context;
-                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror A\n";
+                    
                     int offset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
-                    if (context.functionBindings.count(context.identifier)) {  // From function call
+                    if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\t"
                                 << "sw\t$v0, " << offset << ref << "\t\t# (assign) store function result\n";
-                    } else if (context.variableBindings.count(context.identifier)) {  // Normal variable
+                        // *output << "\t\t"
+                        //         << "sw\t$t0, " << offset << ref << "\t\t# (assign) store function result\n";
+                    } else {  // Normal variable
                         *output << "\t\t"
                                 << "sw\t$t0, " << offset << ref << "\t\t# (assign) store var result\n";
                     }
                 }
                 if (astNode->getNext()) {
-                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declataror B, recursive\n";
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator B, recursive\n";
                     Compile(output, context, astNode->getNext());
                 }
             }
