@@ -7,7 +7,7 @@ FAILED=0
 declare -a FAILARRAY
 
 echo "========================================"
-echo "               TESTBENCH"
+echo "            COMPILER TESTBENCH"
 echo "========================================"
 echo "[INFO] Cleaning directories and building compiler..."
 make all
@@ -63,12 +63,11 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
     qemu-mips translator_tests/extra_tests/b_compiler/outputs/${N}_exe
     ret=$?
     if [[ $ret -ne 0 ]]; then
-        echo "FAILED! Testcase returned $ret, but expected 0."
+        echo "[INFO] FAILED! Testcase returned $ret, but expected 0."
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
     else
-        echo "PASSED!"
-        PASSED=$(( ${PASSED}+1 ));
+        echo "[INFO] PASSED!"
     fi
 
     CHECKED=$(( $CHECKED+1 ));

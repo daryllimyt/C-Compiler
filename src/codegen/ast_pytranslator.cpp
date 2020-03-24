@@ -120,7 +120,7 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                 }
             }
         } else if (astNode->getType() == "WHILE_LOOP") {
-			if(astNode->getVal = 1){ // its a do while loop so do one extra iteration before checking conditions
+			if(astNode->getVal() == 1){ // its a do while loop so do one extra iteration before checking conditions
 				PyTranslate(output, context, astNode->getNext());  //scope
 			}
             context.variableAssignmentState = "WHILE_LOOP";

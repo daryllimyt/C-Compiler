@@ -35,7 +35,7 @@ class JumpStatement : public Node {
     NodePtr returnValue_;
 
    public:
-    JumpStatement(const std::string &type, NodePtr returnValue) {
+    JumpStatement(const std::string& type, NodePtr returnValue) {
         type_ = type;                // return, continue, break
         returnValue_ = returnValue;  // return value or NULL
     }
@@ -157,13 +157,14 @@ class WhileLoop : public Node {
    protected:
     NodePtr condition_;  //condition
     NodePtr next_;       //statement
-	int do;
+    int64_t do_condition_;
 
    public:
-    WhileLoop(NodePtr condition, NodePtr next) {
+    WhileLoop(NodePtr condition, NodePtr next, const int& do_condition) {
         type_ = "WHILE_LOOP";
         condition_ = condition;
         next_ = next;
+        do_condition_ = do_condition;
     }
     NodePtr getCondition() const {
         return condition_;  // Current statement
@@ -171,8 +172,8 @@ class WhileLoop : public Node {
     NodePtr getNext() const {
         return next_;  // Next statement
     }
-    int getVal() const {
-        return do;  // 0 for while 1 for do while
+    const int64_t getVal() const {
+        return do_condition_;  // 0 for while 1 for do while
     }
 };
 

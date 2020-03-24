@@ -275,7 +275,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << end << "\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
-			if(astNode->getVal == 1){ //if loop is a do while loop - do an iteration before checking conditions
+			if(astNode->getVal() == 1){ //if loop is a do while loop - do an iteration before checking conditions
 				Compile(output, context, astNode->getStatements());
 			}
 

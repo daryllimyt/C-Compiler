@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
             if (DRIVER == "compiler") {  // C to MIPS compilation
                 std::cerr << "[INFO] Compilation in progress...\n";
                 Compile(output, context, astRoot);
+                if(Util::viewAllNodesContext) std::cerr << "########################################\n";
                 std::cerr << "[INFO] Compilation complete\n";
 
             } else if (DRIVER == "translator") {  // C to Python translation
@@ -88,6 +89,7 @@ int main(int argc, char *argv[]) {
                 *output << "\n\timport sys";
                 *output << "\n\tret=main()";
                 *output << "\n\tsys.exit(ret)\n";
+                if(Util::viewAllNodesContext) std::cerr << "########################################\n";
                 std::cerr << "[INFO] Translation complete\n";
             }
             // PRINTING PROGRAM CONTEXT
