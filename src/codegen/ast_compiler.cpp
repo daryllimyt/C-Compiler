@@ -136,6 +136,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "jr\t$ra\n";
             *output << "\t\t"
                     << "nop\n";
+			 context.functionEnds.pop_back();
+
         } else if (astNode->getType() == "FUNCTION_CALL") {
             std::string prev = context.variableAssignmentState;
             context.variableAssignmentState = "FUNCTION_CALL";
@@ -167,7 +169,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             {
                 context.variableAssignmentState = "NO_ASSIGN";
             }
-            
+
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
             }
@@ -257,6 +259,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "if_start" + label;
             std::string next = "if_next" + label;
             std::string end = "if_end" + label;
+			context.functionEnds.push_back(end);
+
 
             *output << "\n"
                     << start << ":\n";
@@ -281,6 +285,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
+			context.functionEnds.pop_back();
+
         } else if (astNode->getType() == "WHILE_LOOP") {
             if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
                 Compile(output, context, astNode->getNext());
@@ -289,6 +295,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
+			std::string continue = "while_continue" + label;
+			context.functionEnds.push_back(continue);
+			context.functionEnds.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
@@ -300,6 +309,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\n";
 
             Compile(output, context, astNode->getNext());
+            *output << "\n"
+                    << continue << ":\n";
             *output << "\t\t"
                     << "j\t" << start << "\n";  // unconditional jump to start
             *output << "\t\t"
@@ -308,10 +319,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
+			context.functionEnds.pop_back(); //popping end
+			context.functionEnds.pop_back(); //popping continue
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
+			std::string continue = "for_continue" + label;
+			context.functionEnds.push_back(continue);
+			context.functionEnds.push_back(end);
+
 
             Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
             *output << "\n"
@@ -323,8 +340,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop"
                     << "\n";
             Compile(output, context, astNode->getNext());
-
+            *output << "\n"
+                    << continue << ":\n";
             Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
+
             *output << "\t\t"
                     << "j\t" << start << "\n";
             *output << "\t\t"
@@ -333,6 +352,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
+			context.functionEnds.pop_back(); //popping end
+			context.functionEnds.pop_back(); //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
@@ -531,9 +552,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             *output << "\t\t"
                     << "j\t" << context.functionEnds.back() << "\n";
-            context.functionEnds.pop_back();
         } else if (astNode->getType() == "BREAK") {
+			*output << "\t\t"
+					<< "j\t" << context.functionEnds.back() << "\n";
         } else if (astNode->getType() == "CONTINUE") {
+			*output << "\t\t"
+					<< "j\t" << context.functionEnds[context.functionEnds.size()-2] << "\n";
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
         } else if (astNode->getType() == "CHAR") {
