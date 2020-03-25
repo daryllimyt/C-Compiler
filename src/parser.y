@@ -188,7 +188,7 @@ SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {c
 // //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   	: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5, 0); }
- 	| T_DO SINGLE_STATEMENT T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS                                      { $$ = new WhileLoop($5, $2, 1); }
+ 	| T_DO SINGLE_STATEMENT T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS T_SEMICOLON                                     { $$ = new WhileLoop($5, $2, 1); }
 	| T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT  { $$ = new ForLoop($3, $4, $5, $7); }
 //   | T_FOR T_L_PARENTHESIS EXPRESSION_STATEMENT  EXPRESSION_STATEMENT T_R_PARENTHESIS SINGLE_STATEMENT             { $$ = new ForStatement($3, $4, NULL, $6); }
   ;
