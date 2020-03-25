@@ -278,6 +278,7 @@ PRIMARY_EXPRESSION //a || 1 || a+1
   | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }
   | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
   | DECLARATOR WRAPPED_PARAMETERS  { $$ = new FunctionCall($1, $2); }
+  | T_SIZEOF T_L_PARENTHESIS TYPE_SPECIFIER T_R_PARENTHESIS { $$ = new SizeOf($3); }
   ;
 
 POSTFIX_EXPRESSION // a++

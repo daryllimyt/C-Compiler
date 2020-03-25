@@ -284,4 +284,20 @@ class PostfixExpression : public Node {
     }
 };
 
+class SizeOf : public Node {
+   protected:
+    NodePtr expr_;
+
+
+   public:
+    UnaryExpression(NodePtr expr) {
+        type_ = "SIZE_OF";
+    	expr_ = expr
+    }
+    NodePtr getNext() const {
+        return next_;
+    }
+
+};
+
 #endif
