@@ -560,6 +560,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 					<< "j\t" << context.functionEnds[context.functionEnds.size()-2] << "\n";
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
+        } else if (astNode->getType() == "SIZE_OF") {
+			Compile(output, context, astNode->getExpr());
+            if(context.typeSpecifier == "CHAR"){
+				*output << "\t\tli\t$t0, 1";
+			} else if (context.typeSpecifier == "SHORT"){
+				*output << "\t\tli\t$t0, 2";
+			} else if (context.typeSpecifier == "INT"){
+				*output << "\t\tli\t$t0, 4";
+			} else if (context.typeSpecifier == "LONG"){
+				*output << "\t\tli\t$t0, 8";
+			} else if (context.typeSpecifier == "FLOAT"){
+				*output << "\t\tli\t$t0, 4";
+			} else if (context.typeSpecifier == "DOUBLE"){
+				*output << "\t\tli\t$t0, 8";
+			} else if (context.typeSpecifier == "SIGNED"){
+				*output << "\t\tli\t$t0, 4";
+			} else if (context.typeSpecifier == "UNSIGNED"){
+				*output << "\t\tli\t$t0, 4";
+			}
+
         } else if (astNode->getType() == "CHAR") {
             context.typeSpecifier = "CHAR";
         } else if (astNode->getType() == "SHORT") {
