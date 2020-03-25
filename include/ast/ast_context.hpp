@@ -38,27 +38,29 @@ std::pair<bool, int> findInVector(const std::vector<T>& vecOfElements, const T& 
 struct VariableContext {
     // Single variable name can have different contexts in each scope
     int addressOffset;  // Address offset in memory of where the variable is located relative to $fp
-    int scope;          // Scope in which the variable was defined
+    int scope;          // Scope in which the variable was defined 
+    int frame;          // Frame in which variable was defined
     int intValue = 0;
     int size;  // Size of the variable, default is 8 for regular variables, arrays 8*arraysize
     std::string varType;
     std::string typeSpecifier;  // Type specifier
     friend std::ostream& operator<<(std::ostream& out, const VariableContext& v) {
         out << "{varType: " << v.varType << ", size: " << v.size << ", addrOffset: " << v.addressOffset << ", scope: "
-            << v.scope << ", typeSpec: " << v.typeSpecifier << ", intValue: " << v.intValue << " }";
+            << v.scope << ", frame: " << v.frame << ", typeSpec: " << v.typeSpecifier << ", intValue: " << v.intValue << " }";
         return out;
     }
 };
 
 struct FunctionContext {
-    int scope;                  // Scope in which the variable was defined
+    int frame = 0;              // Frame associated to function
+    int scope;                  // Scope in which the function was defined
     std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
     void addArg(const std::string& arg) {
         args.push_back(arg);
     }
     friend std::ostream& operator<<(std::ostream& out, const FunctionContext& f) {
-        out << "{scope: " << f.scope << ", type: " << f.typeSpecifier << ", args: ";
+        out << "{frame: " << f.frame << ", scope: " << f.scope << ", type: " << f.typeSpecifier << ", args: ";
         printIterable(out, f.args);
         out << "}";
         return out;

@@ -123,7 +123,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "addiu\t$sp, $sp, " << bytes << "\t\t# (fn def: frame end) Move sp to end of previous frame\n";
 
             // Frame end
-            context.frameIndex--;
+            // context.frameIndex--;
 
             // If $ra == 0 then jump to end of program
             *output << "\t\t"
@@ -137,6 +137,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\t"
                     << "nop\n";
         } else if (astNode->getType() == "FUNCTION_CALL") {
+            std::string prev = context.variableAssignmentState;
+            context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
 
@@ -147,7 +149,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
             }
-            context.variableAssignmentState = "FUNCTION_CALL";
+            if (prev == "ASSIGNMENT_STATEMENT") {
+                context.variableAssignmentState = "FUNCTION_CALL"; // Save to $v0 instead of $t0
+            }
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -159,6 +163,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.scope--;
             // updateVariableBindings(context);  // Remove variable contexts created in this scope
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
+            if (context.variableAssignmentState == "FUNCTION_CALL")
+            {
+                context.variableAssignmentState = "NO_ASSIGN";
+            }
+            
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
             }
@@ -249,7 +258,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string next = "if_next" + label;
             std::string end = "if_end" + label;
 
-            *output << "\n" << start << ":\n";
+            *output << "\n"
+                    << start << ":\n";
             Compile(output, context, astNode->getCondition());  // Condition result stored in $t0
             *output << "\t\t"
                     << "beq\t$t0, $0, " << next << "\n";  // If $t0==0 skip to else branch
@@ -263,22 +273,25 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\t"
                     << "nop"
                     << "\n";
-            *output << "\n" << next << ":\n";
+            *output << "\n"
+                    << next << ":\n";
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Else or else if statement
             }
 
-            *output << "\n" << end << ":\n";
+            *output << "\n"
+                    << end << ":\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
-			if(astNode->getVal() == 1){ //if loop is a do while loop - do an iteration before checking conditions
-				Compile(output, context, astNode->getStatements());
-			}
+            if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
+                Compile(output, context, astNode->getNext());
+            }
 
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
 
-            *output << "\n" << start << ":\n";
+            *output << "\n"
+                    << start << ":\n";
             Compile(output, context, astNode->getCondition());  //result in t0
             *output << "\t\t"
                     << "beq\t$t0, $0, " << end << "\n";  // condition returns 0 (false), exit while loop
@@ -286,21 +299,23 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop"
                     << "\n";
 
-            Compile(output, context, astNode->getStatements());
+            Compile(output, context, astNode->getNext());
             *output << "\t\t"
                     << "j\t" << start << "\n";  // unconditional jump to start
             *output << "\t\t"
                     << "nop"
                     << "\n";
 
-            *output << "\n" << end << ":\n";
+            *output << "\n"
+                    << end << ":\n";
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
 
             Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
-            *output << "\n" << start << ":\n";
+            *output << "\n"
+                    << start << ":\n";
             Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
             *output << "\t\t"
                     << "beq\t$t0, $0, " << end << "\n";
@@ -316,7 +331,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "nop"
                     << "\n";
 
-            *output << "\n" << end << ":\n";
+            *output << "\n"
+                    << end << ":\n";
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
@@ -329,14 +345,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
-
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
 
             std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
-        
+
             *output << "\t\t"
                     << "sw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
@@ -392,18 +407,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "and") {
                 *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\t"
-                        << "sltu\t$t1, $0, $t1\n"; //set t1 to 1 if t1 > 0
+                        << "sltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
                 *output << "\t\t"
-                        << "and\t$t0, $t0, $t1\n"; //set t0 to (t0 && t1)
+                        << "and\t$t0, $t0, $t1\n";  //set t0 to (t0 && t1)
             } else if (astNode->getId() == "or") {
                 *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\t"
-                        << "sltu\t$t1, $0, $t1\n"; //set t1 to 1 if t1 > 0
+                        << "sltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
                 *output << "\t\t"
-                        << "or\t$t0, $t0, $t1\n"; //set t0 to (t0 || t1)
+                        << "or\t$t0, $t0, $t1\n";  //set t0 to (t0 || t1)
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -607,9 +622,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\n";
             } else if (astNode->getId() == "!") {  //logical NOT
                 *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n"; //set t0 to 1 if t0 > 0
+                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\t"
-                        << "xor\t$t0, $t0, $t0\n"; //inverse bits
+                        << "xor\t$t0, $t0, $t0\n";  //inverse bits
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -632,12 +647,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.varType = type;
                         newVariable.size = 8;
                         newVariable.scope = context.scope;
+                        newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
 
                     } else {                                                        // shadowing
                         int lastScope = context.variableBindings[id].back().scope;  // check if variable has been declared in this scope
-                        if (lastScope == context.scope) {
+                        int lastFrame = context.variableBindings[id].back().frame;  // check if variable has been declared in this frame
+                        if (lastScope == context.scope && lastFrame == context.frameIndex) {
                             throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
                         }
                         context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
@@ -647,6 +664,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.varType = type;
                         newVariable.size = 8;
                         newVariable.scope = context.scope;
+                        newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
                     }
