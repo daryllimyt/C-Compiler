@@ -288,14 +288,13 @@ class SizeOf : public Node {
    protected:
     NodePtr expr_;
 
-
    public:
-    UnaryExpression(NodePtr expr) {
+    SizeOf(NodePtr expr) {
         type_ = "SIZE_OF";
-    	expr_ = expr
+    	expr_ = expr;
     }
     NodePtr getNext() const {
-        return next_;
+        return expr_;
     }
 
 };

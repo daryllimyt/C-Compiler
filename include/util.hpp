@@ -5,6 +5,7 @@
 
 class Util {
    public:
+    static const bool qemu = true;
     static const bool debug = false;
     static const bool viewStartTags = false;
     static const bool viewEndTags = false;

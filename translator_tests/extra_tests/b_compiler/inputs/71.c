@@ -2,7 +2,7 @@ int f(int a, int b, int c, int d, int e, int x, int y){
     return a + b + c + d + e + x + y;
 }
 
-int main(){
+int fmain(){
     int a = 1;
     int b = 2;
     int c = 3; 

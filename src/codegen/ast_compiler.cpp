@@ -33,7 +33,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             globalFrame.totalBytes = 0;
             globalFrame.variableBytes = 0;
             context.frameTracker = {globalFrame};
-            // *output << ".text\n";  // qemu flag
+            if(Util::qemu) *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << context.endLabel << ":\n";  // add\tend label
@@ -85,10 +85,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionBindings[id].frame = context.frameIndex;
             std::string functionEnd = createLabel(context, id + "_end_");
             context.functionEnds.push_back(functionEnd);
+            if (context.scope == 0 && Util::qemu) {
+                *output << ".globl " << id << "\n";  // Global flag for mips gcc
+            }
             *output << "\n"
                     << id << ":\n";
-            if (context.scope == 0) {
-                *output << ".globl " << id << "\n";  // Global flag for mips gcc
+            // qemu lines
+            if (Util::qemu) {
+            *output << "\t\t.ent " << id << "\n"
+                    << "\t\t.frame $sp, " << bytes << ", $ra\n"
+                    << "\t\t.set noreorder\n"
+                    << "\t\t.cpload $t4\n"
+                    << "\t\t.set reorder\n";
             }
 
             context.scope++;
@@ -107,11 +115,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             for (int i = 0; i < context.functionBindings[id].args.size(); i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
-                *output << "\t\t"
-                        << "lw\t$t8, "
-                        << -8 * (1 + i) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n";
-                *output << "\t\t"
-                        << "sw\t$t8, "
+                *output << "\t\tlw\t$t8, "
+                        << -8 * (1 + i) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
+                        << "\t\tnop\n";
+                *output << "\t\tsw\t$t8, "
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
             }
             context.scope--;
@@ -143,7 +150,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "jr\t$ra\n";
             *output << "\t\t"
                     << "nop\n";
-			 context.functionEnds.pop_back();
+            // qemu lines
+            if (Util::qemu) *output << "\t\t.end " << id << "\n";
+            context.functionEnds.pop_back();
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
             std::string prev = context.variableAssignmentState;
@@ -261,8 +270,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "if_start" + label;
             std::string next = "if_next" + label;
             std::string end = "if_end" + label;
-			context.functionEnds.push_back(end);
-
+            context.functionEnds.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
@@ -287,7 +295,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-			context.functionEnds.pop_back();
+            context.functionEnds.pop_back();
 
         } else if (astNode->getType() == "WHILE_LOOP") {
             if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
@@ -297,9 +305,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
-			std::string continue = "while_continue" + label;
-			context.functionEnds.push_back(continue);
-			context.functionEnds.push_back(end);
+            std::string continue_ = "while_continue" + label;
+            context.functionEnds.push_back(continue_);
+            context.functionEnds.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
@@ -312,7 +320,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             Compile(output, context, astNode->getNext());
             *output << "\n"
-                    << continue << ":\n";
+                    << continue_ << ":\n";
             *output << "\t\t"
                     << "j\t" << start << "\n";  // unconditional jump to start
             *output << "\t\t"
@@ -321,16 +329,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-			context.functionEnds.pop_back(); //popping end
-			context.functionEnds.pop_back(); //popping continue
+            context.functionEnds.pop_back();  //popping end
+            context.functionEnds.pop_back();  //popping continue_
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
-			std::string continue = "for_continue" + label;
-			context.functionEnds.push_back(continue);
-			context.functionEnds.push_back(end);
-
+            std::string continue_ = "for_continue" + label;
+            context.functionEnds.push_back(continue_);
+            context.functionEnds.push_back(end);
 
             Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
             *output << "\n"
@@ -343,7 +350,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\n";
             Compile(output, context, astNode->getNext());
             *output << "\n"
-                    << continue << ":\n";
+                    << continue_ << ":\n";
             Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
 
             *output << "\t\t"
@@ -354,8 +361,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-			context.functionEnds.pop_back(); //popping end
-			context.functionEnds.pop_back(); //popping continue
+            context.functionEnds.pop_back();  //popping end
+            context.functionEnds.pop_back();  //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
@@ -550,34 +557,37 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 throw std::runtime_error("[ERROR] Int type function requires return type INT, got \"" + context.returnType + "\" instead");
             }
             *output << "\t\t"
-                    << "j\t" << context.functionEnds.back() << "\n";
+                    << "j\t" << context.functionEnds.back() << "\n"
+                    << "\t\tnop\n";
         } else if (astNode->getType() == "BREAK") {
-			*output << "\t\t"
-					<< "j\t" << context.functionEnds.back() << "\n";
+            *output << "\t\t"
+                    << "j\t" << context.functionEnds.back() << "\n"
+                    << "\t\tnop\n";
         } else if (astNode->getType() == "CONTINUE") {
-			*output << "\t\t"
-					<< "j\t" << context.functionEnds[context.functionEnds.size()-2] << "\n";
+            *output << "\t\t"
+                    << "j\t" << context.functionEnds[context.functionEnds.size() - 2] << "\n"
+                    << "\t\tnop\n";
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
         } else if (astNode->getType() == "SIZE_OF") {
-			Compile(output, context, astNode->getExpr());
-            if(context.typeSpecifier == "CHAR"){
-				*output << "\t\tli\t$t0, 1";
-			} else if (context.typeSpecifier == "SHORT"){
-				*output << "\t\tli\t$t0, 2";
-			} else if (context.typeSpecifier == "INT"){
-				*output << "\t\tli\t$t0, 4";
-			} else if (context.typeSpecifier == "LONG"){
-				*output << "\t\tli\t$t0, 8";
-			} else if (context.typeSpecifier == "FLOAT"){
-				*output << "\t\tli\t$t0, 4";
-			} else if (context.typeSpecifier == "DOUBLE"){
-				*output << "\t\tli\t$t0, 8";
-			} else if (context.typeSpecifier == "SIGNED"){
-				*output << "\t\tli\t$t0, 4";
-			} else if (context.typeSpecifier == "UNSIGNED"){
-				*output << "\t\tli\t$t0, 4";
-			}
+            Compile(output, context, astNode->getNext());
+            if (context.typeSpecifier == "CHAR") {
+                *output << "\t\tli\t$t0, 1";
+            } else if (context.typeSpecifier == "SHORT") {
+                *output << "\t\tli\t$t0, 2";
+            } else if (context.typeSpecifier == "INT") {
+                *output << "\t\tli\t$t0, 4";
+            } else if (context.typeSpecifier == "LONG") {
+                *output << "\t\tli\t$t0, 8";
+            } else if (context.typeSpecifier == "FLOAT") {
+                *output << "\t\tli\t$t0, 4";
+            } else if (context.typeSpecifier == "DOUBLE") {
+                *output << "\t\tli\t$t0, 8";
+            } else if (context.typeSpecifier == "SIGNED") {
+                *output << "\t\tli\t$t0, 4";
+            } else if (context.typeSpecifier == "UNSIGNED") {
+                *output << "\t\tli\t$t0, 4";
+            }
 
         } else if (astNode->getType() == "CHAR") {
             context.typeSpecifier = "CHAR";
@@ -1193,6 +1203,9 @@ void storeRegisters(std::ostream *output) {
             << "sw\t$a3, 52($sp)\n";
     *output << "\t\t"
             << "sw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
+    // qemu lines
+    if (Util::qemu) *output << "\t\t.cprestore 60\n";
+
     *output << "\t\t"
             << "nop\n";
 }
