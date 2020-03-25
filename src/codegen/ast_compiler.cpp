@@ -63,7 +63,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             bytes += (52 + (8 - (bytes % 8)));
 
             // Frame start
-            context.frameIndex++;
+            context.frameIndex = context.frameTracker.size();  // frame number based on the number of functions
 
             // Tracking frame sizes
             if (context.frameIndex >= context.frameTracker.size()) {
@@ -82,6 +82,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             // Create labels
             std::string id = context.identifier;
+            context.functionBindings[id].frame = context.frameIndex;
             std::string functionEnd = createLabel(context, id + "_end_");
             context.functionEnds.push_back(functionEnd);
             *output << "\n"
@@ -90,15 +91,20 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << ".globl " << id << "\n";  // Global flag for mips gcc
             }
 
+            context.scope++;
             // Push to stack
             *output << "\t\t"
                     << "addiu\t$sp, $sp, " << -bytes << "\t\t# (fn def: frame start) Move sp to end of new frame\n";
             storeRegisters(output);
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
-            if (Util::debug) std::cerr << context;
+            if (Util::debug) {
+                std::cerr << "#######################################################\n";
+                std::cerr << context;
+                std::cerr << "#######################################################\n";
+            }
 
-            for (int i = 0; i < context.virtualRegisters; i++) {  // Load fn args to registers, save if more than 4
+            for (int i = 0; i < context.functionBindings[id].args.size(); i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\t"
@@ -108,6 +114,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "sw\t$t8, "
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
             }
+            context.scope--;
 
             // All function parameters are now in their respective variables in the new frame
 
@@ -123,7 +130,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "addiu\t$sp, $sp, " << bytes << "\t\t# (fn def: frame end) Move sp to end of previous frame\n";
 
             // Frame end
-            // context.frameIndex--;
+            context.frameIndex = 0;  // out of function, in global frame
 
             // If $ra == 0 then jump to end of program
             *output << "\t\t"
@@ -150,7 +157,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\tnop\n";
             }
             if (prev == "ASSIGNMENT_STATEMENT") {
-                context.variableAssignmentState = "FUNCTION_CALL"; // Save to $v0 instead of $t0
+                context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             }
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
@@ -163,11 +170,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.scope--;
             // updateVariableBindings(context);  // Remove variable contexts created in this scope
         } else if (astNode->getType() == "PARENTHESIS_WRAPPER") {
-            if (context.variableAssignmentState == "FUNCTION_CALL")
-            {
+            if (context.variableAssignmentState == "FUNCTION_CALL") {
                 context.variableAssignmentState = "NO_ASSIGN";
             }
-            
+
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
             }
@@ -175,16 +181,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             if (astNode->getArgs()) {
                 Compile(output, context, astNode->getArgs());
-                // if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : A: " << context.variableAssignmentState << "\n";
-                // *output << "\t\t"
-                //         << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
-                // *output << "\t\t"
-                //         << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (arg) store in virtual\n";
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
                 if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
+
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());  //get in t0
@@ -502,12 +504,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
                 std::string functionId = context.allFunctions.back();  // Gets last bound function
                 Compile(output, context, astNode->getTypeSpecifier());
-
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
-                context.scope++;
                 Compile(output, context, astNode->getStatements());
                 context.functionBindings[functionId].addArg(context.identifier);  // Adding new variable id to function args
-                context.scope--;
 
             } else {  // Coming from ASSIGNMENT_STATEMENT or FUNCTION_CALL
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
@@ -825,6 +824,27 @@ void updateVariableBindings(ProgramContext &context) {
     }
 }
 
+int getLastVariableAddressOffset(ProgramContext &context, const std::string &id) {
+    // check for matching frame
+    // if no matching frame, throw error
+    // check for matching scope
+    // if no matching scope, check all previous scopes
+    // else , throw error
+    // Iterating from back to front using reverse iterator
+    int currentFrame = context.frameIndex;
+    int currentScope = context.scope;
+    for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
+        // Matching frame and scope
+        if (it->frame == currentFrame && it->scope == currentScope) {
+            return it->addressOffset;
+            // Matching frame and previous scope
+        } else if (it->frame == currentFrame && it->scope <= currentScope) {
+            return it->addressOffset;
+        }
+    }
+    throw std::runtime_error("[ERROR] Could not find variable binding in frame " + std::to_string(currentFrame) + ", scope " + std::to_string(currentScope) + "\n");
+}
+
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
     try {
         // variable not bound
@@ -832,15 +852,29 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
             throw std::runtime_error("[ERROR] Could not find binding associated to variable \"" + id + "\"\n");
         } else {
             // get address offset of the last context associated with id.
-            int addressOffset = context.variableBindings[id].back().addressOffset;
-            // verify address
-            if (addressOffset < 0) {
-                throw std::runtime_error("[ERROR] Invalid address offset associated to variable \"" + id + "\"\n");
+            int offset;
+            for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
+                if (it->frame == context.frameIndex && it->scope == context.scope) {  // Matching frame and scope
+                    offset = it->addressOffset;
+                    break;
+
+                } else if (it->frame == context.frameIndex && it->scope <= context.scope) {  // Matching frame and previous scope
+                    offset = it->addressOffset;
+                    break;
+                } else {
+                    throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
+                }
             }
-            return addressOffset;
+
+            // verify address
+            if (offset < 0) {
+                throw std::runtime_error("[ERROR] Address offset associated to variable \"" + id + "\" outside of frame\n");
+            }
+            return offset;
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
+        Util::abort;
     }
 }
 

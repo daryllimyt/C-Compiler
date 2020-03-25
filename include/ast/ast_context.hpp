@@ -52,7 +52,7 @@ struct VariableContext {
 };
 
 struct FunctionContext {
-    int frame = 0;              // Frame associated to function
+    int frame;              // Frame associated to function
     int scope;                  // Scope in which the function was defined
     std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
