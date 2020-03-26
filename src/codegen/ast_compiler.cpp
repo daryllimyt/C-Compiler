@@ -33,7 +33,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             globalFrame.totalBytes = 0;
             globalFrame.variableBytes = 0;
             context.frameTracker = {globalFrame};
-            if(Util::qemu) *output << ".text\n";  // qemu flag
+            if (Util::qemu) *output << ".text\n";  // qemu flag
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << context.endLabel << ":\n";  // add\tend label
@@ -86,17 +86,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string functionEnd = createLabel(context, id + "_end_");
             context.functionEnds.push_back(functionEnd);
             if (context.scope == 0 && Util::qemu) {
-                *output << ".globl " << id << "\n";  // Global flag for mips gcc
+                *output << "\n.globl " << id << "\n";  // Global flag for mips gcc
             }
-            *output << "\n"
-                    << id << ":\n";
+            *output << id << ":\n";
             // qemu lines
             if (Util::qemu) {
-            *output << "\t\t.ent " << id << "\n"
-                    << "\t\t.frame $sp, " << bytes << ", $ra\n"
-                    << "\t\t.set noreorder\n"
-                    << "\t\t.cpload $t4\n"
-                    << "\t\t.set reorder\n";
+                *output << "\t\t.ent " << id << "\n"
+                        << "\t\t.frame $sp, " << bytes << ", $ra\n"
+                        << "\t\t.set noreorder\n"
+                        << "\t\t.cpload $t4\n"
+                        << "\t\t.set reorder\n";
             }
 
             context.scope++;
@@ -116,7 +115,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\tlw\t$t8, "
-                        << -8 * (1 + i) << "($t9) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
+                        << -8 * (1 + i) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t8, "
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
@@ -163,7 +162,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
 
-                *output << "\t\tmove\t$t9, $fp \t\t# Store current fp in $f9\n";      //storing current fp into t4
+                *output << "\t\tmove\t$a0, $fp \t\t# Store current fp in $f9\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
             }
@@ -546,10 +545,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // if (astNode->getReturnValue()->getType() != context.returnType) {
                 //     throw std::runtime_error(context.returnType+" type function requires "+context.returnType+" return value, but got "+astNode->getReturnValue()->getType()+"\n");
                 // }
-                Compile(output, context, astNode->getReturnValue());
-                *output << "\t\t"
-                        << "add\t$v0, $t0, $0 \t\t# (return node) put return val in $v0\n";
-
+                Compile(output, context, astNode->getReturnValue());       // RV either $v0 or $t0
+                if (context.variableAssignmentState != "FUNCTION_CALL") {  // From function call
+                    *output << "\t\t"
+                            << "move\t$v0, $t0 \t\t# (return node) load $t0 to $v0 if not function call\n";
+                }
             } else if (context.returnType == "VOID") {
                 *output << "\t\t"
                         << "nop\n";
@@ -1161,10 +1161,6 @@ void clearRegisters(std::ostream *output) {
             << "addiu\t$s6, $0, 0\n";
     *output << "\t\t"
             << "addiu\t$s7, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$v0, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$v1, $0, 0\n";
 }
 
 void storeRegisters(std::ostream *output) {
