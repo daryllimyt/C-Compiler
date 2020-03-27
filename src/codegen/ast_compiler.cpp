@@ -110,12 +110,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 std::cerr << context;
                 std::cerr << "#######################################################\n";
             }
-
-            for (int i = 0; i < context.functionBindings[id].args.size(); i++) {  // Load fn args to registers, save if more than 4
+			int argCount = context.functionBindings[id].args.size();
+            for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\tlw\t$t8, "
-                        << -8 * (1 + i) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
+                        << 8 * (argCount - (i+1)) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t8, "
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
@@ -161,10 +161,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
+				int argCount = context.functionBindings[id].args.size();
 
-                *output << "\t\tmove\t$a0, $fp \t\t# Store current fp in $f9\n";      //storing current fp into t4
+                *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
+				*output << "\t\taddi\t$sp, " << 8*(argCount) << "\t\t# Erasing virtual register for "<< id << "\n";
+				context.virtualRegisters -= argCount;
             }
             if (prev == "ASSIGNMENT_STATEMENT") {
                 context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
@@ -201,7 +204,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());  //get in t0
                 *output << "\t\t"
-                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
+                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack for storing result of above\n";
                 *output << "\t\t"
                         << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
             }
