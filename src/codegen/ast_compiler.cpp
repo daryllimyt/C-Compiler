@@ -591,21 +591,21 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "SIZE_OF") {
             Compile(output, context, astNode->getNext());
             if (context.typeSpecifier == "CHAR") {
-                *output << "\t\tli\t$t0, 1";
+                *output << "\t\tli\t$t0, 1\n";
             } else if (context.typeSpecifier == "SHORT") {
-                *output << "\t\tli\t$t0, 2";
+                *output << "\t\tli\t$t0, 2\n";
             } else if (context.typeSpecifier == "INT") {
-                *output << "\t\tli\t$t0, 4";
+                *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "LONG") {
-                *output << "\t\tli\t$t0, 8";
+                *output << "\t\tli\t$t0, 8\n";
             } else if (context.typeSpecifier == "FLOAT") {
-                *output << "\t\tli\t$t0, 4";
+                *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "DOUBLE") {
-                *output << "\t\tli\t$t0, 8";
+                *output << "\t\tli\t$t0, 8\n";
             } else if (context.typeSpecifier == "SIGNED") {
-                *output << "\t\tli\t$t0, 4";
+                *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "UNSIGNED") {
-                *output << "\t\tli\t$t0, 4";
+                *output << "\t\tli\t$t0, 4\n";
             }
 
         } else if (astNode->getType() == "CHAR") {
@@ -665,38 +665,22 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "++") {
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, 1"
-                        << "\n";
+                *output << "\t\taddi\t$t0, $t0, 1\n";
             } else if (astNode->getId() == "--") {
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, -1"
-                        << "\n";
+                *output << "\t\taddi\t$t0, $t0, -1\n";
             } else if (astNode->getId() == "&") {  //address
-                *output << "\t\t"
-                        << "addi\t$t0, $0, ref"
-                        << "\n";
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, offset"
-                        << "\n";
+                *output << "\t\taddi\t$t0, $0, ref\n";
+                *output << "\t\taddi\t$t0, $t0, offset\n";
             } else if (astNode->getId() == "+") {  //positive
-                *output << "\t\t"
-                        << "addu\t$t0, $t0, $0"
-                        << "\n";
+                *output << "\t\taddu\t$t0, $t0, $0\n";
             } else if (astNode->getId() == "-") {  //negative
-                *output << "\t\t"
-                        << "sub\t$t0, $0, $t0"
-                        << "\n";
+                *output << "\t\tsub\t$t0, $0, $t0\n";
             } else if (astNode->getId() == "~") {  //ones complement
-                *output << "\t\t"
-                        << "li\t$t1, -1\n"
-                        << "xor\t$t0, $t0, $t1"
-                        << "\n";
+                *output << "\t\tli\t$t1, -1\n"
+                        << "\t\txor\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == "!") {  //logical NOT
-                *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\t"
-                        << "xor\t$t0, $t0, $t0\n";  //inverse bits
+                *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
+                *output << "\t\txor\t$t0, $t0, $t0\n";  //inverse bits
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -1149,46 +1133,30 @@ std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &contex
 }
 
 void clearRegisters(std::ostream *output) {
-    *output << "\t\t"
-            << "addiu\t$t0, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t1, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t2, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t3, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t4, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t5, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t6, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t7, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$t8, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s0, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s1, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s2, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s3, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s4, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s5, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s6, $0, 0\n";
-    *output << "\t\t"
-            << "addiu\t$s7, $0, 0\n";
+    *output << "\t\taddiu\t$t0, $0, 0\n";
+    *output << "\t\taddiu\t$t1, $0, 0\n";
+    *output << "\t\taddiu\t$t2, $0, 0\n";
+    *output << "\t\taddiu\t$t3, $0, 0\n";
+    *output << "\t\taddiu\t$t4, $0, 0\n";
+    *output << "\t\taddiu\t$t5, $0, 0\n";
+    *output << "\t\taddiu\t$t6, $0, 0\n";
+    *output << "\t\taddiu\t$t7, $0, 0\n";
+    *output << "\t\taddiu\t$t8, $0, 0\n";
+    *output << "\t\taddiu\t$s0, $0, 0\n";
+    *output << "\t\taddiu\t$s1, $0, 0\n";
+    *output << "\t\taddiu\t$s2, $0, 0\n";
+    *output << "\t\taddiu\t$s3, $0, 0\n";
+    *output << "\t\taddiu\t$s4, $0, 0\n";
+    *output << "\t\taddiu\t$s5, $0, 0\n";
+    *output << "\t\taddiu\t$s6, $0, 0\n";
+    *output << "\t\taddiu\t$s7, $0, 0\n";
 }
 
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
-    *output << "\t\tsw\t$ra, 0($sp) \t\t# (fn def) Store ra on stack\n";
-    *output << "\t\tsw\t$fp, 4($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tsw\t$fp, 0($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tadd\t$fp, $sp, $0 \t\t# (fn def) Move fp to new sp\n";
+    *output << "\t\tsw\t$ra, 4($sp) \t\t# (fn def) Store ra on stack\n";
     *output << "\t\tsw\t$s0, 8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
     *output << "\t\tsw\t$s1, 12($sp)\n";
     *output << "\t\tsw\t$s2, 16($sp)\n";
