@@ -163,11 +163,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getParameters());
 				int argCount = context.functionBindings[id].args.size();
 
-<<<<<<< HEAD
                 *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
-=======
-                *output << "\t\tmove\t$a0, $fp \t\t# Store current fp in $a0\n";      //storing current fp into t4
->>>>>>> 61ea83627098c05b1c9d6150c6cac2e6cf14c37c
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
 				*output << "\t\taddi\t$sp, " << 8*(argCount) << "\t\t# Erasing virtual register for "<< id << "\n";
@@ -206,13 +202,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
             std::string id = context.identifier;
             if (astNode->getStatements()) {
-<<<<<<< HEAD
-                Compile(output, context, astNode->getStatements());  //get in t0
-                *output << "\t\t"
-                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack for storing result of above\n";
-                *output << "\t\t"
-                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
-=======
                 context.variableAssignmentState = "NO_ASSIGN";             // Default state for function readings
                 Compile(output, context, astNode->getStatements());        //get in t0
                 if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -226,7 +215,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     *output << "\t\t"
                             << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
                 }
->>>>>>> 61ea83627098c05b1c9d6150c6cac2e6cf14c37c
             }
 
             if (astNode->getNext()) {
