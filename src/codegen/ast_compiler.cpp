@@ -118,7 +118,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << -8 * (1 + i) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t8, "
-                        << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to new virtual\n";
+                        << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to memory\n";
             }
             context.scope--;
 
@@ -154,7 +154,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionEnds.pop_back();
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-            std::string prev = context.variableAssignmentState;
+            // std::string prev = context.variableAssignmentState;
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
@@ -162,13 +162,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
 
-                *output << "\t\tmove\t$a0, $fp \t\t# Store current fp in $f9\n";      //storing current fp into t4
+                *output << "\t\tmove\t$a0, $fp \t\t# Store current fp in $a0\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
             }
-            if (prev == "ASSIGNMENT_STATEMENT") {
-                context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
-            }
+            // if (prev == "ASSIGNMENT_STATEMENT") {
+            context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
+            context.identifier = id; // exit function call with function id
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -196,22 +196,31 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
                 if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
-
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
+            std::string id = context.identifier;
             if (astNode->getStatements()) {
-                Compile(output, context, astNode->getStatements());  //get in t0
-                *output << "\t\t"
-                        << "addiu\t$sp, $sp, -8 \t\t# Expanding stack\n";
-                *output << "\t\t"
-                        << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
+                context.variableAssignmentState = "NO_ASSIGN";             // Default state for function readings
+                Compile(output, context, astNode->getStatements());        //get in t0
+                if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+                    *output << "\t\t"
+                            << "addiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
+                    *output << "\t\t"
+                            << "sw\t$v0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
+                } else {  // Normal variable
+                    *output << "\t\t"
+                            << "addiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
+                    *output << "\t\t"
+                            << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
+                }
             }
 
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
             }
-        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
-            context.variableAssignmentState = "NO_ASSIGN";         // Clear any previous variableAssignContext
-            Compile(output, context, astNode->getStatements());    // Current statement
+            context.virtualRegisters -= context.functionBindings[id].args.size();  // Clear used virtual regs
+        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {                  //most indentation happens here
+            context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
+            Compile(output, context, astNode->getStatements());                    // Current statement
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -869,6 +878,9 @@ int getSize(ProgramContext &context, NodePtr astNode) {
 
 void updateVariableBindings(ProgramContext &context) {
     for (auto &keyValuePair : context.variableBindings) {
+        if (keyValuePair.second.back().frame > context.scope) {
+            context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
+        }
         if (keyValuePair.second.back().scope > context.scope) {
             context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
         }

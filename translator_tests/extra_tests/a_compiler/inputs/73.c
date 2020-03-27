@@ -6,7 +6,7 @@ int f2(int a, int b, int c, int d, int e){
     return a + b + c + d + e;
 }
 
-int main(){
+int fmain(){
     int a = 1;
     int b = 2;
     int c = 3;

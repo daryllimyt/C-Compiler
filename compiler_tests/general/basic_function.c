@@ -1,13 +1,16 @@
-int add(int i, int j, int k, int x, int y, int z);
-
-int main() {
-    int a = add(1, 2, 3, 4, 5, 6);
-    return a;
+int f1(int y){
+  return y;
 }
 
-int add(int i, int j, int k, int x, int y, int z){
-    return i+j+k+x+y+z;
+int f2(int i, int j){
+  return i + j;
 }
+
+int fmain(){
+  int i = f2(f1(1), 0);
+  return i;
+}
+
 
 
 
