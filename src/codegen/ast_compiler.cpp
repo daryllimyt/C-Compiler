@@ -160,17 +160,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
+            int argCount = context.functionBindings[id].args.size();
+
 
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
-                int argCount = context.functionBindings[id].args.size();
 
                 *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
                 *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
                 context.virtualRegisters -= (argCount - 1);  // This tells it to store at this VR
-            }
+            } //assuming all arguments are in virtual registers up to $sp
+			for (size_t i = 0; i < argCount; i++) {
+				if(i<4){*output << "\t\tlw\t$a" << i << ", " << 8*(argCount-(i+1)) << "($sp)"
+				<< "\t\t# Loading argument no. " << i << "\n";}
+				else{
+					break;
+				}
+			}
+
             // if (prev == "ASSIGNMENT_STATEMENT") {
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
