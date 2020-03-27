@@ -100,9 +100,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             context.scope++;
             // Push to stack
+            storeRegisters(output);
             *output << "\t\t"
                     << "addiu\t$sp, $sp, " << -bytes << "\t\t# (fn def: frame start) Move sp to end of new frame\n";
-            storeRegisters(output);
+            *output << "\t\t"
+                    << "add\t$fp, $sp, $0 \t\t# (fn def) Move fp to new sp\n";
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
             if (Util::debug) {
@@ -110,12 +112,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 std::cerr << context;
                 std::cerr << "#######################################################\n";
             }
-			int argCount = context.functionBindings[id].args.size();
+            int argCount = context.functionBindings[id].args.size();
             for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\tlw\t$t8, "
-                        << 8 * (argCount - (i+1)) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
+                        << 8 * (argCount - (i + 1)) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t8, "
                         << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to memory\n";
@@ -161,17 +163,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
-				int argCount = context.functionBindings[id].args.size();
+                int argCount = context.functionBindings[id].args.size();
 
                 *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
-				*output << "\t\taddi\t$sp, " << 8*(argCount) << "\t\t# Erasing virtual register for "<< id << "\n";
-				context.virtualRegisters -= argCount;
+                *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
+                context.virtualRegisters -= (argCount - 1);  // This tells it to store at this VR
             }
             // if (prev == "ASSIGNMENT_STATEMENT") {
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
-            context.identifier = id; // exit function call with function id
+            context.identifier = id;                            // exit function call with function id
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -205,15 +207,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.variableAssignmentState = "NO_ASSIGN";             // Default state for function readings
                 Compile(output, context, astNode->getStatements());        //get in t0
                 if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-                    *output << "\t\t"
-                            << "addiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
-                    *output << "\t\t"
-                            << "sw\t$v0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
+                    *output << "\t\tsw\t$v0, 0($sp) \t\t# (fn call params) fn call result stored in virtual reg\n";
+                    // *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
                 } else {  // Normal variable
                     *output << "\t\t"
                             << "addiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
                     *output << "\t\t"
-                            << "sw\t$t0, " << -8 * (++context.virtualRegisters) << "($fp) \t\t# (fn call params) store in virtual\n";
+                            << "sw\t$t0, 0($sp) \t\t# (fn call params) store in virtual register\n";
                 }
             }
 
@@ -844,7 +844,7 @@ std::string createLabel(ProgramContext &context, const std::string &name) {
 
 int getSize(ProgramContext &context, NodePtr astNode) {
     // Base cases
-    if (!astNode) {
+    if (!astNode || astNode->getType() == "FUNCTION_CALL") {
         return 0;
     }
 
@@ -1181,39 +1181,22 @@ void clearRegisters(std::ostream *output) {
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
     *output << "\t\t"
-            << "sw\t$fp, 0($sp) \t\t# (fn def) Store addr of old fp on stack\n";
-    *output << "\t\t"
-            << "add\t$fp, $sp, $0 \t\t# (fn def) Move fp to new sp\n";
-    *output << "\t\t"
-            << "sw\t$ra, 4($sp) \t\t# (fn def) Store ra on stack\n";
-    // *output << "\t\t"
-    //         << "addiu\t$t9, $ra, 0 \t\t# Store ra in $t9\n";
-    *output << "\t\t"
-            << "sw\t$s0, 8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
-    *output << "\t\t"
-            << "sw\t$s1, 12($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s2, 16($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s3, 20($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s4, 24($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s5, 28($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s6, 32($sp)\n";
-    *output << "\t\t"
-            << "sw\t$s7, 36($sp)\n";
-    *output << "\t\t"
-            << "sw\t$a0, 40($sp) \t\t# (fn def) Store prev fn args $a0-$a3 on stack\n";
-    *output << "\t\t"
-            << "sw\t$a1, 44($sp)\n";
-    *output << "\t\t"
-            << "sw\t$a2, 48($sp)\n";
-    *output << "\t\t"
-            << "sw\t$a3, 52($sp)\n";
-    *output << "\t\t"
-            << "sw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
+            << "sw\t$fp, -4($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+
+    *output << "\t\tsw\t$ra, -4($sp) \t\t# (fn def) Store ra on stack\n";
+    *output << "\t\tsw\t$s0, -8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    *output << "\t\tsw\t$s1, -12($sp)\n";
+    *output << "\t\tsw\t$s2, -16($sp)\n";
+    *output << "\t\tsw\t$s3, -20($sp)\n";
+    *output << "\t\tsw\t$s4, -24($sp)\n";
+    *output << "\t\tsw\t$s5, -28($sp)\n";
+    *output << "\t\tsw\t$s6, -32($sp)\n";
+    *output << "\t\tsw\t$s7, -36($sp)\n";
+    *output << "\t\tsw\t$a0, -40($sp) \t\t# (fn def) Store prev fn args $a0-$a3 on stack\n";
+    *output << "\t\tsw\t$a1, -44($sp)\n";
+    *output << "\t\tsw\t$a2, -48($sp)\n";
+    *output << "\t\tsw\t$a3, -52($sp)\n";
+    *output << "\t\tsw\t$gp, -56($sp) \t\t# Store value of $gp on stack\n";
     // qemu lines
     if (Util::qemu) *output << "\t\t.cprestore 60\n";
 
@@ -1222,34 +1205,19 @@ void storeRegisters(std::ostream *output) {
 }
 
 void loadRegisters(std::ostream *output) {
-    *output << "\t\t"
-            << "lw\t$s0, 8($fp) \t\t# (fn def) Load saved regs into $s0-$s7\n";
-    *output << "\t\t"
-            << "lw\t$s1, 12($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s2, 16($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s3, 20($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s4, 24($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s5, 28($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s6, 32($fp)\n";
-    *output << "\t\t"
-            << "lw\t$s7, 36($fp)\n";
-    *output << "\t\t"
-            << "lw\t$a0, 40($fp)\n";
-    *output << "\t\t"
-            << "lw\t$a1, 44($fp) \t\t# (fn def) Load prev fn args into $a0-$a3\n";
-    *output << "\t\t"
-            << "lw\t$a2, 48($fp)\n";
-    *output << "\t\t"
-            << "lw\t$a3, 52($fp)\n";
-    *output << "\t\t"
-            << "lw\t$ra, 4($fp) \t\t# (fn def) Load return address into $ra\n";
-    *output << "\t\t"
-            << "lw\t$fp, 0($fp) \t\t# (fn def) Load prev fp into $fp\n";
-    *output << "\t\t"
-            << "nop\n";
+    *output << "\t\tlw\t$s0, 8($fp) \t\t# (fn def) Load saved regs into $s0-$s7\n";
+    *output << "\t\tlw\t$s1, 12($fp)\n";
+    *output << "\t\tlw\t$s2, 16($fp)\n";
+    *output << "\t\tlw\t$s3, 20($fp)\n";
+    *output << "\t\tlw\t$s4, 24($fp)\n";
+    *output << "\t\tlw\t$s5, 28($fp)\n";
+    *output << "\t\tlw\t$s6, 32($fp)\n";
+    *output << "\t\tlw\t$s7, 36($fp)\n";
+    *output << "\t\tlw\t$a0, 40($fp)\n";
+    *output << "\t\tlw\t$a1, 44($fp) \t\t# (fn def) Load prev fn args into $a0-$a3\n";
+    *output << "\t\tlw\t$a2, 48($fp)\n";
+    *output << "\t\tlw\t$a3, 52($fp)\n";
+    *output << "\t\tlw\t$ra, 4($fp) \t\t# (fn def) Load return address into $ra\n";
+    *output << "\t\tlw\t$fp, 0($fp) \t\t# (fn def) Load prev fp into $fp\n";
+    *output << "\t\tnop\n";
 }
