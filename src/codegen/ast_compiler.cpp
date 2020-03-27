@@ -162,7 +162,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string id = context.identifier;
             int argCount = context.functionBindings[id].args.size();
 
-
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
 
@@ -171,14 +170,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\tnop\n";
                 *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
                 context.virtualRegisters -= (argCount - 1);  // This tells it to store at this VR
-            } //assuming all arguments are in virtual registers up to $sp
-			for (size_t i = 0; i < argCount; i++) {
-				if(i<4){*output << "\t\tlw\t$a" << i << ", " << 8*(argCount-(i+1)) << "($sp)"
-				<< "\t\t# Loading argument no. " << i << "\n";}
-				else{
-					break;
-				}
-			}
+            }                                                //assuming all arguments are in virtual registers up to $sp
+            // for (int i = 0; i < argCount; i++) {
+            //     if (i < 4) {
+            //         *output << "\t\tlw\t$a" << i << ", " << 8 * (argCount - (i + 1)) << "($sp)"
+            //                 << "\t\t# Loading argument no. " << i << "\n";
+            //     } else {
+            //         break;
+            //     }
+            // }
 
             // if (prev == "ASSIGNMENT_STATEMENT") {
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
