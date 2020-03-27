@@ -100,11 +100,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             context.scope++;
             // Push to stack
-            storeRegisters(output);
             *output << "\t\t"
                     << "addiu\t$sp, $sp, " << -bytes << "\t\t# (fn def: frame start) Move sp to end of new frame\n";
-            *output << "\t\t"
-                    << "add\t$fp, $sp, $0 \t\t# (fn def) Move fp to new sp\n";
+            storeRegisters(output);
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
             if (Util::debug) {
@@ -1189,23 +1187,21 @@ void clearRegisters(std::ostream *output) {
 
 void storeRegisters(std::ostream *output) {
     // Store address of previous frame on stack at 0($sp)
-    *output << "\t\t"
-            << "sw\t$fp, -4($sp) \t\t# (fn def) Store addr of old fp on stack\n";
-
-    *output << "\t\tsw\t$ra, -4($sp) \t\t# (fn def) Store ra on stack\n";
-    *output << "\t\tsw\t$s0, -8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
-    *output << "\t\tsw\t$s1, -12($sp)\n";
-    *output << "\t\tsw\t$s2, -16($sp)\n";
-    *output << "\t\tsw\t$s3, -20($sp)\n";
-    *output << "\t\tsw\t$s4, -24($sp)\n";
-    *output << "\t\tsw\t$s5, -28($sp)\n";
-    *output << "\t\tsw\t$s6, -32($sp)\n";
-    *output << "\t\tsw\t$s7, -36($sp)\n";
-    *output << "\t\tsw\t$a0, -40($sp) \t\t# (fn def) Store prev fn args $a0-$a3 on stack\n";
-    *output << "\t\tsw\t$a1, -44($sp)\n";
-    *output << "\t\tsw\t$a2, -48($sp)\n";
-    *output << "\t\tsw\t$a3, -52($sp)\n";
-    *output << "\t\tsw\t$gp, -56($sp) \t\t# Store value of $gp on stack\n";
+    *output << "\t\tsw\t$ra, 0($sp) \t\t# (fn def) Store ra on stack\n";
+    *output << "\t\tsw\t$fp, 4($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tsw\t$s0, 8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    *output << "\t\tsw\t$s1, 12($sp)\n";
+    *output << "\t\tsw\t$s2, 16($sp)\n";
+    *output << "\t\tsw\t$s3, 20($sp)\n";
+    *output << "\t\tsw\t$s4, 24($sp)\n";
+    *output << "\t\tsw\t$s5, 28($sp)\n";
+    *output << "\t\tsw\t$s6, 32($sp)\n";
+    *output << "\t\tsw\t$s7, 36($sp)\n";
+    *output << "\t\tsw\t$a0, 40($sp) \t\t# (fn def) Store prev fn args $a0-$a3 on stack\n";
+    *output << "\t\tsw\t$a1, 44($sp)\n";
+    *output << "\t\tsw\t$a2, 48($sp)\n";
+    *output << "\t\tsw\t$a3, 52($sp)\n";
+    *output << "\t\tsw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
     // qemu lines
     if (Util::qemu) *output << "\t\t.cprestore 60\n";
 
