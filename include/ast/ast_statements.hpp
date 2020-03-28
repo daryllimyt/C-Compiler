@@ -230,4 +230,79 @@ class IfStatement : public Node {
     }
 };
 
+class SwitchStatement : public Node {
+   protected:
+    NodePtr expression_;
+    NodePtr next;
+
+   public:
+    SwitchStatement(NodePtr expression, NodePtr next) {
+        type_ = "SWITCH_STATEMENT";
+        expression_ = expression;
+        next_ = next;
+    }
+    NodePtr getCondition() const {
+        return expression_;
+    }
+    NodePtr getNext() const {
+		return next_;
+	}
+
+};
+
+class MultipleCaseStatements : public Node {
+   protected:
+    NodePtr current_;
+	NodePtr next_;
+
+   public:
+    SwitchStatement(NodePtr current, NodePtr next) {
+        type_ = "MULTIPLE_CASE_STATEMENTS";
+        current_ = current;
+        next_ = next;
+    }
+    NodePtr getStatements() const {
+        return current_;
+    }
+    NodePtr getNext() const {
+		return next_;
+	}
+
+};
+
+class SingleCaseStatement : public Node {
+   protected:
+    NodePtr expression_;
+	NodePtr statement_;
+
+   public:
+    SwitchStatement(NodePtr expr, NodePtr statement) {
+        type_ = "SINGLE_CASE_STATEMENT";
+        expression_ = expr;
+        statement_ = statement;
+    }
+    NodePtr getCondition() const {
+        return expression_;
+    }
+    NodePtr getStatements() const {
+		return statement_;
+	}
+
+};
+
+class DefaultStatement : public Node {
+   protected:
+	NodePtr statement_;
+
+   public:
+    SwitchStatement(NodePtr statement) {
+        type_ = "DEFAULT_STATEMENT";
+        statement_ = statement;
+    }
+    NodePtr getStatements() const {
+		return statement_;
+	}
+
+};
+
 #endif

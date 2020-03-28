@@ -228,9 +228,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
             context.virtualRegisters -= context.functionBindings[id].args.size();  // Clear used virtual regs
-        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {                  //most indentation happens here
+        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
             context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
+			if(astNode->getStatements()){
             Compile(output, context, astNode->getStatements());                    // Current statement
+			}
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -313,7 +315,71 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << end << ":\n";
 
+        } else if (astNode->getType() == "SWITCH_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "switch_start" + label;
+            std::string end = "switch_end" + label;
+			context.breakPoints.push_back(end);
+
+            *output << "\n"
+                    << start << ":\n";
+			Compile(output, context, astNode->getCondition()); //result in $t0
+
+			if (context.variableAssignmentState == "FUNCTION_CALL") {
+				*output << "\t\t"
+						<< "move\t$s0, $v0 \t\t# (switch) Storing the switch expression in $s0\n";
+			} else {
+		        *output << "\t\t"
+		                << "move\t$s0, $t0\t\t# (switch) Storing the switch expression in $s0\n";
+			}
+			Compile(output, context, astNode->getNext()); //going into WRAPPED_CASE_STATEMENTS
+            *output << "\n"
+                    << end << ":\n";
+			context.breakPoints.pop_back(end);
+        } else if (astNode->getType() == "MULTIPLE_CASE_STATEMENTS") {
+            context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
+
+            if(astNode->getStatements()){
+				Compile(output, context, astNode->getStatements());
+			}
+            if(astNode->getNext()){
+				Compile(output, context, astNode->getNext());
+			}
+        } else if (astNode->getType() == "SINGLE_CASE_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "case_start" + label;
+            std::string end = "case_end" + label;
+
+            *output << "\n"
+                    << start << ":\n";
+			Compile(output, context, astNode->getCondition()); //result in $t0
+
+			*output << "\t\t"
+					<< "bne\t$s0, $t0, " << end
+					<< "\t\t# (case) branching past case if expr not same\n";
+
+			Compile(output, context, astnode->getStatements());
+
+            *output << "\n"
+                    << end << ":\n";
+        } else if (astNode->getType() == "DEFAULT_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "default_start" + label;
+            std::string end = "default_end" + label;
+
+            *output << "\t\tj " << end << "\n"; //go to end
+            *output << "\n"
+                    << start << ":\n";
+
+			Compile(output, context, astnode->getStatements());
+
+            *output << "\t\t"
+                    << "j\t" << context.breakPoints.back() << "\n"
+                    << "\t\tnop\n";
+            *output << "\n"
+                    << end << ":\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
+
             if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
                 Compile(output, context, astNode->getNext());
             }
@@ -348,6 +414,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.breakPoint.pop_back();  //popping end
             context.continuePoint.pop_back();  //popping continue_
         } else if (astNode->getType() == "FOR_LOOP") {
+
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
