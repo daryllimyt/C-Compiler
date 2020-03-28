@@ -125,6 +125,8 @@ struct ProgramContext {
     std::string endLabel = "end";
     std::vector<std::string> functionEnds;
 	std::vector<std::string> breakPoints;
+	std::vector<std::string> continuePoints;
+
 
 
     // Contextual information for Python translator
