@@ -25,6 +25,7 @@ fmain:
 		sw	$gp, 56($sp) 		# Store value of $gp on stack
 		nop
 		li	$t0, 0				# (int const)
+<<<<<<< HEAD
 		sw	$t0, 156($fp)		# (assign) store var result in NORMAL variable
 		li	$t0, 10				# (int const)
 		sw	$t0, 148($fp)		# (assign) store var result in NORMAL variable
@@ -47,17 +48,49 @@ for_start_1:
 		li	$t0, 1				# (int const)
 		sw	$t0, -8($fp) 		# (eval expr) store lhs in virtual
 		lw	$t0, 156($fp)		# (var: normal) Reading from variable "x"
+=======
+		sw	$t0, 156($fp)		# (assign) store var result in NORMAL variable "x"
+		li	$t0, 10				# (int const)
+		sw	$t0, 148($fp)		# (assign) store var result in NORMAL variable "y"
+		li	$t0, 0				# (int const)
+		sw	$t0, 140($fp)		# (assign) store var result in NORMAL variable "y"
+
+for_start_1:
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		li	$t0, 5				# (int const)
+		sw	$t0, -8($fp) 		# (eval expr) store RHS in virtual
+		lw	$t0, 140($fp)		# (var: normal) Reading from variable "y"
+>>>>>>> scoping
 		nop
-		lw	$t1, -8($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
+		lw	$t1, -8($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
 		nop
 		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+<<<<<<< HEAD
 		add	$t0, $t0, $t1 		# (assign op node) lhs += rhs
+=======
+		slt	$t0, $t0, $t1
+		beq	$t0, $0, for_end_1
+		nop
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
+		li	$t0, 1				# (int const)
+		sw	$t0, -8($fp) 		# (eval expr) store RHS in virtual
+		lw	$t0, 156($fp)		# (var: normal) Reading from variable "x"
+		nop
+		lw	$t1, -8($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
+		nop
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (assign op node) LHS += RHS
+>>>>>>> scoping
 		sw	$t0, 156($fp)		# (assign expr) storing evaluated expression from $t0 to LHS variable in memory
 
 for_continue_1:
 		lw	$t0, 140($fp)		# (var: normal) Reading from variable "y"
 		nop
+<<<<<<< HEAD
 		lw	$t0, 140($fp)		# (postfix) store var result in NORMAL variable
+=======
+		lw	$t0, 140($fp)		# (postfix) store var result in NORMAL variable "y"
+>>>>>>> scoping
 		nop
 		move	$t1, $t0
 		addi	$t0, $t0, 1
@@ -67,7 +100,11 @@ for_continue_1:
 		nop
 
 for_end_1:
+<<<<<<< HEAD
 		lw	$t0, 1($fp)		# (var: normal) Reading from variable "y"
+=======
+		lw	$t0, 148($fp)		# (var: normal) Reading from variable "y"
+>>>>>>> scoping
 		nop
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	fmain_end_0
