@@ -3,13 +3,14 @@
 // template <class T1, class T2>
 // void addToHashedClass(T1 &container, const std::string &key, const T2& value);
 void clearRegisters(std::ostream *output);
-void storeRegisters(std::ostream *output);
-void loadRegisters(std::ostream *output);
-void updateVariableBindings(ProgramContext &context);
+void functionPrologue(std::ostream *output, const int &bytes);
+void functionEpilogue(std::ostream *output, const int &bytes);
+// void updateVariableBindings(ProgramContext &context);
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
 int getSize(ProgramContext &context, NodePtr astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode);
+std::pair<bool, int> checkForVariableInFrame(ProgramContext &context, const std::string &id);
 std::string getReferenceRegister(ProgramContext &context, const std::string &id);
 std::string createLabel(ProgramContext &context, const std::string &name);
 std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &context, NodePtr identifierNode);
@@ -21,14 +22,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         if (astNode == NULL) {
             throw std::runtime_error("[ERROR] Unhandled NULL-type ast node \n");
         } else if (astNode->getType() == "ROOT") {
-            /* STEPS
-            1. Count global vars
-            2. Init framesizes
-            3. Init all functions vector
-            4. Init all vars vector
-            5. Init end label for program
-            6. Init qemu flag .text
-            */
             FrameContext globalFrame;
             globalFrame.totalBytes = 0;
             globalFrame.variableBytes = 0;
@@ -55,16 +48,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int bytes = getSize(context, astNode);
             /* Adjustments
             -8  -> function's own identifier
-            +48 -> saved registers $s0 - $s7 + $a0 - a3 (12 x 4 bytes)
+            +32 -> saved registers $s0 - $s7 (8*4 bytes) 
             +4  -> return address in $ra
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
-            bytes += (52 + (8 - (bytes % 8)));
+            bytes += (36 + (8 - (bytes % 8)));
 
             // Frame start
             context.frameIndex = context.frameTracker.size();  // frame number based on the number of functions
-
             // Tracking frame sizes
             if (context.frameIndex >= context.frameTracker.size()) {
                 FrameContext newFrame;
@@ -86,99 +78,101 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string functionEnd = createLabel(context, id + "_end_");
             context.functionEnds.push_back(functionEnd);
             if (context.scope == 0 && Util::qemu) {
-                *output << "\n.globl " << id << "\n";  // Global flag for mips gcc
+                *output << "\n.set noreorder\n"
+                        << ".text\n"
+                        << ".globl " << id << "\n";  // Global flag for mips gcc
             }
             *output << id << ":\n";
             // qemu lines
             if (Util::qemu) {
-                *output << "\t\t.ent " << id << "\n"
-                        << "\t\t.frame $sp, " << bytes << ", $ra\n"
-                        << "\t\t.set noreorder\n"
-                        << "\t\t.cpload $t4\n"
-                        << "\t\t.set reorder\n";
+                *output << "\t\t.ent " << id << "\n";
+                        // << "\t\t.frame $sp, " << bytes << ", $ra\n"
+                        // << "\t\t.align 2\n"
+                        // << "\t\t.cpload $t4\n";
             }
 
             context.scope++;
-            // Push to stack
-            *output << "\t\t"
-                    << "addiu\t$sp, $sp, " << -bytes << "\t\t# (fn def: frame start) Move sp to end of new frame\n";
-            storeRegisters(output);
+            *output << "\t\tsw\t$a0, 0($sp) \t\t# (fn def) Store arg regs in memory\n"
+                    << "\t\tsw\t$a1, 8($sp) \t\t# (fn def) Store arg regs in memory\n"
+                    << "\t\tsw\t$a2, 16($sp) \t\t# (fn def) Store arg regs in memory\n"
+                    << "\t\tsw\t$a3, 24($sp) \t\t# (fn def) Store arg regs in memory\n"
+                    << "\t\tmove\t$t9, $sp \t\t# (fn def) Store caller $sp in $t9 for argument calling\n";
+
+            // Shift stack pointer and storing registers
+            functionPrologue(output, bytes);
+
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
-            if (Util::debug) {
-                std::cerr << "#######################################################\n";
-                std::cerr << context;
-                std::cerr << "#######################################################\n";
-            }
+            // if (Util::debug) {
+            //     std::cerr << "#######################################################\n";
+            //     std::cerr << context;
+            //     std::cerr << "#######################################################\n";
+            // }
             int argCount = context.functionBindings[id].args.size();
             for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
-                *output << "\t\tlw\t$t8, "
-                        << 8 * (argCount - (i + 1)) << "($a0) \t\t# (fn args) Load fn call args from old virtual to $t8\n"
+                *output << "\t\tlw\t$t0, "
+                        << 8 * i << "($t9) \t\t# (fn args) Load fn call args from arg slots to $t0\n"
                         << "\t\tnop\n";
-                *output << "\t\tsw\t$t8, "
-                        << offset << ref << "\t\t# (fn args) Store fn call args from $t8 to memory\n";
+                *output << "\t\tsw\t$t0, "
+                        << offset << ref << "\t\t# (fn args) Store fn call args from $t0 to memory\n";
             }
             context.scope--;
 
             // All function parameters are now in their respective variables in the new frame
 
-            // Get scope
+            // Get function body
             Compile(output, context, astNode->getScope());
 
             *output << "\n"
                     << functionEnd << ":\n";
 
-            // Load from stack
-            loadRegisters(output);
-            *output << "\t\t"
-                    << "addiu\t$sp, $sp, " << bytes << "\t\t# (fn def: frame end) Move sp to end of previous frame\n";
+            // Load saved registers and previous stack info from stack
+            functionEpilogue(output, bytes);
 
             // Frame end
             context.frameIndex = 0;  // out of function, in global frame
 
             // If $ra == 0 then jump to end of program
-            *output << "\t\t"
-                    << "beq\t$ra, $0, " << context.endLabel << "\n"
-                    << "\t\t"
-                    << "nop\n";
+            *output << "\t\tbeq\t$ra, $0, " << context.endLabel << "\n"
+                    << "\t\tnop\n";
 
             // Return to previous frame
-            *output << "\t\t"
-                    << "jr\t$ra\n";
-            *output << "\t\t"
-                    << "nop\n";
+            *output << "\t\tjr\t$ra\n";
+            *output << "\t\tnop\n";
             // qemu lines
             if (Util::qemu) *output << "\t\t.end " << id << "\n";
             context.functionEnds.pop_back();
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-            // std::string prev = context.variableAssignmentState;
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
-            int argCount = context.functionBindings[id].args.size();
-
+            int argCount = context.functionBindings[id].args.size();  // Get arg count
+            if (argCount < 4) {
+                argCount = 4;
+            }
+            context.functionArgs.push_back(0);                                      // tracks arg count
+            int varBytes = context.frameTracker[context.frameIndex].variableBytes;  // Space allocated to variables
+            int functionCallOffset = ((8 * argCount) + varBytes);
             if (astNode->getParameters()) {
-                Compile(output, context, astNode->getParameters());
-
-                *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
-                *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
-                        << "\t\tnop\n";
-                *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
-                context.virtualRegisters -= (argCount - 1);  // This tells it to store at this VR
-            }                                                //assuming all arguments are in virtual registers up to $sp
-            // for (int i = 0; i < argCount; i++) {
-            //     if (i < 4) {
-            //         *output << "\t\tlw\t$a" << i << ", " << 8 * (argCount - (i + 1)) << "($sp)"
-            //                 << "\t\t# Loading argument no. " << i << "\n";
-            //     } else {
-            //         break;
-            //     }
-            // }
-
-            // if (prev == "ASSIGNMENT_STATEMENT") {
+                *output << "\t\taddiu\t$sp, $sp, " << -functionCallOffset << "\t\t# (fn call) Expand stack for fn \"" << id << "\" arg slots\n";
+                Compile(output, context, astNode->getParameters());  // Loading function arguments into arg slots
+                // Load args from arg slots into $a0-$a3 before jal
+                // Function args is now the number of function args
+                for (int i = 0; i < context.functionArgs.back(); i++) {
+                    if (i < 4) {
+                        *output << "\t\tlw\t$a" << i << ", " << 8 * i << "($sp) \t\t# Load arguments into $a0-$a3\n";
+                    } else {
+                        break;
+                    }
+                }
+            }                                                                     //assuming all arguments are in virtual registers up to $sp
+            *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
+                    << "\t\tnop\n";
+            *output << "\t\taddiu\t$sp, $sp, " << functionCallOffset << "\t\t# (fn call) Shrink stack for fn \"" << id << "\" arg slots\n";
+            context.functionArgs.pop_back();                    // Remove arg count for this function call
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
         } else if (astNode->getType() == "SCOPE") {
@@ -206,31 +200,30 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
-                if (Util::debug) std::cerr << "[DEBUG] MULT_ARGS : B: " << context.variableAssignmentState << "\n";
             }
         } else if (astNode->getType() == "MULTIPLE_PARAMETERS") {
-            std::string id = context.identifier;
             if (astNode->getStatements()) {
-                context.variableAssignmentState = "NO_ASSIGN";             // Default state for function readings
-                Compile(output, context, astNode->getStatements());        //get in t0
-                if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-                    *output << "\t\tsw\t$v0, 0($sp) \t\t# (fn call params) fn call result stored in virtual reg\n";
-                    // *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
-                } else {  // Normal variable
-                    *output << "\t\t"
-                            << "addiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
-                    *output << "\t\t"
-                            << "sw\t$t0, 0($sp) \t\t# (fn call params) store in virtual register\n";
+                context.variableAssignmentState = "NO_ASSIGN";       // Default state for function readings
+                Compile(output, context, astNode->getStatements());  // get in t0 for vars, v0 for functions
+                int argSlotPosition = context.functionArgs.back()++;
+                if (argSlotPosition < 0) {
+                    throw std::runtime_error("[ERROR] Negative arg slot offset\n");
                 }
+                if (context.variableAssignmentState == "FUNCTION_CALL") {  // From nested function call
+                    *output << "\t\tsw\t$v0, ";
+                } else {  // Normal variable
+                    *output << "\t\tsw\t$t0, ";
+                }
+                *output << 8 * argSlotPosition << "($sp) \t\t# (fn call params) store in arg slot\n";
             }
 
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
             }
-            context.virtualRegisters -= context.functionBindings[id].args.size();  // Clear used virtual regs
-        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {                  //most indentation happens here
-            context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
-            Compile(output, context, astNode->getStatements());                    // Current statement
+
+        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
+            context.variableAssignmentState = "NO_ASSIGN";         // Clear any previous variableAssignContext
+            Compile(output, context, astNode->getStatements());    // Current statement
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -272,10 +265,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
-                                << "\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable\n";
+                                << "\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     } else {  // Normal variable
                         *output << "\t\tsw\t$t0, " << offset << ref
-                                << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable\n";
+                                << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     }
                 }
                 if (astNode->getNext()) {  // Recursive or variable
@@ -678,7 +671,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (astNode->getId() == "~") {  //ones complement
                 *output << "\t\tli\t$t1, -1\n"
                         << "\t\txor\t$t0, $t0, $t1\n";
-            } else if (astNode->getId() == "!") {  //logical NOT
+            } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\txor\t$t0, $t0, $t0\n";  //inverse bits
 
@@ -692,37 +685,36 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
                 if (type == "NORMAL") {
                     int index = context.frameIndex;
-                    if (context.variableBindings.count(id) == 0) {  // Non-shadowing
+                    std::pair<bool, int> varInfo = checkForVariableInFrame(context, id);  // (in-frame status, scope)
+                    if (!varInfo.first) {                                                 // If false means variable not in the current frame. Non-shadowing
                         if (context.scope == 0) {
                             index = 0;  // For global variables
                         }
-                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
-                        // context.frameTracker[index].addVariable(id);  // Track variable id
                         VariableContext newVariable;
-                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                         newVariable.varType = type;
                         newVariable.size = 8;
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-
-                    } else {                                                        // shadowing
-                        int lastScope = context.variableBindings[id].back().scope;  // check if variable has been declared in this scope
-                        int lastFrame = context.variableBindings[id].back().frame;  // check if variable has been declared in this frame
-                        if (lastScope == context.scope && lastFrame == context.frameIndex) {
+                        context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                    } else {                                                  // True means variable in the current frame
+                        // Variable in current frame, check which scope it was found in
+                        if (varInfo.second == context.scope) {
                             throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
                         }
-                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
+
                         // context.frameTracker[index].addVariable(id);  // Track variable id
                         VariableContext newVariable;
-                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                         newVariable.varType = type;
                         newVariable.size = 8;
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
+                        context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
                     }
                 } else if (type == "ARRAY") {
                     int index = context.frameIndex;
@@ -870,20 +862,37 @@ int getSize(ProgramContext &context, NodePtr astNode) {
     return bytes;
 }
 
-void updateVariableBindings(ProgramContext &context) {
-    for (auto &keyValuePair : context.variableBindings) {
-        if (keyValuePair.second.back().frame > context.scope) {
-            context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
+// void removeVarsFromScope(ProgramContext &context) {
+//     for (auto &keyValuePair : context.variableBindings) {
+//         if (keyValuePair.second.back().scope > context.scope) {
+//             context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
+//         }
+//         if (keyValuePair.second.size() == 0) {
+//             context.variableBindings.erase(keyValuePair.first);  // Remove empty bindings
+//         }
+//     }
+// }
+// void removeVarsFromFrame(ProgramContext &context) {
+//     for (auto &keyValuePair : context.variableBindings) {
+//         if (keyValuePair.second.back().frame < context.frameIndex) {  // Remove previous
+//             context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
+//         }
+//     }
+// }
+std::pair<bool, int> checkForVariableInFrame(ProgramContext &context, const std::string &id) {
+    bool status = false;
+    int scope = -1;
+    int currentFrame = context.frameIndex;
+    for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
+        // Matching frame
+        if (it->frame == currentFrame) {
+            status = true;
+            scope = it->scope;
+            break;
         }
-        if (keyValuePair.second.back().scope > context.scope) {
-            context.variableBindings[keyValuePair.first].pop_back();  // Remove scope bindings
-        }
-        if (keyValuePair.second.size() == 0) {
-            context.variableBindings.erase(keyValuePair.first);  // Remove empty bindings
-        }
+        return std::make_pair(status, scope);  // (false, -1) means not found in frame
     }
 }
-
 int getLastVariableAddressOffset(ProgramContext &context, const std::string &id) {
     // check for matching frame
     // if no matching frame, throw error
@@ -926,10 +935,10 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
                 }
             }
 
-            // verify address
-            if (offset < 0) {
-                throw std::runtime_error("[ERROR] Address offset associated to variable \"" + id + "\" outside of frame\n");
-            }
+            // // verify address
+            // if (offset < 0) {
+            //     throw std::runtime_error("[ERROR] Address offset associated to variable \"" + id + "\" outside of frame\n");
+            // }
             return offset;
         }
     } catch (const std::exception &e) {
@@ -961,28 +970,23 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
-    *output << "\t\t"
-            << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
+    int resultOffset = context.frameTracker[context.frameIndex].variableBytes; // Calculations stored in the free spot after this 
+    context.frameTracker[context.frameIndex].variableBytes += 8;
     Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\t"
-                << "sw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+        *output << "\t\tsw\t$v0, ";
     } else {  // Normal variable
-        *output << "\t\t"
-                << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+        *output << "\t\tsw\t$t0, ";
     }
+    *output  << -resultOffset << "($fp) \t\t# (eval expr) store RHS in available memory after variable section\n";
 
-    Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
+    Compile(output, context, astNode->getLeft());               //expr - LHS result stored in $t0
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\t"
-                << "move\t$t0, $v0 \t\t# (eval expr) lhs from fn call\n";
+        *output << "\t\tmove\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
     }
-    *output << "\t\t"  //RHS is loaded to $t1
-            << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
-            << "\t\t"
-            << "nop\n";
-    *output << "\t\t"
-            << "addiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
+    *output << "\t\tlw\t$t1, " << -(resultOffset+8) << "($fp) \t\t# (eval expr) load LHS from memory to $t1, RHS in $t0\n"
+            << "\t\tnop\n";
+    context.frameTracker[context.frameIndex].variableBytes -= 8;
 }
 
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
@@ -1152,45 +1156,43 @@ void clearRegisters(std::ostream *output) {
     *output << "\t\taddiu\t$s7, $0, 0\n";
 }
 
-void storeRegisters(std::ostream *output) {
+void functionPrologue(std::ostream *output, const int &bytes) {
     // Store address of previous frame on stack at 0($sp)
-    *output << "\t\tsw\t$fp, 0($sp) \t\t# (fn def) Store addr of old fp on stack\n";
-    *output << "\t\tadd\t$fp, $sp, $0 \t\t# (fn def) Move fp to new sp\n";
-    *output << "\t\tsw\t$ra, 4($sp) \t\t# (fn def) Store ra on stack\n";
-    *output << "\t\tsw\t$s0, 8($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
-    *output << "\t\tsw\t$s1, 12($sp)\n";
-    *output << "\t\tsw\t$s2, 16($sp)\n";
-    *output << "\t\tsw\t$s3, 20($sp)\n";
-    *output << "\t\tsw\t$s4, 24($sp)\n";
-    *output << "\t\tsw\t$s5, 28($sp)\n";
-    *output << "\t\tsw\t$s6, 32($sp)\n";
-    *output << "\t\tsw\t$s7, 36($sp)\n";
-    *output << "\t\tsw\t$a0, 40($sp) \t\t# (fn def) Store prev fn args $a0-$a3 on stack\n";
-    *output << "\t\tsw\t$a1, 44($sp)\n";
-    *output << "\t\tsw\t$a2, 48($sp)\n";
-    *output << "\t\tsw\t$a3, 52($sp)\n";
-    *output << "\t\tsw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
-    // qemu lines
-    if (Util::qemu) *output << "\t\t.cprestore 60\n";
+    // *output << "\t\tmove\t$t8, $sp \t\t# Save old $sp to restore in $fp later\n";
+    *output << "\t\taddiu\t$sp, $sp, " << -12 << "\t\t# (fn def: frame start) Expand stack for saved registers\n";
+    *output << "\t\tsw\t$fp, 4($sp) \t\t# (fn def)\n";
+    *output << "\t\tsw\t$ra, 8($sp) \t\t# (fn def)\n";
+    // if (Util::qemu) *output << "\t\t.cprestore 12\n";
 
-    *output << "\t\t"
-            << "nop\n";
+    // *output << "\t\tsw\t$s0, 0($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    // *output << "\t\tsw\t$s1, 4($sp)\n";
+    // *output << "\t\tsw\t$s2, 8($sp)\n";
+    // *output << "\t\tsw\t$s3, 12($sp)\n";
+    // *output << "\t\tsw\t$s4, 16($sp)\n";
+    // *output << "\t\tsw\t$s5, 20($sp)\n";
+    // *output << "\t\tsw\t$s6, 24($sp)\n";
+    // *output << "\t\tsw\t$s7, 28($sp)\n";
+    // *output << "\t\tsw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
+    // *output << "\t\tsw\t$gp, 36($sp) \t\t# (fn def) Store value of $gp on stack\n";
+    // *output << "\t\tsw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tmove\t$fp, $sp \t\t# $fp is at the start of the variable section\n";
+    // $sp now points to arg slots
 }
 
-void loadRegisters(std::ostream *output) {
-    *output << "\t\tlw\t$s0, 8($fp) \t\t# (fn def) Load saved regs into $s0-$s7\n";
-    *output << "\t\tlw\t$s1, 12($fp)\n";
-    *output << "\t\tlw\t$s2, 16($fp)\n";
-    *output << "\t\tlw\t$s3, 20($fp)\n";
-    *output << "\t\tlw\t$s4, 24($fp)\n";
-    *output << "\t\tlw\t$s5, 28($fp)\n";
-    *output << "\t\tlw\t$s6, 32($fp)\n";
-    *output << "\t\tlw\t$s7, 36($fp)\n";
-    *output << "\t\tlw\t$a0, 40($fp)\n";
-    *output << "\t\tlw\t$a1, 44($fp) \t\t# (fn def) Load prev fn args into $a0-$a3\n";
-    *output << "\t\tlw\t$a2, 48($fp)\n";
-    *output << "\t\tlw\t$a3, 52($fp)\n";
-    *output << "\t\tlw\t$ra, 4($fp) \t\t# (fn def) Load return address into $ra\n";
-    *output << "\t\tlw\t$fp, 0($fp) \t\t# (fn def) Load prev fp into $fp\n";
-    *output << "\t\tnop\n";
+void functionEpilogue(std::ostream *output, const int &bytes) {
+    // *output << "\t\tlw\t$s0, 0($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    // *output << "\t\tlw\t$s1, 4($sp)\n";
+    // *output << "\t\tlw\t$s2, 8($sp)\n";
+    // *output << "\t\tlw\t$s3, 12($sp)\n";
+    // *output << "\t\tlw\t$s4, 16($sp)\n";
+    // *output << "\t\tlw\t$s5, 20($sp)\n";
+    // *output << "\t\tlw\t$s6, 24($sp)\n";
+    // *output << "\t\tlw\t$s7, 28($sp)\n";
+    // *output << "\t\tlw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
+    // *output << "\t\tlw\t$gp, 36($sp) \t\t# (fn def) Store value of $gp on stack\n";
+    // *output << "\t\tlw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tmove\t$sp, $fp \t\t# Restore sp to start of variable section\n";
+    *output << "\t\tlw\t$fp, 4($sp) \t\t# (fn def)\n";
+    *output << "\t\tlw\t$ra, 8($sp) \t\t# (fn def)\n";
+    *output << "\t\taddiu\t$sp, $sp, " << 12 << "\t\t# (fn def: frame end) Shrink stack back to previous frame\n";
 }
