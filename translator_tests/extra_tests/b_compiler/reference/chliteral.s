@@ -1,12 +1,12 @@
 .text
 
-.globl f
-f:
-		.ent f
-		.frame $sp, 140, $ra
+.globl g
+g:
+		.ent g
+		.frame $sp, 76, $ra
 		.set noreorder
 		.set reorder
-		addiu	$sp, $sp, -140		# (fn def: frame start) Move sp to end of new frame
+		addiu	$sp, $sp, -76		# (fn def: frame start) Move sp to end of new frame
 		sw	$fp, 0($sp) 		# (fn def) Store addr of old fp on stack
 		add	$fp, $sp, $0 		# (fn def) Move fp to new sp
 		sw	$ra, 4($sp) 		# (fn def) Store ra on stack
@@ -24,17 +24,12 @@ f:
 		sw	$a3, 52($sp)
 		sw	$gp, 56($sp) 		# Store value of $gp on stack
 		nop
-		lw	$t0, 1($fp)		# (var: array) Reading from array "x" at index 0
-		nop
-		li	$t0, 23				# (int const)
-		sw	$t0, 1($fp)		# (assign) store var result in ARRAY variable "x"
-		lw	$t0, 1($fp)		# (var: array) Reading from array "x" at index 0
-		nop
+		li	$t0, 39				# (int const)
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
-		j	f_end_0
+		j	g_end_0
 		nop
 
-f_end_0:
+g_end_0:
 		lw	$s0, 8($fp) 		# (fn def) Load saved regs into $s0-$s7
 		lw	$s1, 12($fp)
 		lw	$s2, 16($fp)
@@ -50,11 +45,11 @@ f_end_0:
 		lw	$ra, 4($fp) 		# (fn def) Load return address into $ra
 		lw	$fp, 0($fp) 		# (fn def) Load prev fp into $fp
 		nop
-		addiu	$sp, $sp, 140		# (fn def: frame end) Move sp to end of previous frame
+		addiu	$sp, $sp, 76		# (fn def: frame end) Move sp to end of previous frame
 		beq	$ra, $0, end
 		nop
 		jr	$ra
 		nop
-		.end f
+		.end g
 
 end:

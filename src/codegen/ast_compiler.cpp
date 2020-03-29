@@ -157,6 +157,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
+
+            // if (!context.functionBindings.count(id)) { // If function not defined in file
+            *output << "\t\tlui\t $28, %hi(__gnu_local_gp)\t\t# Calling externally defined function\n";
+            *output << "\t\taddiu\t $28, $28, %lo(__gnu_local_gp)\t\t# Calling externally defined function\n";
+            // }
+
+            // lui $v0,%hi(f2)
+            // lw $v0,%lo(f2)($v0)
             int argCount = context.functionBindings[id].args.size();  // from fn def
             context.functionArgCounter.push_back(0);
 
@@ -664,8 +672,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\txor\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\txori\t$t0, $t0, 1\n";  //inverse bits
-                *output << "\t\tandi\t$t0, $t0, 1\n";  //extract lsb
+                *output << "\t\txori\t$t0, $t0, 1\n";   //inverse bits
+                *output << "\t\tandi\t$t0, $t0, 1\n";   //extract lsb
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());

@@ -12,13 +12,15 @@ echo -e "\e[95m            SMALL TESTBENCH\e[0m"
 echo "========================================"
 echo "[INFO] Removing directories and building compiler..."
 make all
+
+# Generate assembly using our compiler
 bin/c_compiler -S ${INPUT_PATH} -o ${ASSEMBLY_PATH} 
 if [[ $? -ne 0 ]]; then
     >&2 echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCompiler returned error message. \e[0m"
     exit 1;
 fi
 
-# Compile driver with normal GCC
+# Create object file with normal GCC
 mips-linux-gnu-gcc -mfp32 -o ${OBJECT_DIR}/test_program.o -c ${ASSEMBLY_PATH} 
 if [[ $? -ne 0 ]]; then
     echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCouldn't compile driver program using GCC. \e[0m"
@@ -33,6 +35,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Run the linked and assembled executableqemu-mips ${OUTPUT_DIR}/test_program_exe
+qemu-mips ${OUTPUT_DIR}/test_program_exe
 ret=$?
 if [[ $ret -ne 0 ]]; then
     >&2 echo -e "[INFO] \e[31m\e[1mFAILED!\e[33m Testcase returned $ret, but expected 0. \e[0m"
