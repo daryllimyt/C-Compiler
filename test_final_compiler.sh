@@ -7,12 +7,12 @@ FAILED=0
 declare -a FAILARRAY
 
 echo "========================================"
-echo "            COMPILER TESTBENCH"
+echo -e "\e[95m            COMPILER TESTBENCH\e[0m"
 echo "========================================"
 echo "[INFO] Cleaning directories and building compiler..."
 make all
 if [[ "$?" -ne "0" ]]; then
-    echo "[ERROR] Could not build compiler."
+    echo -e "[ERROR] \e[31m\e[1mCould not build compiler."
     exit 1;
 fi
 
@@ -22,20 +22,22 @@ mkdir -p translator_tests/extra_tests/b_compiler/outputs
 
 N=0
 
-for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
+for path in translator_tests/extra_tests/b_compiler/inputs/* ; do
 
-    N=$(( $N+1 ));
-    
+    COUNT=$(( $COUNT+1 ));
+    file=${path##*/};
+    N=${file%.*};
+
     echo ""
-    echo "==========================="
-    echo "          TEST $N      "
-    echo "==========================="
+    echo "========================================"
+    echo -e "\e[1m    TEST $N      \e[0m"
+    echo "========================================"
     echo ""
 
     # Compile test function with compiler under test to assembly
     bin/c_compiler -S translator_tests/extra_tests/b_compiler/inputs/$N.c -o translator_tests/extra_tests/b_compiler/assembly/$N.s 
     if [[ $? -ne 0 ]]; then
-        >&2 echo "[ERROR] Compiler returned error message."
+        >&2 echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCompiler returned error message. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
@@ -44,7 +46,7 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
     # Compile driver with normal GCC
     mips-linux-gnu-gcc -mfp32 -o translator_tests/extra_tests/b_compiler/objects/$N.o -c translator_tests/extra_tests/b_compiler/assembly/$N.s
     if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Couldn't compile driver program using GCC."
+        echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCouldn't compile driver program using GCC. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
@@ -53,7 +55,7 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
     # Link driver object and assembly into executable
     mips-linux-gnu-gcc -mfp32 -static -o translator_tests/extra_tests/b_compiler/outputs/${N}_exe translator_tests/extra_tests/b_compiler/objects/$N.o translator_tests/extra_tests/b_compiler/drivers/$N.c
     if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Linker returned error message."
+        echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mLinker returned error message. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
@@ -63,11 +65,11 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
     qemu-mips translator_tests/extra_tests/b_compiler/outputs/${N}_exe
     ret=$?
     if [[ $ret -ne 0 ]]; then
-        echo "[INFO] FAILED! Testcase returned $ret, but expected 0."
+        echo -e "[INFO] \e[31m\e[1mFAILED!\e[33m Testcase returned $ret, but expected 0. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
     else
-        echo "[INFO] PASSED!"
+        echo -e "[INFO] \e[32m\e[1mPASSED!\e[0m"
         PASSED=$(( ${PASSED}+1 ));
     fi
 
@@ -77,8 +79,8 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
 done
 
 echo "########################################"
-echo "[INFO] Passed ${PASSED} out of ${N}."
-echo "[INFO] Failed cases:"
+echo -e "[INFO] \e[32m\e[1mPassed ${PASSED} out of ${COUNT}.\e[0m"
+echo -e "[INFO] \e[31m\e[1mFailed cases:\e[0m"
 for case in "${FAILARRAY[*]}"
 do
    echo $FAILARRAY[${case}]
