@@ -726,7 +726,39 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
 
                 } else if (type == "POINTER") {
-                    /* code */
+                    int index = context.frameIndex;
+                    if (context.variableBindings.count(id) == 0) {  // Non-shadowing
+                        if (context.scope == 0) {
+                            index = 0;  // For global variables
+                        }
+                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
+                        // context.frameTracker[index].addVariable(id);  // Track variable id
+                        VariableContext newVariable;
+                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.varType = type;
+                        newVariable.size = 8;
+                        newVariable.scope = context.scope;
+                        newVariable.frame = context.frameIndex;
+                        newVariable.typeSpecifier = context.typeSpecifier;
+                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variable in map
+
+                    } else {                                                        // shadowing
+                        int lastScope = context.variableBindings[id].back().scope;  // check if variable has been declared in this scope
+                        int lastFrame = context.variableBindings[id].back().frame;  // check if variable has been declared in this frame
+                        if (lastScope == context.scope && lastFrame == context.frameIndex) {
+                            throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
+                        }
+                        context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
+                        // context.frameTracker[index].addVariable(id);  // Track variable id
+                        VariableContext newVariable;
+                        newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                        newVariable.varType = type;
+                        newVariable.size = 8;
+                        newVariable.scope = context.scope;
+                        newVariable.frame = context.frameIndex;
+                        newVariable.typeSpecifier = context.typeSpecifier;
+                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
+                    }
                 } else {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
                 }
@@ -749,6 +781,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "\t\t# (var: array) Reading from array \"" << id << "\" at index " << addrOffset / 8 << "\n"
                             << "\t\tnop\n";
                 } else if (type == "POINTER") {
+                    int addrOffset = getVariableAddressOffset(context, id);
+                    std::string ref = getReferenceRegister(context, id);
+                    *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
+                            << "\t\tnop\n";
+
                 } else {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
                 }
@@ -757,7 +794,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (!context.variableBindings.count(id) &&
                     !context.functionBindings.count(id) &&
                     !context.declaredFunctions.count(id)) {  // Varibale does not exist
-                    throw std::runtime_error("[ERROR] Assignment to undeclaraed variable " + id + "\n");
+                    throw std::runtime_error("[ERROR] Assignment to undeclared variable " + id + "\n");
                 }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
                 if (context.functionBindings.count(id)) {
