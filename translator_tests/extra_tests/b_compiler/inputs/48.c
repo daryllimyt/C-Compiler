@@ -1,6 +1,6 @@
 int fmain(){
-	if(!(false && true){
-		return 0;
+	if(!(false && true)){
+		return 1;
 	}
-    return 1;
+    return 0;
 }
