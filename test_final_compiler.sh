@@ -8,6 +8,7 @@ INPUT_DIR=translator_tests/extra_tests/b_compiler/inputs
 ASSEMBLY_DIR=translator_tests/extra_tests/b_compiler/assembly
 OBJECT_DIR=translator_tests/extra_tests/b_compiler/objects
 OUTPUT_DIR=translator_tests/extra_tests/b_compiler/outputs
+DRIVER_DIR=translator_tests/extra_tests/b_compiler/drivers
 
 declare -a FAILARRAY
 
@@ -61,7 +62,7 @@ for path in ${INPUT_DIR}/* ; do
     fi
 
     # Link driver object and assembly into executable
-    mips-linux-gnu-gcc -mfp32 -static -o ${OUTPUT_DIR}/${N}_exe ${OBJECT_DIR}/$N.o translator_tests/extra_tests/b_compiler/drivers/$N.c
+    mips-linux-gnu-gcc -mfp32 -static -o ${OUTPUT_DIR}/${N}_exe ${OBJECT_DIR}/$N.o ${DRIVER_DIR}/$N.c
     if [[ $? -ne 0 ]]; then
         echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mLinker returned error message. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
