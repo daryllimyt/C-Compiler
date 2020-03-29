@@ -94,7 +94,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\t.ent " << id << "\n"
                         << "\t\t.frame $sp, " << bytes << ", $ra\n"
                         << "\t\t.set noreorder\n"
-                        << "\t\t.cpload $t4\n"
+                        // << "\t\t.cpload $t4\n"
                         << "\t\t.set reorder\n";
             }
 
@@ -335,7 +335,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 			Compile(output, context, astNode->getNext()); //going into WRAPPED_CASE_STATEMENTS
             *output << "\n"
                     << end << ":\n";
-			context.breakPoints.pop_back(end);
+			context.breakPoints.pop_back();
         } else if (astNode->getType() == "MULTIPLE_CASE_STATEMENTS") {
             context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
 
@@ -358,7 +358,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 					<< "bne\t$s0, $t0, " << end
 					<< "\t\t# (case) branching past case if expr not same\n";
 
-			Compile(output, context, astnode->getStatements());
+			Compile(output, context, astNode->getStatements());
 
             *output << "\n"
                     << end << ":\n";
@@ -371,7 +371,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << start << ":\n";
 
-			Compile(output, context, astnode->getStatements());
+			Compile(output, context, astNode->getStatements());
 
             *output << "\t\t"
                     << "j\t" << context.breakPoints.back() << "\n"
@@ -388,8 +388,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
             std::string continue_ = "while_continue" + label;
-            context.continuePoint.push_back(continue_);
-            context.breakPoint.push_back(end);
+            context.continuePoints.push_back(continue_);
+            context.breakPoints.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
@@ -411,16 +411,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-            context.breakPoint.pop_back();  //popping end
-            context.continuePoint.pop_back();  //popping continue_
+            context.breakPoints.pop_back();  //popping end
+            context.continuePoints.pop_back();  //popping continue_
         } else if (astNode->getType() == "FOR_LOOP") {
 
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
             std::string continue_ = "for_continue" + label;
-            context.continuePoint.push_back(continue_);
-            context.breakPoint.push_back(end);
+            context.continuePoints.push_back(continue_);
+            context.breakPoints.push_back(end);
 
             Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
             *output << "\n"
@@ -444,8 +444,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-            context.breakPoint.pop_back();  //popping end
-            context.continuePoint.pop_back();  //popping continue
+            context.breakPoints.pop_back();  //popping end
+            context.continuePoints.pop_back();  //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
@@ -649,7 +649,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\t\tnop\n";
         } else if (astNode->getType() == "CONTINUE") {
             *output << "\t\t"
-                    << "j\t" << context.continuePoint.back() << "\n"
+                    << "j\t" << context.continuePoints.back() << "\n"
                     << "\t\tnop\n";
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
@@ -1236,7 +1236,7 @@ void storeRegisters(std::ostream *output) {
     *output << "\t\tsw\t$a3, 52($sp)\n";
     *output << "\t\tsw\t$gp, 56($sp) \t\t# Store value of $gp on stack\n";
     // qemu lines
-    if (Util::qemu) *output << "\t\t.cprestore 60\n";
+    // if (Util::qemu) *output << "\t\t.cprestore 60\n";
 
     *output << "\t\t"
             << "nop\n";

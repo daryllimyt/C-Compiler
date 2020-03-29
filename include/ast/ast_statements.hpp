@@ -233,7 +233,7 @@ class IfStatement : public Node {
 class SwitchStatement : public Node {
    protected:
     NodePtr expression_;
-    NodePtr next;
+    NodePtr next_;
 
    public:
     SwitchStatement(NodePtr expression, NodePtr next) {
@@ -256,7 +256,7 @@ class MultipleCaseStatements : public Node {
 	NodePtr next_;
 
    public:
-    SwitchStatement(NodePtr current, NodePtr next) {
+    MultipleCaseStatements(NodePtr current, NodePtr next) {
         type_ = "MULTIPLE_CASE_STATEMENTS";
         current_ = current;
         next_ = next;
@@ -276,7 +276,7 @@ class SingleCaseStatement : public Node {
 	NodePtr statement_;
 
    public:
-    SwitchStatement(NodePtr expr, NodePtr statement) {
+    SingleCaseStatement(NodePtr expr, NodePtr statement) {
         type_ = "SINGLE_CASE_STATEMENT";
         expression_ = expr;
         statement_ = statement;
@@ -295,7 +295,7 @@ class DefaultStatement : public Node {
 	NodePtr statement_;
 
    public:
-    SwitchStatement(NodePtr statement) {
+    DefaultStatement(NodePtr statement) {
         type_ = "DEFAULT_STATEMENT";
         statement_ = statement;
     }

@@ -154,36 +154,36 @@ SELECTION_STATEMENT //if(expr){do smth;} else{do smth else;}  || switch(expr) {c
   : T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                              { $$ = new IfStatement($3, $5, NULL); }
   | T_IF T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT SELECTION_STATEMENT   { $$ = new IfStatement($3, $5, $6); } //recursive
   | T_ELSE SINGLE_STATEMENT                                                                              { $$ = $2; }
-  // | T_SWITCH T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS WRAPPED_CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
+  | T_SWITCH T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS WRAPPED_CASE_STATEMENTS               { $$ = new SwitchStatement($3, $5); }
   ;
 
-// WRAPPED_CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
-//   : T_L_BRACE MULTIPLE_CASE_DEFAULT T_R_BRACE          { $$ = $2; }
-//   | T_L_BRACE MULTIPLE_CASE_STATEMENTS T_R_BRACE       { $$ = $2; }
-//   | T_L_BRACE T_R_BRACE                                { $$ = new MultipleCaseStatement(NULL, NULL); }
-//   ;
+WRAPPED_CASE_STATEMENTS //{case x: do smth; break; case y: do smth; break; ...}
+  : T_L_BRACE MULTIPLE_CASE_DEFAULT T_R_BRACE          { $$ = $2; }
+  | T_L_BRACE MULTIPLE_CASE_STATEMENTS T_R_BRACE       { $$ = $2; }
+  | T_L_BRACE T_R_BRACE                                { $$ = new MultipleCaseStatement(NULL, NULL); }
+  ;
 
-// MULTIPLE_CASE_DEFAULT //default can happen in any order
-//   : SINGLE_CASE_STATEMENT MULTIPLE_CASE_DEFAULT  { $$ = new MultipleCaseStatements($1, $2); }
-//   | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new MultipleCaseStatements($1, $2); }
-//   | DEFAULT_STATEMENT                           { $$ = new MultipleCaseStatements($1, NULL); }
-//   ;
+MULTIPLE_CASE_DEFAULT //default can happen in any order
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_DEFAULT  { $$ = new MultipleCaseStatements($1, $2); }
+  | DEFAULT_STATEMENT MULTIPLE_CASE_STATEMENTS  { $$ = new MultipleCaseStatements($1, $2); }
+  | DEFAULT_STATEMENT                           { $$ = new MultipleCaseStatements($1, NULL); }
+  ;
 
-// MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
-//   : SINGLE_CASE_STATEMENT MULTIPLE_CASE_STATEMENTS { $$ = new MultipleCaseStatements($1, $2); }
-//   | SINGLE_CASE_STATEMENT                          { $$ = new MultipleCaseStatements($1, NULL); }
-//   ;
+MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
+  : SINGLE_CASE_STATEMENT MULTIPLE_CASE_STATEMENTS { $$ = new MultipleCaseStatements($1, $2); }
+  | SINGLE_CASE_STATEMENT                          { $$ = new MultipleCaseStatements($1, NULL); }
+  ;
 
 
-// SINGLE_CASE_STATEMENT //case x: do smth;
-//   : T_CASE EXPRESSION T_COLON MULTIPLE_CASE_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
-//   | T_CASE EXPRESSION T_COLON                       { $$ = new SingleCaseStatement($2, NULL); }
-//   ;
+SINGLE_CASE_STATEMENT //case x: do smth;
+  : T_CASE EXPRESSION T_COLON MULTIPLE_CASE_STATEMENTS      { $$ = new SingleCaseStatement($2, $4); }
+  | T_CASE EXPRESSION T_COLON                       { $$ = new SingleCaseStatement($2, NULL); }
+  ;
 
-// DEFAULT_STATEMENT //default: {do smth;}
-//   : T_DEFAULT T_COLON MULTIPLE_CASE_STATEMENTS           { $$ = new DefaultStatement($3); }
-//   | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(NULL); }
-//   ;
+DEFAULT_STATEMENT //default: {do smth;}
+  : T_DEFAULT T_COLON MULTIPLE_CASE_STATEMENTS           { $$ = new DefaultStatement($3); }
+  | T_DEFAULT T_COLON                               { $$ = new DefaultStatement(NULL); }
+  ;
 
 // //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
