@@ -167,18 +167,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
                 *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
-                context.virtualRegisters -= (argCount - 1);  // This tells it to store at this VR
-            }                                                //assuming all arguments are in virtual registers up to $sp
-            // for (int i = 0; i < argCount; i++) {
-            //     if (i < 4) {
-            //         *output << "\t\tlw\t$a" << i << ", " << 8 * (argCount - (i + 1)) << "($sp)"
-            //                 << "\t\t# Loading argument no. " << i << "\n";
-            //     } else {
-            //         break;
-            //     }
-            // }
-
-            // if (prev == "ASSIGNMENT_STATEMENT") {
+                context.virtualRegisters -= (argCount - 1);  
+            }                                                
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
         } else if (astNode->getType() == "SCOPE") {
@@ -420,6 +410,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.continuePoints.push_back(continue_);
             context.breakPoints.push_back(end);
 
+            context.scope++;
             if (astNode->getConditionOne()) {
                 Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
             }
@@ -439,6 +430,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getConditionThree()) {
                 Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
             }
+            context.scope--;
 
             *output << "\t\t"
                     << "j\t" << start << "\n";
