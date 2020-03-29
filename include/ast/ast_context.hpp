@@ -108,6 +108,7 @@ struct ProgramContext {
 
     // Functions
     std::string returnType = "VOID";
+    std::vector<int> functionArgCounter;
     std::unordered_set<std::string> functionArgs;
     std::vector<std::string> allFunctions;
     std::unordered_set<std::string> declaredFunctions;
