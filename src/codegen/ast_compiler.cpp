@@ -436,12 +436,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
-
-            std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
-            int offset = addressInfo.first;
-            std::string ref = addressInfo.second;
-
-            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            if (astNode->getRight()->getType() == "VARIABLE" && (astNode->getIdentifier()->getId() == "--" || astNode->getIdentifier()->getId() == "++")) {
+                std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
+                int offset = addressInfo.first;
+                std::string ref = addressInfo.second;
+                *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            }
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -664,7 +664,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\txor\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\txor\t$t0, $t0, $t0\n";  //inverse bits
+                *output << "\t\txori\t$t0, $t0, 1\n";  //inverse bits
+                *output << "\t\tandi\t$t0, $t0, 1\n";  //extract lsb
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());

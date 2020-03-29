@@ -1,5 +1,5 @@
-int fmain();
+int f();
 
 int main(){
-    return ( (fmain() - 1) );
+    return ( f() - 1 );
 }
