@@ -173,7 +173,9 @@ MULTIPLE_CASE_STATEMENTS //purely case statements (no default)
 
 SINGLE_CASE_STATEMENT //case x: do smth;
   : T_CASE EXPRESSION T_COLON MULTIPLE_STATEMENTS   		{ $$ = new SingleCaseStatement($2, $4); }
+  | T_CASE EXPRESSION T_COLON    		{ $$ = new SingleCaseStatement($2, NULL); }
   | T_DEFAULT T_COLON MULTIPLE_STATEMENTS                   { $$ = new DefaultStatement($3); }
+  | T_DEFAULT T_COLON                    { $$ = new DefaultStatement(NULL); }
   | SINGLE_STATEMENT                                     { $$ = $1; } 
   ;
 
