@@ -132,7 +132,7 @@ fmain:
 		sw	$fp, 4($sp) 		# (fn def)
 		sw	$ra, 8($sp) 		# (fn def)
 		move	$fp, $sp 		# $fp is at the start of the variable section
-		addiu	$sp, $sp, -96	# Move $sp to end of variable section before function call
+		addiu	$sp, $sp, -104	# Move $sp to end of variable section before function call
 		li	$t0, 1				# (int const)
 		sw	$t0, 0($fp)			# (assign) store var result in NORMAL variable "a"
 		li	$t0, 2				# (int const)
@@ -144,21 +144,27 @@ fmain:
 		li	$t0, 5				# (int const)
 		sw	$t0, -32($fp)			# (assign) store var result in NORMAL variable "e"
 		addiu	$sp, $sp, -40	# (fn call) Expand stack for fn "f2" arg slots
-		addiu	$sp, $sp, -32	# (fn call) Expand stack for fn "f1" arg slots
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "a"
+		nop
+		sw	$t0, 0($sp) 		# (fn call params) store in arg slot
+		addiu	$sp, $sp, -32	# (fn call) Expand stack for fn "f1" arg slots
+		lw	$t0, -8($fp)			# (var: normal) Reading from variable "b"
 		nop
 		sw	$t0, 0($sp) 		# (fn call params) store in arg slot
 		lw	$a0, 0($sp) 		# Load arguments into $a0-$a3
 		jal	f1				# (fn call) enter fn def
 		nop
 		addiu	$sp, $sp, 32	# (fn call) Shrink stack for fn "f1" arg slots
-		sw	$v0, 0($sp) 		# (fn call params) store in arg slot
-		lw	$t0, -8($fp)			# (var: normal) Reading from variable "b"
-		nop
-		sw	$t0, 8($sp) 		# (fn call params) store in arg slot
+		sw	$v0, 8($sp) 		# (fn call params) store in arg slot
+		addiu	$sp, $sp, -32	# (fn call) Expand stack for fn "f1" arg slots
 		lw	$t0, -16($fp)			# (var: normal) Reading from variable "c"
 		nop
-		sw	$t0, 16($sp) 		# (fn call params) store in arg slot
+		sw	$t0, 0($sp) 		# (fn call params) store in arg slot
+		lw	$a0, 0($sp) 		# Load arguments into $a0-$a3
+		jal	f1				# (fn call) enter fn def
+		nop
+		addiu	$sp, $sp, 32	# (fn call) Shrink stack for fn "f1" arg slots
+		sw	$v0, 16($sp) 		# (fn call params) store in arg slot
 		lw	$t0, -24($fp)			# (var: normal) Reading from variable "d"
 		nop
 		sw	$t0, 24($sp) 		# (fn call params) store in arg slot
@@ -176,7 +182,7 @@ fmain:
 		nop
 
 fmain_end_2:
-		addiu	$sp, $sp, 96	# Move $sp to end of function arg section after function call
+		addiu	$sp, $sp, 104	# Move $sp to end of function arg section after function call
 		move	$sp, $fp 		# Restore sp to start of variable section
 		lw	$fp, 4($sp) 		# (fn def)
 		lw	$ra, 8($sp) 		# (fn def)

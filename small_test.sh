@@ -1,5 +1,4 @@
 INPUT_NAME="$1"
-
 INPUT_PATH=translator_tests/extra_tests/b_compiler/inputs/${INPUT_NAME}.c
 ASSEMBLY_PATH=translator_tests/extra_tests/b_compiler/reference/${INPUT_NAME}.s
 DRIVER_PATH=translator_tests/extra_tests/b_compiler/drivers/${INPUT_NAME}.c

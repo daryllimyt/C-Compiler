@@ -87,10 +87,16 @@ FRAME
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
   | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
-  // | ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
+  // | T_ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
   ;
 
-// ENUMATOR_LIST
+// STRUCT_DEFINITION
+//   : T_STRUCT T_IDENTIFIER SCOPE T_SEMICOLON { $$ = new StructDefinition(*$2, $3)}
+
+// STRUCT_DECLARATION
+//   : T_IDENTIFIER T_IDENTIFIER T_SEMICOLON    { $$ = new StructObject(*$1, *$2)}
+
+// ENUMERATOR_LIST
 //   : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
 //   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, NULL); }
 //   ;
@@ -180,7 +186,6 @@ SINGLE_CASE_STATEMENT //case x: do smth;
   ;
 
 
-// //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   	: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5, 0); }
  	| T_DO SINGLE_STATEMENT T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS T_SEMICOLON                                     { $$ = new WhileLoop($5, $2, 1); }
@@ -232,6 +237,9 @@ ASSIGNMENT_OPERATOR
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
  */
 
+
+
+
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
   | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
@@ -240,6 +248,7 @@ DECLARATOR //a || *a || a[1]
 
 VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
+
 
 TYPE_SPECIFIER
   : T_VOID     { $$ = new TypeSpecifier("VOID"); }
