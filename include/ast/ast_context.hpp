@@ -70,10 +70,6 @@ struct FunctionContext {
 struct FrameContext {
     int totalBytes;
     int variableBytes;
-    // std::vector<std::string> frameVariables;
-    // void addVariable(const std::string &id) {
-    //     frameVariables.push_back(id);
-    // }
     friend std::ostream& operator<<(std::ostream& out, const FrameContext& f) {
         out << "{totalBytes: " << f.totalBytes << ", varBytes: " << f.variableBytes << " }";
         return out;
