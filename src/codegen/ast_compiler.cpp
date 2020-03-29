@@ -781,7 +781,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
                             << "\t\tnop\n";
 
-				 	context.typeSpecifier = context.variableBindings[id].typeSpecifier;
+				 	context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
