@@ -234,7 +234,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
                 if (context.variableAssignmentState == "VARIABLE_DECLARATION" || context.variableAssignmentState == "NO_ASSIGN") {
                     // temp : no assign comes from expressions
-                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror A\n";
+                    if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declarator A\n";
                     Compile(output, context, astNode->getIdentifier());
 
                 } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Recursive assignment terminal case
@@ -772,6 +772,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string ref = getReferenceRegister(context, id);
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
                             << "\t\tnop\n";
+
+				 	context.typeSpecifier = context.variableBindings[id].typeSpecifier;
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
