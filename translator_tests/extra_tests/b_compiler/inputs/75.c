@@ -15,5 +15,5 @@ int fmain(){
     int x = 16;
     int y = 32;
     int z = 48;
-    return f2(x,y,f1(a,b,c,d,e),z,f1(a,b,c,d,e));
+    return f2(x,y,f1(a,b,c,d,e,x),z,f1(a,b,c,d,e,x));
 }

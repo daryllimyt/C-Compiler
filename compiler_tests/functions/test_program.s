@@ -1,12 +1,12 @@
 .text
 
-.globl fmain
-fmain:
-		.ent fmain
-		.frame $sp, 164, $ra
+.globl f
+f:
+		.ent f
+		.frame $sp, 100, $ra
 		.set noreorder
 		.set reorder
-		addiu	$sp, $sp, -164		# (fn def: frame start) Move sp to end of new frame
+		addiu	$sp, $sp, -100		# (fn def: frame start) Move sp to end of new frame
 		sw	$fp, 0($sp) 		# (fn def) Store addr of old fp on stack
 		add	$fp, $sp, $0 		# (fn def) Move fp to new sp
 		sw	$ra, 4($sp) 		# (fn def) Store ra on stack
@@ -24,93 +24,40 @@ fmain:
 		sw	$a3, 52($sp)
 		sw	$gp, 56($sp) 		# Store value of $gp on stack
 		nop
-		li	$t0, 0				# (int const)
-<<<<<<< HEAD
-		sw	$t0, 156($fp)		# (assign) store var result in NORMAL variable
-		li	$t0, 10				# (int const)
-		sw	$t0, 148($fp)		# (assign) store var result in NORMAL variable
-		li	$t0, 0				# (int const)
-		sw	$t0, 140($fp)		# (assign) store var result in NORMAL variable
 
-for_start_1:
-		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
-		li	$t0, 5				# (int const)
-		sw	$t0, -8($fp) 		# (eval expr) store lhs in virtual
-		lw	$t0, 140($fp)		# (var: normal) Reading from variable "y"
-		nop
-		lw	$t1, -8($fp) 		# (eval expr) load lhs from virtual to $t1, rhs in $t0
-		nop
-		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
-		slt	$t0, $t0, $t1
-		beq	$t0, $0, for_end_1
-		nop
+if_start_1:
 		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		li	$t0, 1				# (int const)
-		sw	$t0, -8($fp) 		# (eval expr) store lhs in virtual
-		lw	$t0, 156($fp)		# (var: normal) Reading from variable "x"
-=======
-		sw	$t0, 156($fp)		# (assign) store var result in NORMAL variable "x"
-		li	$t0, 10				# (int const)
-		sw	$t0, 148($fp)		# (assign) store var result in NORMAL variable "y"
+		sw	$t0, 0($sp) 		# (eval expr) store RHS in virtual register
 		li	$t0, 0				# (int const)
-		sw	$t0, 140($fp)		# (assign) store var result in NORMAL variable "y"
-
-for_start_1:
-		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
-		li	$t0, 5				# (int const)
-		sw	$t0, -8($fp) 		# (eval expr) store RHS in virtual
-		lw	$t0, 140($fp)		# (var: normal) Reading from variable "y"
->>>>>>> scoping
-		nop
-		lw	$t1, -8($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
+		lw	$t1, 0($sp) 		# (eval expr) load RHS from virtual to $t1, LHS in $t0
 		nop
 		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
-<<<<<<< HEAD
-		add	$t0, $t0, $t1 		# (assign op node) lhs += rhs
-=======
-		slt	$t0, $t0, $t1
-		beq	$t0, $0, for_end_1
+		sltu	$t0, $0, $t0
+		sltu	$t1, $0, $t1
+		and	$t0, $t0, $t1
+		andi	$t0, $t0, 1
+		sltu	$t0, $0, $t0
+		xori	$t0, $t0, 1
+		andi	$t0, $t0, 1
+		beq	$t0, $0, if_next_1
 		nop
-		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		li	$t0, 1				# (int const)
-		sw	$t0, -8($fp) 		# (eval expr) store RHS in virtual
-		lw	$t0, 156($fp)		# (var: normal) Reading from variable "x"
-		nop
-		lw	$t1, -8($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
-		nop
-		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
-		add	$t0, $t0, $t1 		# (assign op node) LHS += RHS
->>>>>>> scoping
-		sw	$t0, 156($fp)		# (assign expr) storing evaluated expression from $t0 to LHS variable in memory
-
-for_continue_1:
-		lw	$t0, 140($fp)		# (var: normal) Reading from variable "y"
-		nop
-<<<<<<< HEAD
-		lw	$t0, 140($fp)		# (postfix) store var result in NORMAL variable
-=======
-		lw	$t0, 140($fp)		# (postfix) store var result in NORMAL variable "y"
->>>>>>> scoping
-		nop
-		move	$t1, $t0
-		addi	$t0, $t0, 1
-		sw	$t0, 140($fp)
-		move	$t0, $t1
-		j	for_start_1
-		nop
-
-for_end_1:
-<<<<<<< HEAD
-		lw	$t0, 1($fp)		# (var: normal) Reading from variable "y"
-=======
-		lw	$t0, 148($fp)		# (var: normal) Reading from variable "y"
->>>>>>> scoping
-		nop
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
-		j	fmain_end_0
+		j	f_end_0
+		nop
+		j	if_end_1
 		nop
 
-fmain_end_0:
+if_next_1:
+
+if_end_1:
+		li	$t0, 0				# (int const)
+		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
+		j	f_end_0
+		nop
+
+f_end_0:
 		lw	$s0, 8($fp) 		# (fn def) Load saved regs into $s0-$s7
 		lw	$s1, 12($fp)
 		lw	$s2, 16($fp)
@@ -126,11 +73,11 @@ fmain_end_0:
 		lw	$ra, 4($fp) 		# (fn def) Load return address into $ra
 		lw	$fp, 0($fp) 		# (fn def) Load prev fp into $fp
 		nop
-		addiu	$sp, $sp, 164		# (fn def: frame end) Move sp to end of previous frame
+		addiu	$sp, $sp, 100		# (fn def: frame end) Move sp to end of previous frame
 		beq	$ra, $0, end
 		nop
 		jr	$ra
 		nop
-		.end fmain
+		.end f
 
 end:

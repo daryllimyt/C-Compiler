@@ -106,9 +106,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
             if (Util::debug) {
-                std::cerr << "#######################################################\n";
+                std::cerr << "##############################################################################################################\n";
                 std::cerr << context;
-                std::cerr << "#######################################################\n";
+                std::cerr << "##############################################################################################################\n";
             }
             int argCount = context.functionBindings[id].args.size();
             for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
@@ -154,23 +154,26 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionEnds.pop_back();
 
         } else if (astNode->getType() == "FUNCTION_CALL") {
-            // std::string prev = context.variableAssignmentState;
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
-            int argCount = context.functionBindings[id].args.size();
+            int argCount = context.functionBindings[id].args.size();  // from fn def
+            context.functionArgCounter.push_back(0);
 
             if (astNode->getParameters()) {
                 Compile(output, context, astNode->getParameters());
+                if (argCount != context.functionArgCounter.back()) {
+                    throw std::runtime_error("[ERROR] Function call argument count does not match function definition\n");
+                }
 
                 *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
                 *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
-                context.virtualRegisters -= (argCount - 1);
             }
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
+            context.functionArgCounter.pop_back();
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
@@ -203,6 +206,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getStatements()) {
                 context.variableAssignmentState = "NO_ASSIGN";             // Default state for function readings
                 Compile(output, context, astNode->getStatements());        //get in t0
+                context.functionArgCounter.back()++;                       // Track number of args in function call
                 if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                     *output << "\t\tsw\t$v0, 0($sp) \t\t# (fn call params) fn call result stored in virtual reg\n";
                     // *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (fn call params) Expanding stack\n";
@@ -217,7 +221,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
             }
-            context.virtualRegisters -= context.functionBindings[id].args.size();  // Clear used virtual regs
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
             context.variableAssignmentState = "NO_ASSIGN";  // Clear any previous variableAssignContext
             if (astNode->getStatements()) {
@@ -256,10 +259,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
-                                << "\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \""<< id << "\"\n";
+                                << "\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     } else {  // Normal variable
                         *output << "\t\tsw\t$t0, " << offset << ref
-                                << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \""<< id << "\"\n";
+                                << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     }
                 }
                 if (astNode->getNext()) {  // Recursive or variable
@@ -330,7 +333,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getCondition());  //result in $t0
             *output << "\t\tslt\t$t1, $t0, $s0\n";
             *output << "\t\tslt\t$t2, $s0, $t0\n";
-            *output << "\t\tor\t$t0, $t1, $t2\n";  //t0 == 1 if t0 != s0
+            *output << "\t\tor\t$t0, $t1, $t2\n";   //t0 == 1 if t0 != s0
             *output << "\t\tand\t$t0, $t0, $s1\n";  //branch if t0 == s1 == 1
             *output << "\t\tbgtz\t$t0, " << end
                     << "\t\t# (case) branching past case if expr not same\n";
@@ -433,12 +436,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
-
-            std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
-            int offset = addressInfo.first;
-            std::string ref = addressInfo.second;
-
-            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            if (astNode->getRight()->getType() == "VARIABLE" && (astNode->getIdentifier()->getId() == "--" || astNode->getIdentifier()->getId() == "++")) {
+                std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getRight());
+                int offset = addressInfo.first;
+                std::string ref = addressInfo.second;
+                *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            }
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -499,7 +502,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tslt\t$v0, $t0, $t1\n"
                     << "\t\tslt\t$v1, $t1, $t0\n"
                     << "\t\txor\t$t0, $v0, $v1\n"
-                    << "\t\tsltu\t$t0, $t0, 1\n";
+                    << "\t\tsltiu\t$t0, $t0, 1\n";
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -519,10 +522,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tslt\t$t0, $t1, $t0\n";
             } else if (astNode->getId() == "<=") {
                 *output << "\t\tslt\t$t0, $t1, $t0\n"
-                        << "\t\tsltu\t$t0, $t0, 1\n";
+                        << "\t\tsltiu\t$t0, $t0, 1\n";
             } else if (astNode->getId() == ">=") {
                 *output << "\t\tslt\t$t0, $t0, $t1\n"
-                        << "\t\tsltu\t$t0, $t0, 1\n";
+                        << "\t\tsltiu\t$t0, $t0, 1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
@@ -533,7 +536,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
             *output << "\t\tlw\t$t0, " << offset << ref
-                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable \""<< id << "\"\n"
+                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n"
                     << "\t\tnop\n";
 
             *output << "\t\tmove\t$t1, $t0\n";
@@ -661,7 +664,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         << "\t\txor\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\txor\t$t0, $t0, $t0\n";  //inverse bits
+                *output << "\t\txori\t$t0, $t0, 1\n";  //inverse bits
+                *output << "\t\tandi\t$t0, $t0, 1\n";  //extract lsb
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -867,7 +871,6 @@ std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &contex
     return std::make_pair(offset, ref);
 }
 
-
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
     try {
         // variable not bound
@@ -883,7 +886,7 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
                 } else if (it->frame == context.frameIndex && it->scope <= context.scope) {  // Matching frame and previous scope
                     offset = it->addressOffset;
                     break;
-                } 
+                }
             }
             if (offset < 0) {
                 throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
@@ -923,9 +926,9 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
     *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
     Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\tsw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
+        *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in virtual register\n";
     } else {  // Normal variable
-        *output << "\t\tsw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
+        *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in virtual register\n";
     }
     context.variableAssignmentState = "NO_ASSIGN";             // Reading var
     Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
@@ -933,7 +936,7 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
     }
-    *output << "\t\tlw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load LHS from virtual to $t1, RHS in $t0\n"
+    *output << "\t\tlw\t$t1, 0($sp) \t\t# (eval expr) load RHS from virtual to $t1, LHS in $t0\n"
             << "\t\tnop\n";
     *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
     context.variableAssignmentState = "NO_ASSIGN";  // Reading var
