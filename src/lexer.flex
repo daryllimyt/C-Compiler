@@ -46,12 +46,10 @@ IDENTIFIER [_a-zA-Z][_a-zA-Z0-9]*
 NEW_LINE 		[\n\r]
 WHITESPACE 	[ \t\v]+
 
-SINGLE_LINE_COMMENT 	([/][/].*)
-MULTIPLE_LINE_COMMENT ([/]\*(.|{NEW_LINE})*\*[/])
-
 %%
 
 "auto"			{ return T_AUTO; }
+"bool"			{ return T_BOOL; }
 "break"			{ return T_BREAK; }
 "case"			{ return T_CASE; }
 "char"			{ return T_CHAR; }
@@ -158,8 +156,9 @@ MULTIPLE_LINE_COMMENT ([/]\*(.|{NEW_LINE})*\*[/])
 
 {NEW_LINE} 				{line_number++;}
 
-
-(.|{SINGLE_LINE_COMMENT}|{MULTIPLE_LINE_COMMENT})			{ }
+"//".*            ;
+"/*"[^"*/"]*"*/"  ;
+.			            ;
 
 %%
 

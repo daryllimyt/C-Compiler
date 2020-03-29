@@ -229,10 +229,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
             context.virtualRegisters -= context.functionBindings[id].args.size();  // Clear used virtual regs
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
-            context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
-			if(astNode->getStatements()){
-            Compile(output, context, astNode->getStatements());                    // Current statement
-			}
+            context.variableAssignmentState = "NO_ASSIGN";  // Clear any previous variableAssignContext
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());  // Current statement
+            }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -319,32 +319,33 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string label = createLabel(context, "_");
             std::string start = "switch_start" + label;
             std::string end = "switch_end" + label;
-			context.breakPoints.push_back(end);
+            context.breakPoints.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
-			Compile(output, context, astNode->getCondition()); //result in $t0
+            *output << "\t\tmove\t$s1, $0\n";    
+            Compile(output, context, astNode->getCondition());  //result in $t0
 
-			if (context.variableAssignmentState == "FUNCTION_CALL") {
-				*output << "\t\t"
-						<< "move\t$s0, $v0 \t\t# (switch) Storing the switch expression in $s0\n";
-			} else {
-		        *output << "\t\t"
-		                << "move\t$s0, $t0\t\t# (switch) Storing the switch expression in $s0\n";
-			}
-			Compile(output, context, astNode->getNext()); //going into WRAPPED_CASE_STATEMENTS
+            if (context.variableAssignmentState == "FUNCTION_CALL") {
+                *output << "\t\t"
+                        << "move\t$s0, $v0 \t\t# (switch) Storing the switch expression in $s0\n";
+            } else {
+                *output << "\t\t"
+                        << "move\t$s0, $t0\t\t# (switch) Storing the switch expression in $s0\n";
+            }
+            Compile(output, context, astNode->getNext());  //going into WRAPPED_CASE_STATEMENTS
             *output << "\n"
                     << end << ":\n";
-			context.breakPoints.pop_back();
+            context.breakPoints.pop_back();
         } else if (astNode->getType() == "MULTIPLE_CASE_STATEMENTS") {
-            context.variableAssignmentState = "NO_ASSIGN";                         // Clear any previous variableAssignContext
+            context.variableAssignmentState = "NO_ASSIGN";  // Clear any previous variableAssignContext
 
-            if(astNode->getStatements()){
-				Compile(output, context, astNode->getStatements());
-			}
-            if(astNode->getNext()){
-				Compile(output, context, astNode->getNext());
-			}
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());
+            }
         } else if (astNode->getType() == "SINGLE_CASE_STATEMENT") {
             std::string label = createLabel(context, "_");
             std::string start = "case_start" + label;
@@ -352,13 +353,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << start << ":\n";
-			Compile(output, context, astNode->getCondition()); //result in $t0
+            Compile(output, context, astNode->getCondition());  //result in $t0
 
-			*output << "\t\t"
-					<< "bne\t$s0, $t0, " << end
-					<< "\t\t# (case) branching past case if expr not same\n";
+                *output << "\t\t"
+                        << "bne\t$s0, $t0, " << end
+                        << "\t\t# (case) branching past case if expr not same\n";
 
-			Compile(output, context, astNode->getStatements());
+            Compile(output, context, astNode->getStatements());
 
             *output << "\n"
                     << end << ":\n";
@@ -367,11 +368,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "default_start" + label;
             std::string end = "default_end" + label;
 
-            *output << "\t\tj " << end << "\n"; //go to end
+            *output << "\t\tj " << end << "\n";  //go to end
             *output << "\n"
                     << start << ":\n";
 
-			Compile(output, context, astNode->getStatements());
+            Compile(output, context, astNode->getStatements());
 
             *output << "\t\t"
                     << "j\t" << context.breakPoints.back() << "\n"
@@ -379,17 +380,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << end << ":\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
-
-            if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
-                Compile(output, context, astNode->getNext());
-            }
-
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
             std::string continue_ = "while_continue" + label;
             context.continuePoints.push_back(continue_);
             context.breakPoints.push_back(end);
+            if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
+                Compile(output, context, astNode->getNext());
+            }
 
             *output << "\n"
                     << start << ":\n";
@@ -411,10 +410,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-            context.breakPoints.pop_back();  //popping end
+            context.breakPoints.pop_back();     //popping end
             context.continuePoints.pop_back();  //popping continue_
         } else if (astNode->getType() == "FOR_LOOP") {
-
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
@@ -422,10 +420,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.continuePoints.push_back(continue_);
             context.breakPoints.push_back(end);
 
-            Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
+            if (astNode->getConditionOne()) {
+                Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
+            }
             *output << "\n"
                     << start << ":\n";
-            Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
+            if (astNode->getConditionTwo()) {
+                Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
+            }
             *output << "\t\t"
                     << "beq\t$t0, $0, " << end << "\n";
             *output << "\t\t"
@@ -434,7 +436,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << continue_ << ":\n";
-            Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
+            if (astNode->getConditionThree()) {
+                Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
+            }
 
             *output << "\t\t"
                     << "j\t" << start << "\n";
@@ -444,7 +448,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-            context.breakPoints.pop_back();  //popping end
+            context.breakPoints.pop_back();     //popping end
             context.continuePoints.pop_back();  //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
@@ -662,7 +666,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (context.typeSpecifier == "INT") {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "LONG") {
-                *output << "\t\tli\t$t0, 8\n";
+                *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "FLOAT") {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "DOUBLE") {
@@ -671,6 +675,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "UNSIGNED") {
                 *output << "\t\tli\t$t0, 4\n";
+            } else if (context.typeSpecifier == "BOOL") {
+                *output << "\t\tli\t$t0, 1\n";
             }
 
         } else if (astNode->getType() == "CHAR") {
@@ -743,7 +749,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (astNode->getId() == "~") {  //ones complement
                 *output << "\t\tli\t$t1, -1\n"
                         << "\t\txor\t$t0, $t0, $t1\n";
-            } else if (astNode->getId() == "!") {  //logical NOT
+            } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\txor\t$t0, $t0, $t0\n";  //inverse bits
 
@@ -1026,28 +1032,23 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
-    *output << "\t\t"
-            << "addiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
+    *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
     Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\t"
-                << "sw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+        *output << "\t\tsw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
     } else {  // Normal variable
-        *output << "\t\t"
-                << "sw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
+        *output << "\t\tsw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store lhs in virtual\n";
     }
-
+    context.variableAssignmentState = "NO_ASSIGN";             // Reading var
     Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) lhs from fn call\n";
     }
-    *output << "\t\t"  //RHS is loaded to $t1
-            << "lw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
-            << "\t\t"
-            << "nop\n";
-    *output << "\t\t"
-            << "addiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
+    *output << "\t\tlw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load lhs from virtual to $t1, rhs in $t0\n"
+            << "\t\tnop\n";
+    *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
+    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
 }
 
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
