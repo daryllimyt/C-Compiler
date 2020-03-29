@@ -49,6 +49,7 @@ WHITESPACE 	[ \t\v]+
 %%
 
 "auto"			{ return T_AUTO; }
+"bool"			{ return T_BOOL; }
 "break"			{ return T_BREAK; }
 "case"			{ return T_CASE; }
 "char"			{ return T_CHAR; }

@@ -38,7 +38,7 @@ std::pair<bool, int> findInVector(const std::vector<T>& vecOfElements, const T& 
 struct VariableContext {
     // Single variable name can have different contexts in each scope
     int addressOffset;  // Address offset in memory of where the variable is located relative to $fp
-    int scope;          // Scope in which the variable was defined 
+    int scope;          // Scope in which the variable was defined
     int frame;          // Frame in which variable was defined
     int intValue = 0;
     int size;  // Size of the variable, default is 8 for regular variables, arrays 8*arraysize
@@ -70,10 +70,6 @@ struct FunctionContext {
 struct FrameContext {
     int totalBytes;
     int variableBytes;
-    // std::vector<std::string> frameVariables;
-    // void addVariable(const std::string &id) {
-    //     frameVariables.push_back(id);
-    // }
     friend std::ostream& operator<<(std::ostream& out, const FrameContext& f) {
         out << "{totalBytes: " << f.totalBytes << ", varBytes: " << f.variableBytes << " }";
         return out;
@@ -124,6 +120,10 @@ struct ProgramContext {
     int labelCount = 0;
     std::string endLabel = "end";
     std::vector<std::string> functionEnds;
+	std::vector<std::string> breakPoints;
+	std::vector<std::string> continuePoints;
+
+
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;

@@ -63,32 +63,40 @@ f2:
 		lw	$t0, 32($t9) 		# (fn args) Load fn call args from arg slots to $t0
 		nop
 		sw	$t0, -32($fp)		# (fn args) Store fn call args from $t0 to memory
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		lw	$t0, -32($fp)		# (var: normal) Reading from variable "e"
 		nop
-		sw	$t0, -40($fp) 		# (eval expr) store RHS in available memory after variable section
+		sw	$t0, -8($fp) 		# (eval expr) store RHS in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		lw	$t0, -24($fp)		# (var: normal) Reading from variable "d"
 		nop
-		sw	$t0, -48($fp) 		# (eval expr) store RHS in available memory after variable section
+		sw	$t0, -16($fp) 		# (eval expr) store RHS in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		lw	$t0, -16($fp)		# (var: normal) Reading from variable "c"
 		nop
-		sw	$t0, -56($fp) 		# (eval expr) store RHS in available memory after variable section
+		sw	$t0, -24($fp) 		# (eval expr) store RHS in virtual
+		addiu	$sp, $sp, -8 		# (eval expr) move sp for virtual regs
 		lw	$t0, -8($fp)		# (var: normal) Reading from variable "b"
 		nop
-		sw	$t0, -64($fp) 		# (eval expr) store RHS in available memory after variable section
+		sw	$t0, -32($fp) 		# (eval expr) store RHS in virtual
 		lw	$t0, 0($fp)		# (var: normal) Reading from variable "a"
 		nop
-		lw	$t1, -72($fp) 		# (eval expr) load LHS from memory to $t1, RHS in $t0
+		lw	$t1, -32($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
 		nop
-		add	$t0, $t0, $t1 		# (add node) lhs + rhs
-		lw	$t1, -64($fp) 		# (eval expr) load LHS from memory to $t1, RHS in $t0
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) LHS + RHS
+		lw	$t1, -24($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
 		nop
-		add	$t0, $t0, $t1 		# (add node) lhs + rhs
-		lw	$t1, -56($fp) 		# (eval expr) load LHS from memory to $t1, RHS in $t0
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) LHS + RHS
+		lw	$t1, -16($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
 		nop
-		add	$t0, $t0, $t1 		# (add node) lhs + rhs
-		lw	$t1, -48($fp) 		# (eval expr) load LHS from memory to $t1, RHS in $t0
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) LHS + RHS
+		lw	$t1, -8($fp) 		# (eval expr) load LHS from virtual to $t1, RHS in $t0
 		nop
-		add	$t0, $t0, $t1 		# (add node) lhs + rhs
+		addiu	$sp, $sp, 8 		# (eval expr) clearing virtual
+		add	$t0, $t0, $t1 		# (add node) LHS + RHS
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	f2_end_1
 		nop

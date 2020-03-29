@@ -241,14 +241,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string refLeft = getReferenceRegister(context, context.identifier);
                     context.variableAssignmentState = "NO_ASSIGN";
                     Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
-                    // int offsetRight = getVariableAddressOffset(context, context.identifier);  // New id
-                    // std::string refRight = getReferenceRegister(context, context.identifier);
-                    // *output << "\t\t"
-                    //         << "lw\t$t0, " << offsetRight << refRight << "\n";
-                    // *output << "\t\t"
-                    //         << "nop\n";
-                    *output << "\t\t"
-                            << "sw\t$t0, " << offsetLeft << refLeft << "\t\t# (assign) store recursive assign\n";
+                    *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t# (assign) store recursive assign\n";
                 }
 
             } else {
@@ -260,7 +253,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 std::string ref = addressInfo.second;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {  // Math or bitwise
-                    // if (Util::viewAllNodesContext) std::cerr << context;
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -281,23 +273,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string start = "if_start" + label;
             std::string next = "if_next" + label;
             std::string end = "if_end" + label;
-            context.functionEnds.push_back(end);
 
             *output << "\n"
                     << start << ":\n";
             Compile(output, context, astNode->getCondition());  // Condition result stored in $t0
-            *output << "\t\t"
-                    << "beq\t$t0, $0, " << next << "\n";  // If $t0==0 skip to else branch
-            *output << "\t\t"
-                    << "nop"
-                    << "\n";
+            *output << "\t\tbeq\t$t0, $0, " << next << "\n";    // If $t0==0 skip to else branch
+            *output << "\t\tnop\n";
 
             Compile(output, context, astNode->getStatements());  // If statement
-            *output << "\t\t"
-                    << "j\t" << end << "\n";  // Skips else statement
-            *output << "\t\t"
-                    << "nop"
-                    << "\n";
+            *output << "\t\tj\t" << end << "\n";                 // Skips else statement
+            *output << "\t\tnop\n";
             *output << "\n"
                     << next << ":\n";
             if (astNode->getNext()) {
@@ -306,74 +291,131 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-            context.functionEnds.pop_back();
 
-        } else if (astNode->getType() == "WHILE_LOOP") {
-            if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
+        } else if (astNode->getType() == "SWITCH_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "switch_start" + label;
+            std::string end = "switch_end" + label;
+            context.breakPoints.push_back(end);
+
+            *output << "\n"
+                    << start << ":\n";
+            *output << "\t\tmove\t$s1, $0\n";
+            Compile(output, context, astNode->getCondition());  //result in $t0
+
+            if (context.variableAssignmentState == "FUNCTION_CALL") {
+                *output << "\t\tmove\t$s0, $v0 \t\t# (switch) Storing the switch expression in $s0\n";
+            } else {
+                *output << "\t\tmove\t$s0, $t0\t\t# (switch) Storing the switch expression in $s0\n";
+            }
+            Compile(output, context, astNode->getNext());  //going into WRAPPED_CASE_STATEMENTS
+            *output << "\n"
+                    << end << ":\n";
+            context.breakPoints.pop_back();
+        } else if (astNode->getType() == "MULTIPLE_CASE_STATEMENTS") {
+            context.variableAssignmentState = "NO_ASSIGN";  // Clear any previous variableAssignContext
+
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
+            if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
             }
+        } else if (astNode->getType() == "SINGLE_CASE_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "case_start" + label;
+            std::string end = "case_end" + label;
 
+            *output << "\n"
+                    << start << ":\n";
+            Compile(output, context, astNode->getCondition());  //result in $t0
+
+            *output << "\t\tbne\t$s0, $t0, " << end << "\t\t# (case) branching past case if expr not same\n"
+                    << "\t\tnop\n";
+
+            Compile(output, context, astNode->getStatements());
+
+            *output << "\n"
+                    << end << ":\n";
+        } else if (astNode->getType() == "DEFAULT_STATEMENT") {
+            std::string label = createLabel(context, "_");
+            std::string start = "default_start" + label;
+            std::string end = "default_end" + label;
+
+            *output << "\t\tj " << end << "\n"  //go to end
+                    << "\t\tnop\n";
+            *output << "\n"
+                    << start << ":\n";
+
+            Compile(output, context, astNode->getStatements());
+
+            *output << "\t\tj\t" << context.breakPoints.back() << "\n"
+                    << "\t\tnop\n";
+            *output << "\n"
+                    << end << ":\n";
+        } else if (astNode->getType() == "WHILE_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
             std::string end = "while_end" + label;
             std::string continue_ = "while_continue" + label;
-            context.functionEnds.push_back(continue_);
-            context.functionEnds.push_back(end);
+            context.continuePoints.push_back(continue_);
+            context.breakPoints.push_back(end);
+            if (astNode->getVal() == 1) {  //if loop is a do while loop - do an iteration before checking conditions
+                Compile(output, context, astNode->getNext());
+            }
 
             *output << "\n"
                     << start << ":\n";
             Compile(output, context, astNode->getCondition());  //result in t0
-            *output << "\t\t"
-                    << "beq\t$t0, $0, " << end << "\n";  // condition returns 0 (false), exit while loop
-            *output << "\t\t"
-                    << "nop"
+            *output << "\t\tbeq\t$t0, $0, " << end << "\n";     // condition returns 0 (false), exit while loop
+            *output << "\t\tnop"
                     << "\n";
 
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << continue_ << ":\n";
-            *output << "\t\t"
-                    << "j\t" << start << "\n";  // unconditional jump to start
-            *output << "\t\t"
-                    << "nop"
+            *output << "\t\tj\t" << start << "\n";  // unconditional jump to start
+            *output << "\t\tnop"
                     << "\n";
 
             *output << "\n"
                     << end << ":\n";
-            context.functionEnds.pop_back();  //popping end
-            context.functionEnds.pop_back();  //popping continue_
+            context.breakPoints.pop_back();     //popping end
+            context.continuePoints.pop_back();  //popping continue_
         } else if (astNode->getType() == "FOR_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "for_start" + label;
             std::string end = "for_end" + label;
             std::string continue_ = "for_continue" + label;
-            context.functionEnds.push_back(continue_);
-            context.functionEnds.push_back(end);
+            context.continuePoints.push_back(continue_);
+            context.breakPoints.push_back(end);
 
-            Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
+            context.scope++;
+            if (astNode->getConditionOne()) {
+                Compile(output, context, astNode->getConditionOne());  // Initialize the iterator
+            }
             *output << "\n"
                     << start << ":\n";
-            Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
-            *output << "\t\t"
-                    << "beq\t$t0, $0, " << end << "\n";
-            *output << "\t\t"
-                    << "nop"
-                    << "\n";
+            if (astNode->getConditionTwo()) {
+                Compile(output, context, astNode->getConditionTwo());  // Evaluate condition, result in t0
+            }
+            *output << "\t\tbeq\t$t0, $0, " << end << "\n";
+            *output << "\t\tnop\n";
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << continue_ << ":\n";
-            Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
+            if (astNode->getConditionThree()) {
+                Compile(output, context, astNode->getConditionThree());  // Modifying the iterator
+            }
+            context.scope--;
 
-            *output << "\t\t"
-                    << "j\t" << start << "\n";
-            *output << "\t\t"
-                    << "nop"
-                    << "\n";
+            *output << "\t\tj\t" << start << "\n";
+            *output << "\t\tnop\n";
 
             *output << "\n"
                     << end << ":\n";
-            context.functionEnds.pop_back();  //popping end
-            context.functionEnds.pop_back();  //popping continue
+            context.breakPoints.pop_back();     //popping end
+            context.continuePoints.pop_back();  //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();        // LHS Variable ID
             evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
@@ -393,26 +435,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
 
-            *output << "\t\t"
-                    << "sw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "*") {
-                *output << "\t\t"
-                        << "mult\t$t0, $t1\n";
-                *output << "\t\t"
-                        << "mflo\t$t0\n";
+                *output << "\t\tmult\t$t0, $t1\n";
+                *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "/") {
-                *output << "\t\t"
-                        << "div\t$t0, $t1\n";
-                *output << "\t\t"
-                        << "mflo\t$t0\n";
+                *output << "\t\tdiv\t$t0, $t1\n";
+                *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "%") {
-                *output << "\t\t"
-                        << "div\t$t0, $t1\n";
-                *output << "\t\t"
-                        << "mfhi\t$t0\n";
+                *output << "\t\tdiv\t$t0, $t1\n";
+                *output << "\t\tmfhi\t$t0\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
@@ -420,46 +455,35 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "+") {
-                *output << "\t\t"
-                        << "add\t$t0, $t0, $t1 \t\t# (add node) lhs + rhs\n";
+                *output << "\t\tadd\t$t0, $t0, $t1 \t\t# (add node) LHS + RHS\n";
             } else if (astNode->getId() == "-") {
-                *output << "\t\t"
-                        << "sub\t$t0, $t0, $t1 \t\t# (add node) lhs - rhs\n";
+                *output << "\t\tsub\t$t0, $t0, $t1 \t\t# (add node) LHS - RHS\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
-            *output << "\t\t"
-                    << "and\t$t0, $t0, $t1\n";
+            *output << "\t\tand\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
-            *output << "\t\t"
-                    << "xor\t$t0, $t0, $t1\n";
+            *output << "\t\txor\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
-            *output << "\t\t"
-                    << "or\t$t0, $t0, $t1\n";
+            *output << "\t\tor\t$t0, $t0, $t1\n";
         } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "and") {
-                *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\t"
-                        << "sltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
-                *output << "\t\t"
-                        << "and\t$t0, $t0, $t1\n";  //set t0 to (t0 && t1)
+                *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
+                *output << "\t\tsltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
+                *output << "\t\tand\t$t0, $t0, $t1\n";  //set t0 to (t0 && t1)
             } else if (astNode->getId() == "or") {
-                *output << "\t\t"
-                        << "sltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
-                *output << "\t\t"
-                        << "sltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
-                *output << "\t\t"
-                        << "or\t$t0, $t0, $t1\n";  //set t0 to (t0 || t1)
+                *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
+                *output << "\t\tsltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
+                *output << "\t\tor\t$t0, $t0, $t1\n";   //set t0 to (t0 || t1)
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -469,23 +493,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
-            *output << "\t\t"
-                    << "slt\t$v0, $t0, $t1\n"
-                    << "\t\t"
-                    << "slt\t$v1, $t1, $t0\n"
-                    << "\t\t"
-                    << "xor\t$t0, $v0, $v1\n"
-                    << "\t\t"
-                    << "sltu\t$t0, $t0, 1\n";
+            *output << "\t\tslt\t$v0, $t0, $t1\n"
+                    << "\t\tslt\t$v1, $t1, $t0\n"
+                    << "\t\txor\t$t0, $v0, $v1\n"
+                    << "\t\tsltu\t$t0, $t0, 1\n";
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "<<") {
-                *output << "\t\t"
-                        << "sll\t$t0, $t0, $t1\n";
+                *output << "\t\tsll\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == ">>") {
-                *output << "\t\t"
-                        << "sra\t$t0, $t0, $t1\n";
+                *output << "\t\tsra\t$t0, $t0, $t1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
@@ -493,22 +511,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
             if (astNode->getId() == "<") {
-                *output << "\t\t"
-                        << "slt\t$t0, $t0, $t1\n";
+                *output << "\t\tslt\t$t0, $t0, $t1\n";
             } else if (astNode->getId() == ">") {
-                *output << "\t\t"
-                        << "slt\t$t0, $t1, $t0\n";
+                *output << "\t\tslt\t$t0, $t1, $t0\n";
             } else if (astNode->getId() == "<=") {
-                *output << "\t\t"
-                        << "slt\t$t0, $t1, $t0\n"
-                        << "\t\t"
-                        << "sltu\t$t0, $t0, 1\n";
-
+                *output << "\t\tslt\t$t0, $t1, $t0\n"
+                        << "\t\tsltu\t$t0, $t0, 1\n";
             } else if (astNode->getId() == ">=") {
-                *output << "\t\t"
-                        << "slt\t$t0, $t0, $t1\n"
-                        << "\t\t"
-                        << "sltu\t$t0, $t0, 1\n";
+                *output << "\t\tslt\t$t0, $t0, $t1\n"
+                        << "\t\tsltu\t$t0, $t0, 1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
@@ -518,26 +529,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getLeft());
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
-            *output << "\t\t"
-                    << "lw\t$t0, " << offset << ref
-                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable\n"
-                    << "\t\t"
-                    << "nop\n";
+            *output << "\t\tlw\t$t0, " << offset << ref
+                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable \""<< id << "\"\n"
+                    << "\t\tnop\n";
 
             *output << "\t\tmove\t$t1, $t0\n";
             if (astNode->getId() == "++") {
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, 1"
-                        << "\n";
+                *output << "\t\taddi\t$t0, $t0, 1\n";
             } else if (astNode->getId() == "--") {
-                *output << "\t\t"
-                        << "addi\t$t0, $t0, -1"
-                        << "\n";
+                *output << "\t\taddi\t$t0, $t0, -1\n";
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
-            *output << "\t\t"
-                    << "sw\t$t0, " << offset << ref << "\n";
+            *output << "\t\tsw\t$t0, " << offset << ref << "\n";
             *output << "\t\tmove\t$t0, $t1\n";
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             if (context.variableAssignmentState == "FUNCTION_ARGUMENTS") {
@@ -554,30 +558,22 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "RETURN") {
             if (astNode->getReturnValue()) {
-                // if (astNode->getReturnValue()->getType() != context.returnType) {
-                //     throw std::runtime_error(context.returnType+" type function requires "+context.returnType+" return value, but got "+astNode->getReturnValue()->getType()+"\n");
-                // }
                 Compile(output, context, astNode->getReturnValue());       // RV either $v0 or $t0
                 if (context.variableAssignmentState != "FUNCTION_CALL") {  // From function call
-                    *output << "\t\t"
-                            << "move\t$v0, $t0 \t\t# (return node) load $t0 to $v0 if not function call\n";
+                    *output << "\t\tmove\t$v0, $t0 \t\t# (return node) load $t0 to $v0 if not function call\n";
                 }
             } else if (context.returnType == "VOID") {
-                *output << "\t\t"
-                        << "nop\n";
+                *output << "\t\tnop\n";
             } else {
                 throw std::runtime_error("[ERROR] Int type function requires return type INT, got \"" + context.returnType + "\" instead");
             }
-            *output << "\t\t"
-                    << "j\t" << context.functionEnds.back() << "\n"
+            *output << "\t\tj\t" << context.functionEnds.back() << "\n"
                     << "\t\tnop\n";
         } else if (astNode->getType() == "BREAK") {
-            *output << "\t\t"
-                    << "j\t" << context.functionEnds.back() << "\n"
+            *output << "\t\tj\t" << context.breakPoints.back() << "\n"
                     << "\t\tnop\n";
         } else if (astNode->getType() == "CONTINUE") {
-            *output << "\t\t"
-                    << "j\t" << context.functionEnds[context.functionEnds.size() - 2] << "\n"
+            *output << "\t\tj\t" << context.continuePoints.back() << "\n"
                     << "\t\tnop\n";
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
@@ -590,7 +586,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (context.typeSpecifier == "INT") {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "LONG") {
-                *output << "\t\tli\t$t0, 8\n";
+                *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "FLOAT") {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "DOUBLE") {
@@ -599,6 +595,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tli\t$t0, 4\n";
             } else if (context.typeSpecifier == "UNSIGNED") {
                 *output << "\t\tli\t$t0, 4\n";
+            } else if (context.typeSpecifier == "BOOL") {
+                *output << "\t\tli\t$t0, 1\n";
             }
 
         } else if (astNode->getType() == "CHAR") {
@@ -620,41 +618,28 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
             if (astNode->getId() == "*=") {
-                *output << "\t\t"
-                        << "mult\t$t0, $t1 \t\t# (assign op node) lhs *= rhs\n";
-                *output << "\t\t"
-                        << "mflo\t$t0\n";
+                *output << "\t\tmult\t$t0, $t1 \t\t# (assign op node) LHS *= RHS\n";
+                *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "/=") {
-                *output << "\t\t"
-                        << "div\t$t0, $t1 \t\t# (assign op node) lhs /= rhs\n";
-                *output << "\t\t"
-                        << "mflo\t$t0\n";
+                *output << "\t\tdiv\t$t0, $t1 \t\t# (assign op node) LHS /= RHS\n";
+                *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "%=") {
-                *output << "\t\t"
-                        << "div\t$t0, $t1 \t\t# (assign op node) lhs %= rhs\n";
-                *output << "\t\t"
-                        << "mfhi\t$t0\n";
+                *output << "\t\tdiv\t$t0, $t1 \t\t# (assign op node) LHS %= RHS\n";
+                *output << "\t\tmfhi\t$t0\n";
             } else if (astNode->getId() == "+=") {
-                *output << "\t\t"
-                        << "add\t$t0, $t0, $t1 \t\t# (assign op node) lhs += rhs\n";
+                *output << "\t\tadd\t$t0, $t0, $t1 \t\t# (assign op node) LHS += RHS\n";
             } else if (astNode->getId() == "-=") {
-                *output << "\t\t"
-                        << "sub\t$t0, $t0, $t1 \t\t# (assign op node) lhs -= rhs\n";
+                *output << "\t\tsub\t$t0, $t0, $t1 \t\t# (assign op node) LHS -= RHS\n";
             } else if (astNode->getId() == "<<=") {
-                *output << "\t\t"
-                        << "sll\t$t0, $t0, $t1 \t\t# (assign op node) lhs <<= rhs\n";
+                *output << "\t\tsll\t$t0, $t0, $t1 \t\t# (assign op node) LHS <<= RHS\n";
             } else if (astNode->getId() == ">>=") {
-                *output << "\t\t"
-                        << "sra\t$t0, $t0, $t1 \t\t# (assign op node) lhs >>= rhs\n";
+                *output << "\t\tsra\t$t0, $t0, $t1 \t\t# (assign op node) LHS >>= RHS\n";
             } else if (astNode->getId() == "&=") {
-                *output << "\t\t"
-                        << "and\t$t0, $t0, $t1 \t\t# (assign op node) lhs &= rhs\n";
+                *output << "\t\tand\t$t0, $t0, $t1 \t\t# (assign op node) LHS &= RHS\n";
             } else if (astNode->getId() == "^=") {
-                *output << "\t\t"
-                        << "xor\t$t0, $t0, $t1 \t\t# (assign op node) lhs ^= rhs\n";
+                *output << "\t\txor\t$t0, $t0, $t1 \t\t# (assign op node) LHS ^= RHS\n";
             } else if (astNode->getId() == "|=") {
-                *output << "\t\t"
-                        << "or\t$t0, $t0, $t1 \t\t# (assign op node) lhs |= rhs\n";
+                *output << "\t\tor\t$t0, $t0, $t1 \t\t# (assign op node) LHS |= RHS\n";
             }
         } else if (astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "++") {
@@ -745,20 +730,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (type == "NORMAL") {
                     int addrOffset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
-                    *output << "\t\t"
-                            << "lw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
-                            << "\t\t"
-                            << "nop\n";
+                    *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
+                            << "\t\tnop\n";
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     // Add element index to array base
-                    *output << "\t\t"
-                            << "lw\t$t0, " << arrayBase + addrOffset << ref
+                    *output << "\t\tlw\t$t0, " << arrayBase + addrOffset << ref
                             << "\t\t# (var: array) Reading from array \"" << id << "\" at index " << addrOffset / 8 << "\n"
-                            << "\t\t"
-                            << "nop\n";
+                            << "\t\tnop\n";
                 } else if (type == "POINTER") {
                 } else {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
@@ -796,8 +777,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 }
             }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
-            *output << "\t\t"
-                    << "li\t$t0, " << astNode->getVal() << "\t\t\t\t# (int const)\n";
+            *output << "\t\tli\t$t0, " << astNode->getVal() << "\t\t\t\t# (int const)\n";
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
@@ -811,15 +791,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 }
 
 /******************** HELPER FUNCTIONS ********************/
-
-// template <class T1, class T2>
-// void addToHashedClass(T1 &container, const std::string &key, const T2& value) {
-//     if (!container.count(key) && value != NULL) {
-//         container[key] = value;
-//     } else {
-//         container.insesrt(key);
-//     }
-// }
 
 std::string createLabel(ProgramContext &context, const std::string &name) {
     return name + std::to_string(context.labelCount++);
@@ -893,26 +864,23 @@ std::pair<bool, int> checkForVariableInFrame(ProgramContext &context, const std:
         return std::make_pair(status, scope);  // (false, -1) means not found in frame
     }
 }
-int getLastVariableAddressOffset(ProgramContext &context, const std::string &id) {
-    // check for matching frame
-    // if no matching frame, throw error
-    // check for matching scope
-    // if no matching scope, check all previous scopes
-    // else , throw error
-    // Iterating from back to front using reverse iterator
-    int currentFrame = context.frameIndex;
-    int currentScope = context.scope;
-    for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
-        // Matching frame and scope
-        if (it->frame == currentFrame && it->scope == currentScope) {
-            return it->addressOffset;
-            // Matching frame and previous scope
-        } else if (it->frame == currentFrame && it->scope <= currentScope) {
-            return it->addressOffset;
-        }
+
+std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &context, NodePtr identifierNode) {
+    std::string id = context.identifier;
+    std::string ref = getReferenceRegister(context, id);
+    int offset;
+    if (context.variableBindings[id].back().varType == "NORMAL") {
+        offset = getVariableAddressOffset(context, id);
+    } else if (context.variableBindings[id].back().varType == "ARRAY") {
+        int addrOffset = 8 * evalArrayIndexOrSize(context, identifierNode->getStatements());
+        int arrayBase = getVariableAddressOffset(context, id);
+        offset = arrayBase + addrOffset;
+    } else if (context.variableBindings[id].back().varType == "POINTER") {
+        /* code */
     }
-    throw std::runtime_error("[ERROR] Could not find variable binding in frame " + std::to_string(currentFrame) + ", scope " + std::to_string(currentScope) + "\n");
+    return std::make_pair(offset, ref);
 }
+
 
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
     try {
@@ -926,18 +894,13 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
                 if (it->frame == context.frameIndex && it->scope == context.scope) {  // Matching frame and scope
                     offset = it->addressOffset;
                     break;
-
                 } else if (it->frame == context.frameIndex && it->scope <= context.scope) {  // Matching frame and previous scope
                     offset = it->addressOffset;
                     break;
-                } else {
-                    throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
-                }
+                } 
             }
-
-            // // verify address
-            // if (offset < 0) {
-            //     throw std::runtime_error("[ERROR] Address offset associated to variable \"" + id + "\" outside of frame\n");
+            // if (offset > 0) {
+            //     throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
             // }
             return offset;
         }
@@ -966,27 +929,28 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
+        Util::abort;
     }
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
-    int resultOffset = context.frameTracker[context.frameIndex].variableBytes; // Calculations stored in the free spot after this 
-    context.frameTracker[context.frameIndex].variableBytes += 8;
+    *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
     Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\tsw\t$v0, ";
+        *output << "\t\tsw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
     } else {  // Normal variable
-        *output << "\t\tsw\t$t0, ";
+        *output << "\t\tsw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
     }
-    *output  << -resultOffset << "($fp) \t\t# (eval expr) store RHS in available memory after variable section\n";
-
-    Compile(output, context, astNode->getLeft());               //expr - LHS result stored in $t0
+    context.variableAssignmentState = "NO_ASSIGN";             // Reading var
+    Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\tmove\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
+        *output << "\t\t"
+                << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
     }
-    *output << "\t\tlw\t$t1, " << -(resultOffset+8) << "($fp) \t\t# (eval expr) load LHS from memory to $t1, RHS in $t0\n"
+    *output << "\t\tlw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load LHS from virtual to $t1, RHS in $t0\n"
             << "\t\tnop\n";
-    context.frameTracker[context.frameIndex].variableBytes -= 8;
+    *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
+    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
 }
 
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
@@ -1117,23 +1081,6 @@ int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
         }
     }
     return value;
-}
-
-std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &context, NodePtr identifierNode) {
-    std::string id = context.identifier;
-    std::string ref = getReferenceRegister(context, id);
-    int offset;
-    if (context.variableBindings[id].back().varType == "NORMAL") {
-        offset = getVariableAddressOffset(context, id);
-        ref = getReferenceRegister(context, id);
-    } else if (context.variableBindings[id].back().varType == "ARRAY") {
-        int addrOffset = 8 * evalArrayIndexOrSize(context, identifierNode->getStatements());
-        int arrayBase = getVariableAddressOffset(context, id);
-        offset = arrayBase + addrOffset;
-    } else if (context.variableBindings[id].back().varType == "POINTER") {
-        /* code */
-    }
-    return std::make_pair(offset, ref);
 }
 
 void clearRegisters(std::ostream *output) {
