@@ -9,19 +9,21 @@ declare -a FAILARRAY
 echo "========================================"
 echo -e "\e[95m            COMPILER TESTBENCH\e[0m"
 echo "========================================"
-echo "[INFO] Cleaning directories and building compiler..."
+echo "[INFO] Removing directories and building compiler..."
 make all
 if [[ "$?" -ne "0" ]]; then
     echo -e "[ERROR] \e[31m\e[1mCould not build compiler."
     exit 1;
 fi
 
+echo -e "[ERROR] \e[32m\e[1mBuild success! \e[0mCreating directories..."
+
 mkdir -p translator_tests/extra_tests/b_compiler/assembly
 mkdir -p translator_tests/extra_tests/b_compiler/objects
 mkdir -p translator_tests/extra_tests/b_compiler/outputs
 
 N=0
-
+echo -e "[ERROR] Running tests..."
 for path in translator_tests/extra_tests/b_compiler/inputs/* ; do
 
     COUNT=$(( $COUNT+1 ));
