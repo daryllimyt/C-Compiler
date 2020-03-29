@@ -1,7 +1,7 @@
 INPUT_NAME="$1"
-INPUT_PATH=compiler_tests/local_var/${INPUT_NAME}.c
+INPUT_PATH=translator_tests/extra_tests/b_compiler/inputs/${INPUT_NAME}.c
 ASSEMBLY_PATH=translator_tests/extra_tests/b_compiler/reference/${INPUT_NAME}.s
-DRIVER_PATH=compiler_tests/local_var/${INPUT_NAME}_driver.c
+DRIVER_PATH=translator_tests/extra_tests/b_compiler/drivers/${INPUT_NAME}.c
 
 OBJECT_DIR=translator_tests/extra_tests/b_compiler/reference
 OUTPUT_DIR=translator_tests/extra_tests/b_compiler/reference

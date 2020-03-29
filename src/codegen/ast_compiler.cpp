@@ -53,6 +53,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
+            int variablebytes = bytes - 8;
             bytes += (36 + (8 - (bytes % 8)));
 
             // Frame start
@@ -86,9 +87,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // qemu lines
             if (Util::qemu) {
                 *output << "\t\t.ent " << id << "\n";
-                        // << "\t\t.frame $sp, " << bytes << ", $ra\n"
-                        // << "\t\t.align 2\n"
-                        // << "\t\t.cpload $t4\n";
+                // << "\t\t.frame $sp, " << bytes << ", $ra\n"
+                // << "\t\t.align 2\n"
+                // << "\t\t.cpload $t4\n";
             }
 
             context.scope++;
@@ -109,26 +110,30 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             //     std::cerr << "#######################################################\n";
             // }
             int argCount = context.functionBindings[id].args.size();
+            if (argCount > 0) {
+                *output << "\t\taddiu\t$sp, $sp, " << -8 * argCount << "\t\t# Move $sp to end of function arg section for local variables\n";
+            }
             for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\tlw\t$t0, "
-                        << 8 * i << "($t9) \t\t# (fn args) Load fn call args from arg slots to $t0\n"
+                        << 8 * i << "($t9) \t\t\t# (fn args) Load fn call args from arg slots to $t0\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t0, "
-                        << offset << ref << "\t\t# (fn args) Store fn call args from $t0 to memory\n";
+                        << offset << ref << "\t\t\t# (fn args) Store fn call args from $t0 to memory\n";
             }
+
             context.scope--;
 
             // All function parameters are now in their respective variables in the new frame
-
+            *output << "\t\taddiu\t$sp, $sp, " << -variablebytes << "\t# Move $sp to end of variable section before function call\n";
             // Get function body
             Compile(output, context, astNode->getScope());
-
             *output << "\n"
                     << functionEnd << ":\n";
-
+            // int varCount = context.frameTracker[context.frameIndex].variableBytes;
             // Load saved registers and previous stack info from stack
+            *output << "\t\taddiu\t$sp, $sp, " << (8 * argCount) + variablebytes << "\t# Move $sp to end of function arg section after function call\n";
             functionEpilogue(output, bytes);
 
             // Frame end
@@ -153,11 +158,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             if (argCount < 4) {
                 argCount = 4;
             }
-            context.functionArgs.push_back(0);                                      // tracks arg count
-            int varBytes = context.frameTracker[context.frameIndex].variableBytes;  // Space allocated to variables
-            int functionCallOffset = ((8 * argCount) + varBytes);
+            context.functionArgs.push_back(0);  // tracks arg count
+            // int varBytes = context.frameTracker[context.frameIndex].variableBytes;  // Space allocated to variables
+            int functionCallOffset = (8 * argCount);
             if (astNode->getParameters()) {
-                *output << "\t\taddiu\t$sp, $sp, " << -functionCallOffset << "\t\t# (fn call) Expand stack for fn \"" << id << "\" arg slots\n";
+                *output << "\t\taddiu\t$sp, $sp, " << -functionCallOffset << "\t# (fn call) Expand stack for fn \"" << id << "\" arg slots\n";
                 Compile(output, context, astNode->getParameters());  // Loading function arguments into arg slots
                 // Load args from arg slots into $a0-$a3 before jal
                 // Function args is now the number of function args
@@ -171,7 +176,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }                                                                     //assuming all arguments are in virtual registers up to $sp
             *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                     << "\t\tnop\n";
-            *output << "\t\taddiu\t$sp, $sp, " << functionCallOffset << "\t\t# (fn call) Shrink stack for fn \"" << id << "\" arg slots\n";
+            *output << "\t\taddiu\t$sp, $sp, " << functionCallOffset << "\t# (fn call) Shrink stack for fn \"" << id << "\" arg slots\n";
             context.functionArgs.pop_back();                    // Remove arg count for this function call
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
@@ -241,7 +246,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string refLeft = getReferenceRegister(context, context.identifier);
                     context.variableAssignmentState = "NO_ASSIGN";
                     Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
-                    *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t# (assign) store recursive assign\n";
+                    *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
                 }
 
             } else {
@@ -257,10 +262,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
-                                << "\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                                << "\t\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     } else {  // Normal variable
                         *output << "\t\tsw\t$t0, " << offset << ref
-                                << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                                << "\t\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     }
                 }
                 if (astNode->getNext()) {  // Recursive or variable
@@ -370,7 +375,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tbeq\t$t0, $0, " << end << "\n";     // condition returns 0 (false), exit while loop
             *output << "\t\tnop"
                     << "\n";
-
             Compile(output, context, astNode->getNext());
             *output << "\n"
                     << continue_ << ":\n";
@@ -425,7 +429,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getLeft());
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
-            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
+            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t\t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
@@ -435,7 +439,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
 
-            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t# (unary) storing to variable\n";
+            *output << "\t\tsw\t$t0, " << offset << ref << "\t\t\t# (unary) storing to variable\n";
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             evaluateExpression(output, context, astNode);
@@ -530,7 +534,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
             *output << "\t\tlw\t$t0, " << offset << ref
-                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable \""<< id << "\"\n"
+                    << "\t\t# (postfix) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n"
                     << "\t\tnop\n";
 
             *output << "\t\tmove\t$t1, $t0\n";
@@ -618,28 +622,28 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
             if (astNode->getId() == "*=") {
-                *output << "\t\tmult\t$t0, $t1 \t\t# (assign op node) LHS *= RHS\n";
+                *output << "\t\tmult\t$t0, $t1 \t\t\t# (assign op node) LHS *= RHS\n";
                 *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "/=") {
-                *output << "\t\tdiv\t$t0, $t1 \t\t# (assign op node) LHS /= RHS\n";
+                *output << "\t\tdiv\t$t0, $t1 \t\t\t# (assign op node) LHS /= RHS\n";
                 *output << "\t\tmflo\t$t0\n";
             } else if (astNode->getId() == "%=") {
-                *output << "\t\tdiv\t$t0, $t1 \t\t# (assign op node) LHS %= RHS\n";
+                *output << "\t\tdiv\t$t0, $t1 \t\t\t# (assign op node) LHS %= RHS\n";
                 *output << "\t\tmfhi\t$t0\n";
             } else if (astNode->getId() == "+=") {
-                *output << "\t\tadd\t$t0, $t0, $t1 \t\t# (assign op node) LHS += RHS\n";
+                *output << "\t\tadd\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS += RHS\n";
             } else if (astNode->getId() == "-=") {
-                *output << "\t\tsub\t$t0, $t0, $t1 \t\t# (assign op node) LHS -= RHS\n";
+                *output << "\t\tsub\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS -= RHS\n";
             } else if (astNode->getId() == "<<=") {
-                *output << "\t\tsll\t$t0, $t0, $t1 \t\t# (assign op node) LHS <<= RHS\n";
+                *output << "\t\tsll\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS <<= RHS\n";
             } else if (astNode->getId() == ">>=") {
-                *output << "\t\tsra\t$t0, $t0, $t1 \t\t# (assign op node) LHS >>= RHS\n";
+                *output << "\t\tsra\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS >>= RHS\n";
             } else if (astNode->getId() == "&=") {
-                *output << "\t\tand\t$t0, $t0, $t1 \t\t# (assign op node) LHS &= RHS\n";
+                *output << "\t\tand\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS &= RHS\n";
             } else if (astNode->getId() == "^=") {
-                *output << "\t\txor\t$t0, $t0, $t1 \t\t# (assign op node) LHS ^= RHS\n";
+                *output << "\t\txor\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS ^= RHS\n";
             } else if (astNode->getId() == "|=") {
-                *output << "\t\tor\t$t0, $t0, $t1 \t\t# (assign op node) LHS |= RHS\n";
+                *output << "\t\tor\t$t0, $t0, $t1 \t\t\t# (assign op node) LHS |= RHS\n";
             }
         } else if (astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "++") {
@@ -684,7 +688,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
                         context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
-                    } else {                                                  // True means variable in the current frame
+                        // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
+                    } else {  // True means variable in the current frame
                         // Variable in current frame, check which scope it was found in
                         if (varInfo.second == context.scope) {
                             throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
@@ -700,6 +705,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
                         context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                        // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     }
                 } else if (type == "ARRAY") {
                     int index = context.frameIndex;
@@ -707,16 +713,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         index = 0;  // For global variables
                     }
                     int arrayBytes = 8 * evalArrayIndexOrSize(context, astNode->getStatements());
-                    context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
                     VariableContext newVariable;
                     // Array base offset is at the bottom of the array block in memory
-                    newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                    newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                     newVariable.varType = type;
                     newVariable.size = arrayBytes;
                     newVariable.scope = context.scope;
                     newVariable.typeSpecifier = context.typeSpecifier;
-                    context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-
+                    context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                    context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
+                    // *output << "\t\taddiu\t$sp, $sp, " << -arrayBytes << " \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                 } else if (type == "POINTER") {
                     /* code */
                 } else {
@@ -730,7 +736,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (type == "NORMAL") {
                     int addrOffset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
-                    *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
+                    *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
                             << "\t\tnop\n";
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
@@ -738,7 +744,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string ref = getReferenceRegister(context, id);
                     // Add element index to array base
                     *output << "\t\tlw\t$t0, " << arrayBase + addrOffset << ref
-                            << "\t\t# (var: array) Reading from array \"" << id << "\" at index " << addrOffset / 8 << "\n"
+                            << "\t# (var: array) Reading from array \"" << id << "\" at index " << addrOffset / 8 << "\n"
                             << "\t\tnop\n";
                 } else if (type == "POINTER") {
                 } else {
@@ -798,14 +804,12 @@ std::string createLabel(ProgramContext &context, const std::string &name) {
 
 int getSize(ProgramContext &context, NodePtr astNode) {
     // Base cases
-    if (!astNode || astNode->getType() == "FUNCTION_CALL") {
+    if (!astNode) {
         return 0;
     }
 
     int bytes = 0;
-    if (astNode->getType() == "INTEGER_CONSTANT" || astNode->getType() == "FLOAT_CONSTANT") {
-        bytes += 8;  // 8 bytes -> 64bits, keep stack pointer double word aligned
-    } else if (astNode->getType() == "VARIABLE") {
+    if (astNode->getType() == "VARIABLE") {
         if (astNode->getVarType() == "NORMAL" || astNode->getVarType() == "POINTER") {
             bytes += 8;
         } else if (astNode->getVarType() == "ARRAY") {
@@ -825,7 +829,6 @@ int getSize(ProgramContext &context, NodePtr astNode) {
         bytes += getSize(context, astNode->getReturnValue());
         bytes += getSize(context, astNode->getIndex());
         bytes += getSize(context, astNode->getTypeSpecifier());
-        bytes += getSize(context, astNode->getQualifiers());  // May not be used
         bytes += getSize(context, astNode->getStatements());
         bytes += getSize(context, astNode->getScope());
         bytes += getSize(context, astNode->getParameters());
@@ -881,7 +884,6 @@ std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &contex
     return std::make_pair(offset, ref);
 }
 
-
 int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
     try {
         // variable not bound
@@ -897,7 +899,7 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
                 } else if (it->frame == context.frameIndex && it->scope <= context.scope) {  // Matching frame and previous scope
                     offset = it->addressOffset;
                     break;
-                } 
+                }
             }
             // if (offset > 0) {
             //     throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
@@ -934,12 +936,12 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
-    *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) move sp for virtual regs\n";
+    *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) Expand stack for expression evaluation\n";
     Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\tsw\t$v0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
+        *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     } else {  // Normal variable
-        *output << "\t\tsw\t$t0, " << -8 * ++context.virtualRegisters << "($fp) \t\t# (eval expr) store RHS in virtual\n";
+        *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     }
     context.variableAssignmentState = "NO_ASSIGN";             // Reading var
     Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
@@ -947,9 +949,9 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
     }
-    *output << "\t\tlw\t$t1, " << -8 * context.virtualRegisters-- << "($fp) \t\t# (eval expr) load LHS from virtual to $t1, RHS in $t0\n"
+    *output << "\t\tlw\t$t1, 0($sp) \t\t# (eval expr) load RHS from memory to $t1, LHS in $t0\n"
             << "\t\tnop\n";
-    *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) clearing virtual\n";
+    *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) Shrinking stack after evaluation\n";
     context.variableAssignmentState = "NO_ASSIGN";  // Reading var
 }
 

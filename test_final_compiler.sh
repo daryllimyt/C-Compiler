@@ -4,70 +4,81 @@ PASSED=0
 CHECKED=0
 FAILED=0
 
+INPUT_DIR=translator_tests/extra_tests/b_compiler/inputs
+ASSEMBLY_DIR=translator_tests/extra_tests/b_compiler/assembly
+OBJECT_DIR=translator_tests/extra_tests/b_compiler/objects
+OUTPUT_DIR=translator_tests/extra_tests/b_compiler/outputs
+DRIVER_DIR=translator_tests/extra_tests/b_compiler/drivers
+
 declare -a FAILARRAY
 
 echo "========================================"
-echo "            COMPILER TESTBENCH"
+echo -e "\e[95m            COMPILER TESTBENCH\e[0m"
 echo "========================================"
-echo "[INFO] Cleaning directories and building compiler..."
+echo "[INFO] Removing directories and building compiler..."
 make all
 if [[ "$?" -ne "0" ]]; then
-    echo "[ERROR] Could not build compiler."
+    echo -e "[ERROR] \e[31m\e[1mCould not build compiler."
     exit 1;
 fi
 
-mkdir -p translator_tests/extra_tests/b_compiler/assembly
-mkdir -p translator_tests/extra_tests/b_compiler/objects
-mkdir -p translator_tests/extra_tests/b_compiler/outputs
+echo -e "[INFO] \e[32m\e[1mBuild success! \e[0mCreating directories..."
+
+mkdir -p ${ASSEMBLY_DIR}
+mkdir -p ${OBJECT_DIR}
+mkdir -p ${OUTPUT_DIR}
 
 N=0
 
-for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
+echo -e "[INFO] Running tests..."
+for path in ${INPUT_DIR}/* ; do
 
-    N=$(( $N+1 ));
-    
+    COUNT=$(( $COUNT+1 ));
+    file=${path##*/};
+    N=${file%.*};
+
     echo ""
-    echo "==========================="
-    echo "          TEST $N      "
-    echo "==========================="
+    echo "========================================"
+    echo -e "\e[1m    TEST $N      \e[0m"
+    echo "========================================"
     echo ""
 
     # Compile test function with compiler under test to assembly
-    bin/c_compiler -S translator_tests/extra_tests/b_compiler/inputs/$N.c -o translator_tests/extra_tests/b_compiler/assembly/$N.s 
+    bin/c_compiler -S ${INPUT_DIR}/$N.c -o ${ASSEMBLY_DIR}/$N.s 
     if [[ $? -ne 0 ]]; then
-        >&2 echo "[ERROR] Compiler returned error message."
+        >&2 echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCompiler returned error message. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
     fi
 
     # Compile driver with normal GCC
-    mips-linux-gnu-gcc -mfp32 -o translator_tests/extra_tests/b_compiler/objects/$N.o -c translator_tests/extra_tests/b_compiler/assembly/$N.s
+    mips-linux-gnu-gcc -mfp32 -o ${OBJECT_DIR}/$N.o -c ${ASSEMBLY_DIR}/$N.s
     if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Couldn't compile driver program using GCC."
+        echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mCouldn't compile driver program using GCC. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
     fi
 
     # Link driver object and assembly into executable
-    mips-linux-gnu-gcc -mfp32 -static -o translator_tests/extra_tests/b_compiler/outputs/${N}_exe translator_tests/extra_tests/b_compiler/objects/$N.o translator_tests/extra_tests/b_compiler/drivers/$N.c
+    mips-linux-gnu-gcc -mfp32 -static -o ${OUTPUT_DIR}/${N}_exe ${OBJECT_DIR}/$N.o ${DRIVER_DIR}/$N.c
     if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Linker returned error message."
+        echo -e "[ERROR] \e[31m\e[1mFAILED! \e[33m\e[1mLinker returned error message. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
         continue
     fi
 
     # Run the linked and assembled executable
-    qemu-mips translator_tests/extra_tests/b_compiler/outputs/${N}_exe
+    qemu-mips ${OUTPUT_DIR}/${N}_exe
     ret=$?
     if [[ $ret -ne 0 ]]; then
-        echo "[INFO] FAILED! Testcase returned $ret, but expected 0."
+        echo -e "[INFO] \e[31m\e[1mFAILED!\e[33m Testcase returned $ret, but expected 0. \e[0m"
         FAILED=$(( ${FAILED}+1 ));
         FAILARRAY[${FAILED}]=$N;
     else
-        echo "[INFO] PASSED!"
+        echo -e "[INFO] \e[32m\e[1mPASSED!\e[0m"
         PASSED=$(( ${PASSED}+1 ));
     fi
 
@@ -77,8 +88,9 @@ for i in translator_tests/extra_tests/b_compiler/inputs/* ; do
 done
 
 echo "########################################"
-echo "[INFO] Passed ${PASSED} out of ${N}."
-echo "[INFO] Failed cases:"
+echo -e "[INFO] \e[32m\e[1mPassed ${PASSED} out of ${COUNT}.\e[0m"
+echo ""
+echo -e "[INFO] \e[31m\e[1mFailed cases:\e[0m"
 for case in "${FAILARRAY[*]}"
 do
    echo $FAILARRAY[${case}]
