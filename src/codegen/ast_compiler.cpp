@@ -173,12 +173,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (argCount != context.functionArgCounter.back()) {
                     throw std::runtime_error("[ERROR] Function call argument count does not match function definition\n");
                 }
-
-                *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
-                *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
-                        << "\t\tnop\n";
-                *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
-            }
+                    *output << "\t\tmove\t$a0, $sp \t\t# Store current sp in $a0\n";      //storing current fp into t4
+                    *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
+                            << "\t\tnop\n";
+                    *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
+                }
+            
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
             context.functionArgCounter.pop_back();

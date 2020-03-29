@@ -6,6 +6,10 @@ f:
 		.frame $sp, 84, $ra
 		.set noreorder
 		.set reorder
+		sw	$a0, 24($sp)
+		sw	$a1, 16($sp)
+		sw	$a2, 8($sp)
+		sw	$a3, 0($sp)
 		addiu	$sp, $sp, -84		# (fn def: frame start) Move sp to end of new frame
 		sw	$fp, 0($sp) 		# (fn def) Store addr of old fp on stack
 		add	$fp, $sp, $0 		# (fn def) Move fp to new sp
