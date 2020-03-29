@@ -1,3 +1,6 @@
 int fmain(){
-    return !false;
+	if(!(false && true){
+		return 0;
+	}
+    return 1;
 }
