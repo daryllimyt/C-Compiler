@@ -167,8 +167,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tjal\t" << id << "\t\t\t\t# (fn call) enter fn def\n"  // return value of function call in $v0
                         << "\t\tnop\n";
                 *output << "\t\taddiu\t$sp, $sp, " << 8 * (argCount - 1) << "\t\t# Erasing virtual register for " << id << "\n";
-                context.virtualRegisters -= (argCount - 1);  
-            }                                                
+                context.virtualRegisters -= (argCount - 1);
+            }
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
         } else if (astNode->getType() == "SCOPE") {
@@ -344,22 +344,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << start << ":\n";
             Compile(output, context, astNode->getCondition());  //result in $t0
-            *output << "\t\t"
-                    << "slt\t$t1, $t0, $s0\n";
-            *output << "\t\t"
-                    << "slt\t$t2, $s0, $t0\n"
-            *output << "\t\t"
-                    << "or\t$t0, $t1, $t2\n" //t0 == 1 if t0 != s0
-            *output << "\t\t"
-                    << "and\t$t0, $t0, $s1\n" //branch if t0 == s1 == 1
-            *output << "\t\t"
-                    << "bgtz\t$t0, " << end
+            *output << "\t\tslt\t$t1, $t0, $s0\n";
+            *output << "\t\tslt\t$t2, $s0, $t0\n";
+            *output << "\t\tor\t$t0, $t1, $t2\n";  //t0 == 1 if t0 != s0
+            *output << "\t\tand\t$t0, $t0, $s1\n";  //branch if t0 == s1 == 1
+            *output << "\t\tbgtz\t$t0, " << end
                     << "\t\t# (case) branching past case if expr not same\n";
-            *output << "\t\t"
-                    << "move\t$s1, $0\n";
-
-            Compile(output, context, astNode->getStatements());
-
+            *output << "\t\tmove\t$s1, $0\n";
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
             *output << "\n"
                     << end << ":\n";
         } else if (astNode->getType() == "DEFAULT_STATEMENT") {
@@ -370,9 +364,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tj " << end << "\n";  //go to end
             *output << "\n"
                     << start << ":\n";
-
-            Compile(output, context, astNode->getStatements());
-
+            if (astNode->getStatements()) {
+                Compile(output, context, astNode->getStatements());
+            }
             *output << "\t\t"
                     << "j\t" << context.breakPoints.back() << "\n"
                     << "\t\tnop\n";
