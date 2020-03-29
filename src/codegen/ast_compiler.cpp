@@ -313,7 +313,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << start << ":\n";
-            *output << "\t\tmove\t$s1, $0\n";    
+            *output << "\t\li\t$s1, 1\n";
             Compile(output, context, astNode->getCondition());  //result in $t0
 
             if (context.variableAssignmentState == "FUNCTION_CALL") {
@@ -344,10 +344,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << start << ":\n";
             Compile(output, context, astNode->getCondition());  //result in $t0
-
-                *output << "\t\t"
-                        << "bne\t$s0, $t0, " << end
-                        << "\t\t# (case) branching past case if expr not same\n";
+            *output << "\t\t"
+                    << "slt\t$t1, $t0, $s0\n";
+            *output << "\t\t"
+                    << "slt\t$t2, $s0, $t0\n"
+            *output << "\t\t"
+                    << "or\t$t0, $t1, $t2\n" //t0 == 1 if t0 != s0
+            *output << "\t\t"
+                    << "and\t$t0, $t0, $s1\n" //branch if t0 == s1 == 1
+            *output << "\t\t"
+                    << "bgtz\t$t0, " << end
+                    << "\t\t# (case) branching past case if expr not same\n";
+            *output << "\t\t"
+                    << "move\t$s1, $0\n";
 
             Compile(output, context, astNode->getStatements());
 
