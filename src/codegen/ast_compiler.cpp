@@ -113,11 +113,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             context.variableAssignmentState = "FUNCTION_ARGUMENTS";
             Compile(output, context, astNode->getArgs());
-            // if (Util::debug) {
-            //     std::cerr << "#######################################################\n";
-            //     std::cerr << context;
-            //     std::cerr << "#######################################################\n";
-            // }
             int argCount = context.functionBindings[id].args.size();
             if (argCount > 0) {
                 *output << "\t\taddiu\t$sp, $sp, " << -multiplier * argCount << "\t\t# Move $sp to end of function arg section for local variables\n";
@@ -310,7 +305,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
                                 << "\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
-                    } else if (type == "ARRAY") {                               // LHS is array
+                    } else if (type == "ARRAY") {  // LHS is array
                         std::string ref2 = ref.substr(1, 3);
                         *output << "\t\tmove\t $t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
                         *output << "\t\taddiu\t$t8, $t8, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
@@ -947,7 +942,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     throw std::runtime_error("[ERROR] Assignment to undeclared variable " + id + "\n");
                 }
                 if (type == "ARRAY") {
-                    context.variableAssignmentState = "NO_ASSIGN"; // Set to read mode to evaluate expression
+                    context.variableAssignmentState = "NO_ASSIGN";         // Set to read mode to evaluate expression
                     Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
                     int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
                     *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) assignment - scale array index offset to multiplier, save to $t2\n";
@@ -1015,8 +1010,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 newVariable.scope = context.scope;
                 newVariable.frame = context.frameIndex;
                 newVariable.typeSpecifier = context.typeSpecifier;
-                context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                context.frameTracker[index].variableBytes += multiplier;       // Increment size of variable block in frame
+                context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
                 context.enumerations[context.allEnumerations.back()].elements.insert(id);
             } else {
                 throw std::runtime_error("Already declared");
@@ -1024,8 +1019,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             //assignment
             int offset = getVariableAddressOffset(context, id);
             std::string ref = getReferenceRegister(context, id);
-            context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
-            if (astNode->getStatements()) {                                // Math or bitwise
+            if (astNode->getStatements()) {  // Math or bitwise
+                context.variableAssignmentState = "NO_ASSIGN";
                 Compile(output, context, astNode->getStatements());        // output -> $t0 (var)
                 if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                     throw std::runtime_error("Cannot use functions for enumerators");
@@ -1033,9 +1028,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     *output << "\t\tsw\t$t0, " << offset << ref
                             << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
                     context.enumerations[id].val = evalArrayIndexOrSize(context, astNode->getStatements());
+                    std::cerr << "A: " << id << " " << context.enumerations[id].val << std::endl;
                 }
             } else {
                 *output << "\t\tli\t$t0, " << ++context.enumerations[id].val << "\t\t# (enumerator) using value of previous + 1\n";
+                std::cerr << "B: " << id << " " << context.enumerations[id].val << std::endl;
                 *output << "\t\tsw\t$t0, " << offset << ref
                         << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
             }
@@ -1144,19 +1141,30 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
             throw std::runtime_error("[ERROR] Could not find binding associated to variable \"" + id + "\"\n");
         } else {
             // get address offset of the last context associated with id.
+            bool found = false;
             int offset;
+            // Check in local
             for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
                 if (it->frame == context.frameIndex && it->scope == context.scope) {  // Matching frame and scope
                     offset = it->addressOffset;
+                    found = true;
                     break;
                 } else if (it->frame == context.frameIndex && it->scope <= context.scope) {  // Matching frame and previous scope
                     offset = it->addressOffset;
+                    found = true;
                     break;
                 }
             }
-            // if (offset > 0) {
-            //     throw std::runtime_error("[ERROR] Could not find variable binding that matches frame " + std::to_string(context.frameIndex) + ", scope " + std::to_string(context.scope) + "\n");
-            // }
+            if (!found) {  // Check in global
+                for (auto it = context.variableBindings[id].rbegin(); it != context.variableBindings[id].rend(); ++it) {
+                    if (it->frame == 0 && it->scope == 0) {  // Matching frame and scope
+                        offset = it->addressOffset;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) throw std::runtime_error("[ERROR] Variable \""+id+"\" has not been declared locally or globally\n");
             return offset;
         }
     } catch (const std::exception &e) {
@@ -1363,9 +1371,10 @@ void clearRegisters(std::ostream *output) {
 void functionPrologue(std::ostream *output, const int &bytes) {
     // Store address of previous frame on stack at 0($sp)
     // *output << "\t\tmove\t$t8, $sp \t\t# Save old $sp to restore in $fp later\n";
-    *output << "\t\taddiu\t$sp, $sp, " << -12 << "\t\t# (fn def: frame start) Expand stack for saved registers\n";
+    *output << "\t\taddiu\t$sp, $sp, " << -16 << "\t\t# (fn def: frame start) Expand stack for saved registers\n";
     *output << "\t\tsw\t$fp, 4($sp) \t\t# (fn def)\n";
     *output << "\t\tsw\t$ra, 8($sp) \t\t# (fn def)\n";
+    *output << "\t\tsw\t$gp, 12($sp) \t\t# (fn def) Store value of $gp on stack\n";
     // if (Util::qemu) *output << "\t\t.cprestore 12\n";
 
     // *output << "\t\tsw\t$s0, 0($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
@@ -1377,7 +1386,6 @@ void functionPrologue(std::ostream *output, const int &bytes) {
     // *output << "\t\tsw\t$s6, 24($sp)\n";
     // *output << "\t\tsw\t$s7, 28($sp)\n";
     // *output << "\t\tsw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
-    // *output << "\t\tsw\t$gp, 36($sp) \t\t# (fn def) Store value of $gp on stack\n";
     // *output << "\t\tsw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
     *output << "\t\tmove\t$fp, $sp \t\t# $fp is at the start of the variable section\n";
     // $sp now points to arg slots
@@ -1393,10 +1401,10 @@ void functionEpilogue(std::ostream *output, const int &bytes) {
     // *output << "\t\tlw\t$s6, 24($sp)\n";
     // *output << "\t\tlw\t$s7, 28($sp)\n";
     // *output << "\t\tlw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
-    // *output << "\t\tlw\t$gp, 36($sp) \t\t# (fn def) Store value of $gp on stack\n";
     // *output << "\t\tlw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
     *output << "\t\tmove\t$sp, $fp \t\t# Restore sp to start of variable section\n";
     *output << "\t\tlw\t$fp, 4($sp) \t\t# (fn def)\n";
     *output << "\t\tlw\t$ra, 8($sp) \t\t# (fn def)\n";
-    *output << "\t\taddiu\t$sp, $sp, " << 12 << "\t\t# (fn def: frame end) Shrink stack back to previous frame\n";
+    *output << "\t\tlw\t$gp, 12($sp) \t\t# (fn def) Store value of $gp on stack\n";
+    *output << "\t\taddiu\t$sp, $sp, " << 16 << "\t\t# (fn def: frame end) Shrink stack back to previous frame\n";
 }
