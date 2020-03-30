@@ -1066,8 +1066,8 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
         *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     } else {  // Normal variable
         *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
-    }
     context.variableAssignmentState = "NO_ASSIGN";  // Reading var
+    }
     Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
     left = context.valueContext.intValue;
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
