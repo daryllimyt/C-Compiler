@@ -140,7 +140,7 @@ class MultipleEnumerators : public Node {
 
    public:
     MultipleEnumerators(NodePtr statement, NodePtr next) {
-        type_ = "MULTIPLE_ENUMERATOR";
+        type_ = "MULTIPLE_ENUMERATORS";
 		statement_ = statement;
         next_ = next;
     }

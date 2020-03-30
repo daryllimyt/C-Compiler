@@ -295,7 +295,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 }
                 std::string id = astNode->getIdentifier()->getId();
                 Compile(output, context, astNode->getIdentifier());  // Set LHS in context. If array, the scaled offset is stored in $t2
-                // std::string id = context.identifier;                             // LHS info
                 context.identifier = id;
                 int offset = getVariableAddressOffset(context, id);              // LHS info
                 std::string ref = getReferenceRegister(context, id);             // LHS info
@@ -1012,12 +1011,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 VariableContext newVariable;
                 newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                 newVariable.varType = "NORMAL";
-                newVariable.size = 8;
+                newVariable.size = multiplier;
                 newVariable.scope = context.scope;
                 newVariable.frame = context.frameIndex;
                 newVariable.typeSpecifier = context.typeSpecifier;
                 context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                context.frameTracker[index].variableBytes += multiplier;       // Increment size of variable block in frame
                 context.enumerations[context.allEnumerations.back()].elements.insert(id);
             } else {
                 throw std::runtime_error("Already declared");
