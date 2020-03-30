@@ -93,4 +93,70 @@ class TypeSpecifier : public Node {
     }
 };
 
+class Enumeration : public Node {
+   protected:
+    std::string id_;
+	NodePtr typeSpecifier_;
+    NodePtr statements_;
+
+   public:
+    Enumeration(std::string id, NodePtr typeSpecifier, NodePtr statements) {
+        type_ = "ENUMERATION";
+		id_ = id;
+		typeSpecifier_ = typeSpecifier;
+        statements_ = statements;
+    }
+    std::string getId() const {
+        return id_;
+    }
+	NodePtr getTypeSpecifier(){
+		return typeSpecifier_;
+	}
+    NodePtr getStatements() const {
+		return statements_;
+	}
+
+};
+
+class MultipleEnumerators : public Node {
+   protected:
+    NodePtr statement_;
+    NodePtr next_;
+
+   public:
+    MultipleEnumerators(NodePtr statement, NodePtr next_) {
+        type_ = "MULTIPLE_ENUMERATOR";
+		statement_ = statement;
+        next_ = next;
+    }
+    NodePtr getStatements() const {
+        return statements_;
+    }
+    NodePtr getNext() const {
+		return next_;
+	}
+
+};
+
+class SingleEnumerator : public Node {
+   protected:
+    std::string id_;
+    NodePtr expr_;
+
+   public:
+    SingleEnumerator(std::string id, NodePtr expr) {
+        type_ = "SINGLE_ENUMERATOR";
+		identifier_ = id;
+        expr_ = expr;
+    }
+    std::string getId() const {
+        return id_;
+    }
+    NodePtr getStatements() const {
+		return statements_;
+	}
+
+};
+
+
 #endif

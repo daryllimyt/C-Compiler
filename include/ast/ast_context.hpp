@@ -51,6 +51,15 @@ struct VariableContext {
     }
 };
 
+struct EnumContext {
+	int frame;
+	int scope;
+	std::string typeSpecifier;
+	std::vector<std::string> elements;
+	int val;
+
+}
+
 struct FunctionContext {
     int frame;              // Frame associated to function
     int scope;                  // Scope in which the function was defined
@@ -124,7 +133,7 @@ struct ProgramContext {
 	std::vector<std::string> breakPoints;
 	std::vector<std::string> continuePoints;
 
-
+	std::unordered_map<std::string, EnumContext> enumerations;
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;
