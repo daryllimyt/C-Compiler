@@ -48,7 +48,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int bytes = getSize(context, astNode);
             /* Adjustments
             -8  -> function's own identifier
-            +32 -> saved registers $s0 - $s7 (8*4 bytes) 
+            +32 -> saved registers $s0 - $s7 (8*4 bytes)
             +4  -> return address in $ra
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
@@ -225,7 +225,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());
             }
 
-        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {  //most indentation happens here
+        } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
             context.variableAssignmentState = "NO_ASSIGN";         // Clear any previous variableAssignContext
             Compile(output, context, astNode->getStatements());    // Current statement
             if (astNode->getNext()) {
@@ -243,6 +243,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror B, recursive terminal\n";
                     int offsetLeft = getVariableAddressOffset(context, context.identifier);  // Previous id
                     std::string refLeft = getReferenceRegister(context, context.identifier);
+
+					if (context.enumerations.count(context.typeSpecifier) &&
+					!context.enumerations[context.identifier].elements.count(astNode->getIdentifier()->getId())){
+						throw std::runtime_error ("Enumerator not declared");
+					}
                     context.variableAssignmentState = "NO_ASSIGN";
                     Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                     *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
@@ -257,6 +262,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 std::string ref = addressInfo.second;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {  // Math or bitwise
+					if (context.enumerations.count(context.typeSpecifier)){
+						throw std::runtime_error( "Enumerations cannot be assigned directly");
+					}
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -625,6 +633,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.typeSpecifier = "SIGNED";
         } else if (astNode->getType() == "UNSIGNED") {
             context.typeSpecifier = "UNSIGNED";
+        } else if (astNode->getType() == "CUSTOM_TYPE") {
+			std::string typeName = astNode->getId();
+			if(context.enumerations[typeName]){
+				context.typeSpecifier = typeName;
+			} else {
+				throw std::runtime_error (" Type not declared ");
+			}
+
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
             if (astNode->getId() == "*=") {
@@ -833,11 +849,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else if (astNode->getType() == "ENUMERATION") {
-			if(astNode->getTypeSpecifier()){
-				Compile(output, context, astNode->getTypeSpecifier());
-			} else {
-				context.typeSpecifier = "INT";
-			}
 
 			EnumContext newEnum;
 			newEnum.typeSpecifer = context.typeSpecifier;
@@ -845,6 +856,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 			newNum.frame = context.frame;
 			newNum.scope = context.scope;
 			context.enumerations[astNode->getId()] = newEnum;
+			context.allEnumerations.push_back(astNode->getId());
 
 			Compile(output, context, astNode->getStatements());
 
@@ -872,6 +884,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 				newVariable.typeSpecifier = context.typeSpecifier;
 				context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
 				context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
+				context.enumerations[context.allEnumerations.back()].elements.insert(id);
                 }
 			else {
 				throw std::runtime_error("Already declared");
