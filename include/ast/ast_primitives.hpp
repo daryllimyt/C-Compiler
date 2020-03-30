@@ -106,6 +106,28 @@ class CustomType : public Node {
 		return id_;
 	}
 
+
+};
+
+class TypeDef : public Node {
+	protected:
+		std::string id_;
+		NodePtr parent_;
+   	public:
+    TypeDef(const std::string &id, NodePtr parent) {
+        type_ = "TYPE_DEF";
+		id_ = id;
+		parent_ = parent;
+    }
+
+	const std::string getId() const {
+		return id_;
+	}
+
+	NodePtr getTypeSpecifier() const{
+		return parent_;
+	}
+
 };
 
 class Enumeration : public Node {

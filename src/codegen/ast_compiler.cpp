@@ -740,10 +740,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string typeName = astNode->getId();
             if (context.enumerations.count(typeName)) {
                 context.typeSpecifier = typeName;
-            } else {
+            } else if (context.typeDefs.count(typeName)){
+				Compile(output, context, context.typeDefs[typeName]);
+			} else {
                 throw std::runtime_error(" Type not declared ");
             }
 
+        } else if (astNode->getType() == "TYPE_DEF") {
+            std::string typeName = astNode->getId();
+			context.typeDefs[typeName] = astNode->getTypeSpecifier();
+			context.allTypeDefs.push_back(typeName);
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
             if (astNode->getId() == "*=") {
