@@ -2,6 +2,7 @@
 
 // template <class T1, class T2>
 // void addToHashedClass(T1 &container, const std::string &key, const T2& value);
+int multiplier = 4;
 void clearRegisters(std::ostream *output);
 void functionPrologue(std::ostream *output, const int &bytes);
 void functionEpilogue(std::ostream *output, const int &bytes);
@@ -37,7 +38,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
         } else if (astNode->getType() == "FUNCTION_DECLARATION") {
             context.variableAssignmentState = "FUNCTION_DECLARATION";
+
+            Compile(output, context, astNode->getTypeSpecifier());
             Compile(output, context, astNode->getIdentifier());
+            if (astNode->getArgs()) {
+                context.variableAssignmentState = "FUNCTION_DEC_ARGS";
+                Compile(output, context, astNode->getArgs());  // multiple arguments node
+            }
         } else if (astNode->getType() == "FUNCTION_DEFINITION") {
             // Get type specifier
             if (astNode->getTypeSpecifier()) {
@@ -53,8 +60,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
-            int variablebytes = bytes - 8;
-            bytes += (36 + (8 - (bytes % 8)));
+            int variablebytes = bytes - multiplier;
+            bytes += (36 + (multiplier - (bytes % multiplier)));
 
             // Frame start
             context.frameIndex = context.frameTracker.size();  // frame number based on the number of functions
@@ -93,11 +100,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
             context.scope++;
-            *output << "\t\tsw\t$a0, 0($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a1, 8($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a2, 16($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a3, 24($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tmove\t$t9, $sp \t\t# (fn def) Store caller $sp in $t9 for argument calling\n";
+            for (int i = 0; i < 4; i++) {
+                *output << "\t\tsw\t$a" << i << ", " << multiplier * i << "($sp) \t\t# (fn def) Store arg regs in memory\n";
+            }
+
+            *output << "\t\tmove\t$t9, $sp \t\t# (fn def) Store caller $sp in $t9 for argument calling\n";
 
             // Shift stack pointer and storing registers
             functionPrologue(output, bytes);
@@ -111,13 +118,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             // }
             int argCount = context.functionBindings[id].args.size();
             if (argCount > 0) {
-                *output << "\t\taddiu\t$sp, $sp, " << -8 * argCount << "\t\t# Move $sp to end of function arg section for local variables\n";
+                *output << "\t\taddiu\t$sp, $sp, " << -multiplier * argCount << "\t\t# Move $sp to end of function arg section for local variables\n";
             }
             for (int i = 0; i < argCount; i++) {  // Load fn args to registers, save if more than 4
                 int offset = getVariableAddressOffset(context, context.functionBindings[id].args[i]);
                 std::string ref = getReferenceRegister(context, context.functionBindings[id].args[i]);
                 *output << "\t\tlw\t$t0, "
-                        << 8 * i << "($t9) \t\t\t# (fn args) Load fn call args from arg slots to $t0\n"
+                        << multiplier * i << "($t9) \t\t\t# (fn args) Load fn call args from arg slots to $t0\n"
                         << "\t\tnop\n";
                 *output << "\t\tsw\t$t0, "
                         << offset << ref << "\t\t\t# (fn args) Store fn call args from $t0 to memory\n";
@@ -132,7 +139,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\n"
                     << functionEnd << ":\n";
             // Load saved registers and previous stack info from stack
-            *output << "\t\taddiu\t$sp, $sp, " << (8 * argCount) + variablebytes << "\t# Move $sp to end of function arg section after function call\n";
+            *output << "\t\taddiu\t$sp, $sp, " << (multiplier * argCount) + variablebytes << "\t# Move $sp to end of function arg section after function call\n";
             functionEpilogue(output, bytes);
 
             // Frame end
@@ -153,13 +160,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.variableAssignmentState = "FUNCTION_CALL";
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
-            int argCount = context.functionBindings[id].args.size();  // Get arg count
-            if (argCount < 4) {
-                argCount = 4;
+            int argCount = 0;
+            if (!context.functionBindings.count(id)) {  // Function not defined
+                argCount = context.declaredFunctions[id];
+
+            } else {
+                argCount = context.functionBindings[id].args.size();  // Get arg count
             }
+            if (argCount < 4) argCount = 4;
+
             context.functionArgs.push_back(0);  // tracks arg count
             // int varBytes = context.frameTracker[context.frameIndex].variableBytes;  // Space allocated to variables
-            int functionCallOffset = (8 * argCount);
+            int functionCallOffset = (multiplier * argCount);
             if (astNode->getParameters()) {
                 *output << "\t\taddiu\t$sp, $sp, " << -functionCallOffset << "\t# (fn call) Expand stack for fn \"" << id << "\" arg slots\n";
                 Compile(output, context, astNode->getParameters());  // Loading function arguments into arg slots
@@ -167,7 +179,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 // Function args is now the number of function args
                 for (int i = 0; i < context.functionArgs.back(); i++) {
                     if (i < 4) {
-                        *output << "\t\tlw\t$a" << i << ", " << 8 * i << "($sp) \t\t# Load arguments into $a0-$a3\n";
+                        *output << "\t\tlw\t$a" << i << ", " << multiplier * i << "($sp) \t\t# Load arguments into $a0-$a3\n";
                     } else {
                         break;
                     }
@@ -198,9 +210,17 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getStatements());
             }
         } else if (astNode->getType() == "MULTIPLE_ARGUMENTS") {
-            context.variableAssignmentState = "FUNCTION_ARGUMENTS";
+            if (context.variableAssignmentState != "FUNCTION_DEC_ARGS") {
+                context.variableAssignmentState = "FUNCTION_ARGUMENTS";
+            }
+
             if (astNode->getArgs()) {
-                Compile(output, context, astNode->getArgs());
+                if (context.variableAssignmentState != "FUNCTION_DEC_ARGS") {
+                    Compile(output, context, astNode->getArgs());
+                } else {
+                    // Don't compile just count args
+                    context.declaredFunctions[context.identifier]++;
+                }
             }
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());
@@ -218,7 +238,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 } else {  // Normal variable
                     *output << "\t\tsw\t$t0, ";
                 }
-                *output << 8 * argSlotPosition << "($sp) \t\t# (fn call params) store in arg slot\n";
+                *output << multiplier * argSlotPosition << "($sp) \t\t# (fn call params) store in arg slot\n";
             }
 
             if (astNode->getNext()) {
@@ -764,8 +784,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
-                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                        context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                        context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                        context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
                         // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     } else {  // True means variable in the current frame
                         // Variable in current frame, check which scope it was found in
@@ -781,8 +801,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
-                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                        context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                        context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                        context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
                         // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     }
                 } else if (type == "ARRAY") {
@@ -790,7 +810,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     if (context.scope == 0) {
                         index = 0;  // For global variables
                     }
-                    int arrayBytes = 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+                    int arrayBytes = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());
                     VariableContext newVariable;
                     // Array base offset is at the bottom of the array block in memory
                     newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
@@ -851,9 +871,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "\t\tnop\n";
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
-                    context.valueContext.intValue = context.variableBindings[id].back().intValue;
-                } else if (type == "ARRAY") {                                                      // Reading from array
-                    int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
+                } else if (type == "ARRAY") {                                                               // Reading from array
+                    int addrOffset = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     // Add element index to array base
@@ -891,7 +910,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             } else if (context.variableAssignmentState == "FUNCTION_DECLARATION") {
                 if (!context.functionBindings.count(id)) {  // Function not found in bindings
-                    context.declaredFunctions.insert(id);
+                    context.declaredFunctions[id] = 0;
                 }
             } else if (context.variableAssignmentState == "FUNCTION_CALL") {
                 if (!context.declaredFunctions.count(id)) {              // Undeclared function
@@ -934,9 +953,9 @@ int getSize(ProgramContext &context, NodePtr astNode) {
     int bytes = 0;
     if (astNode->getType() == "VARIABLE") {
         if (astNode->getVarType() == "NORMAL" || astNode->getVarType() == "POINTER") {
-            bytes += 8;
+            bytes += multiplier;
         } else if (astNode->getVarType() == "ARRAY") {
-            bytes += 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+            bytes += multiplier * evalArrayIndexOrSize(context, astNode->getStatements());
         }
     } else {
         bytes += getSize(context, astNode->getLeft());
