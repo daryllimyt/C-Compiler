@@ -110,7 +110,7 @@ struct ProgramContext {
     std::string returnType = "VOID";
     std::vector<int> functionArgs;
     std::vector<std::string> allFunctions;
-    std::unordered_set<std::string> declaredFunctions;
+    std::unordered_map<std::string, int> declaredFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Registers
@@ -178,7 +178,10 @@ struct ProgramContext {
         printIterable(out, p.functionArgs);
         out << "\n";
         out << "[INFO] * declaredFunctions: ";
-        printIterable(out, p.declaredFunctions);
+        for (auto& it : p.declaredFunctions) {
+            out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
+        }
+        out << "[INFO] *\n";
         out << "\n";
         out << "[INFO] * allFunctions: ";
         printIterable(out, p.allFunctions);

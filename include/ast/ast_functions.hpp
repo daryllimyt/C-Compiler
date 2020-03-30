@@ -48,7 +48,7 @@ class FunctionDeclaration : public Node {
         identifier_ = identifier;
         args_ = args;
     }
-    NodePtr getSpecifier() const {
+    NodePtr getTypeSpecifier() const {
         return typeSpecifier_;  // type specifier
     }
     NodePtr getIdentifier() const {
