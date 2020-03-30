@@ -131,7 +131,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getScope());
             *output << "\n"
                     << functionEnd << ":\n";
-            // int varCount = context.frameTracker[context.frameIndex].variableBytes;
             // Load saved registers and previous stack info from stack
             *output << "\t\taddiu\t$sp, $sp, " << (8 * argCount) + variablebytes << "\t# Move $sp to end of function arg section after function call\n";
             functionEpilogue(output, bytes);
@@ -180,7 +179,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.functionArgs.pop_back();                    // Remove arg count for this function call
             context.variableAssignmentState = "FUNCTION_CALL";  // Save to $v0 instead of $t0
             context.identifier = id;                            // exit function call with function id
-            context.functionArgCounter.pop_back();
         } else if (astNode->getType() == "SCOPE") {
             context.scope++;
             if (astNode->getNext()) {
