@@ -9,7 +9,7 @@
 class Variable : public Node {
    private:
     std::string id_;
-    std::string varType_; // Normal, pointer, array
+    std::string varType_; // Normal, point64_ter, array
     NodePtr expression_;
 
    public:
@@ -89,21 +89,21 @@ class StringLiteral : public Node {
 class TypeSpecifier : public Node {
    public:
     TypeSpecifier(const std::string &type) {
-        type_ = type; // void, char, short, int ...
+        type_ = type; // void, char, short, int64_t ...
     }
 };
 
 class CustomType : public Node {
 	protected:
-		std::string id_
+		std::string id_;
    	public:
     CustomType(const std::string &id) {
         type_ = "CUSTOM_TYPE";
 		id_ = id;
     }
 
-	std::string getId() const {
-		return id_
+	const std::string getId() const {
+		return id_;
 	}
 
 };
@@ -121,7 +121,7 @@ class Enumeration : public Node {
 		typeSpecifier_ = typeSpecifier;
         statements_ = statements;
     }
-    std::string getId() const {
+    const std::string getId() const {
         return id_;
     }
 	NodePtr getTypeSpecifier(){
@@ -139,13 +139,13 @@ class MultipleEnumerators : public Node {
     NodePtr next_;
 
    public:
-    MultipleEnumerators(NodePtr statement, NodePtr next_) {
+    MultipleEnumerators(NodePtr statement, NodePtr next) {
         type_ = "MULTIPLE_ENUMERATOR";
 		statement_ = statement;
         next_ = next;
     }
     NodePtr getStatements() const {
-        return statements_;
+        return statement_;
     }
     NodePtr getNext() const {
 		return next_;
@@ -161,14 +161,14 @@ class SingleEnumerator : public Node {
    public:
     SingleEnumerator(std::string id, NodePtr expr) {
         type_ = "SINGLE_ENUMERATOR";
-		identifier_ = id;
+		id_ = id;
         expr_ = expr;
     }
-    std::string getId() const {
+    const std::string getId() const {
         return id_;
     }
     NodePtr getStatements() const {
-		return statements_;
+		return expr_;
 	}
 
 };

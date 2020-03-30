@@ -57,7 +57,7 @@ struct EnumContext {
 	std::unordered_set<std::string> elements;
 	int val;
 
-}
+};
 
 struct FunctionContext {
     int frame;              // Frame associated to function

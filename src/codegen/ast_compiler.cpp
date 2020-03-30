@@ -226,8 +226,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
         } else if (astNode->getType() == "MULTIPLE_STATEMENTS") {
-            context.variableAssignmentState = "NO_ASSIGN";         // Clear any previous variableAssignContext
-            Compile(output, context, astNode->getStatements());    // Current statement
+            context.variableAssignmentState = "NO_ASSIGN";       // Clear any previous variableAssignContext
+            Compile(output, context, astNode->getStatements());  // Current statement
             if (astNode->getNext()) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
@@ -244,10 +244,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int offsetLeft = getVariableAddressOffset(context, context.identifier);  // Previous id
                     std::string refLeft = getReferenceRegister(context, context.identifier);
 
-					if (context.enumerations.count(context.typeSpecifier) &&
-					!context.enumerations[context.identifier].elements.count(astNode->getIdentifier()->getId())){
-						throw std::runtime_error ("Enumerator not declared");
-					}
+                    if (context.enumerations.count(context.typeSpecifier) &&
+                        !context.enumerations[context.identifier].elements.count(astNode->getIdentifier()->getId())) {
+                        throw std::runtime_error("Enumerator not declared");
+                    }
                     context.variableAssignmentState = "NO_ASSIGN";
                     Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                     *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
@@ -262,9 +262,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 std::string ref = addressInfo.second;
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {  // Math or bitwise
-					if (context.enumerations.count(context.typeSpecifier)){
-						throw std::runtime_error( "Enumerations cannot be assigned directly");
-					}
+                    if (context.enumerations.count(context.typeSpecifier)) {
+                        throw std::runtime_error("Enumerations cannot be assigned directly");
+                    }
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
                     Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -593,6 +593,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
         } else if (astNode->getType() == "SIZE_OF") {
+            context.variableAssignmentState = "NO_ASSIGN";
             Compile(output, context, astNode->getNext());
             if (context.typeSpecifier == "CHAR") {
                 *output << "\t\tli\t$t0, 1\n";
@@ -613,9 +614,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (context.typeSpecifier == "BOOL") {
                 *output << "\t\tli\t$t0, 1\n";
             } else {
-				*output << "\t\tli\t$t0, " << sizeof(astNode->getNext->getVal())
-				<< "\n";
-			}
+                *output << "\t\tli\t$t0, " << sizeof(astNode->getNext()->getVal())
+                        << "\n";
+            }
 
         } else if (astNode->getType() == "CHAR") {
             context.typeSpecifier = "CHAR";
@@ -634,12 +635,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "UNSIGNED") {
             context.typeSpecifier = "UNSIGNED";
         } else if (astNode->getType() == "CUSTOM_TYPE") {
-			std::string typeName = astNode->getId();
-			if(context.enumerations[typeName]){
-				context.typeSpecifier = typeName;
-			} else {
-				throw std::runtime_error (" Type not declared ");
-			}
+            std::string typeName = astNode->getId();
+            if (context.enumerations.count(typeName)) {
+                context.typeSpecifier = typeName;
+            } else {
+                throw std::runtime_error(" Type not declared ");
+            }
 
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
@@ -794,7 +795,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
                             << "\t\tnop\n";
 
-				 	context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
+                    context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
@@ -849,64 +850,59 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else if (astNode->getType() == "ENUMERATION") {
+            EnumContext newEnum;
+            newEnum.val = 0;
+            newEnum.frame = context.frameIndex;
+            newEnum.scope = context.scope;
+            context.enumerations[astNode->getId()] = newEnum;
+            context.allEnumerations.push_back(astNode->getId());
 
-			EnumContext newEnum;
-			newEnum.typeSpecifer = context.typeSpecifier;
-			newEnum.val = 0;
-			newNum.frame = context.frame;
-			newNum.scope = context.scope;
-			context.enumerations[astNode->getId()] = newEnum;
-			context.allEnumerations.push_back(astNode->getId());
-
-			Compile(output, context, astNode->getStatements());
-
-
+            Compile(output, context, astNode->getStatements());
 
         } else if (astNode->getType() == "MULTIPLE_ENUMERATORS") {
-			Compile(output, context, astNode->getStatement());
+            Compile(output, context, astNode->getStatements());
 
-			if(astNode->getNext()){
-				Compile(output, context, astNode->getNext());
-			}
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());
+            }
         } else if (astNode->getType() == "SINGLE_ENUMERATOR") {
             std::string id = context.identifier = astNode->getId();
             int index = context.frameIndex;
-			if (context.variableBindings.count(id) == 0) {  // Variable declaration
-				if (context.scope == 0) {
-					index = 0;  // For global variables
-				}
-				VariableContext newVariable;
-				newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
-				newVariable.varType = type;
-				newVariable.size = 8;
-				newVariable.scope = context.scope;
-				newVariable.frame = context.frameIndex;
-				newVariable.typeSpecifier = context.typeSpecifier;
-				context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-				context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
-				context.enumerations[context.allEnumerations.back()].elements.insert(id);
+            if (context.variableBindings.count(id) == 0) {  // Variable declaration
+                if (context.scope == 0) {
+                    index = 0;  // For global variables
                 }
-			else {
-				throw std::runtime_error("Already declared");
-			}
-			//assignment
-			int offset = getVariableAddressOffset(context, id);
-			std::string ref = getReferenceRegister(ProgramContext &context, const std::string &id);
-			context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
-			if (astNode->getStatements()) {  // Math or bitwise
-				Compile(output, context, astNode->getStatements());        // output -> $t0 (var)
-				if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-					throw std::runtime_error("Cannot use functions for enumerators");
-				} else {
-					*output << "\t\tsw\t$t0, " << offset << ref
-							<< "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
-					context.enumerations[id].val = evalArrayIndexOrSize(context, astNode->getStatements());
-				}
-			} else {
-				*output << "\t\tli\t$t0, " << ++context.enumerations[id].val << "\t\t# (enumerator) using value of previous + 1\n";
-				*output << "\t\tsw\t$t0, " << offset << ref
-						<< "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
-			}
+                VariableContext newVariable;
+                newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                newVariable.varType = "NORMAL";
+                newVariable.size = 8;
+                newVariable.scope = context.scope;
+                newVariable.frame = context.frameIndex;
+                newVariable.typeSpecifier = context.typeSpecifier;
+                context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
+                context.frameTracker[index].variableBytes += 8;       // Increment size of variable block in frame
+                context.enumerations[context.allEnumerations.back()].elements.insert(id);
+            } else {
+                throw std::runtime_error("Already declared");
+            }
+            //assignment
+            int offset = getVariableAddressOffset(context, id);
+            std::string ref = getReferenceRegister(context, id);
+            context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
+            if (astNode->getStatements()) {                                // Math or bitwise
+                Compile(output, context, astNode->getStatements());        // output -> $t0 (var)
+                if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+                    throw std::runtime_error("Cannot use functions for enumerators");
+                } else {
+                    *output << "\t\tsw\t$t0, " << offset << ref
+                            << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
+                    context.enumerations[id].val = evalArrayIndexOrSize(context, astNode->getStatements());
+                }
+            } else {
+                *output << "\t\tli\t$t0, " << ++context.enumerations[id].val << "\t\t# (enumerator) using value of previous + 1\n";
+                *output << "\t\tsw\t$t0, " << offset << ref
+                        << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
+            }
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
         }
