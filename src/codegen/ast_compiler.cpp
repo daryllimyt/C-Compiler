@@ -883,6 +883,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     if (Util::debug) std::cerr << "[DEBUG] NEW_FUNCTION E: " << id << std::endl;
                     FunctionContext newFunction;
                     newFunction.scope = context.scope;
+                    newFunction.frame = context.frameIndex;
                     newFunction.typeSpecifier = context.typeSpecifier;
                     context.functionBindings[id] = newFunction;
                     context.allFunctions.push_back(id);
