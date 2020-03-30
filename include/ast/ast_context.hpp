@@ -60,7 +60,7 @@ struct EnumContext {
 };
 
 struct FunctionContext {
-    int frame;              // Frame associated to function
+    int frame;                  // Frame associated to function
     int scope;                  // Scope in which the function was defined
     std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
@@ -76,12 +76,20 @@ struct FunctionContext {
 };
 
 struct FrameContext {
-    int totalBytes;
-    int variableBytes;
+    int totalBytes = 0;
+    int variableBytes = 0;
     friend std::ostream& operator<<(std::ostream& out, const FrameContext& f) {
         out << "{totalBytes: " << f.totalBytes << ", varBytes: " << f.variableBytes << " }";
         return out;
     }
+};
+
+struct ValueContext {
+    int intValue = 0;
+    double doubleValue;
+    char charValue;
+    float floatValue;
+    std::string type;
 };
 
 /* Variable assignment states (for variable nodes)
@@ -108,6 +116,7 @@ struct ProgramContext {
     std::vector<FrameContext> frameTracker;  // Tracks requred totalBytes & num of vars for ecah frame (global = 0, current = 1)
 
     // Variables
+    ValueContext valueContext;
     std::string identifier;
     std::string typeSpecifier;
     std::string typeQualifier;  // const, volatile
@@ -118,7 +127,7 @@ struct ProgramContext {
     std::string returnType = "VOID";
     std::vector<int> functionArgs;
     std::vector<std::string> allFunctions;
-    std::unordered_set<std::string> declaredFunctions;
+    std::unordered_map<std::string, int> declaredFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
 
     // Registers
@@ -143,7 +152,8 @@ struct ProgramContext {
     // Helper methods
     int getVariableIntValue(const std::string& id) {
         if (!variableBindings.count(id)) {
-            throw std::runtime_error("[ERROR] Unable to retrieve intValue for undeclared variable \"" + id + "\"\n");
+            return 0;
+            // throw std::runtime_error("[ERROR] Unable to retrieve intValue for undeclared variable \"" + id + "\"\n");
         }
         return variableBindings[id].back().intValue;
     }
@@ -186,8 +196,11 @@ struct ProgramContext {
         out << "[INFO] * functionArgs: ";
         printIterable(out, p.functionArgs);
         out << "\n";
-        out << "[INFO] * declaredFunctions: ";
-        printIterable(out, p.declaredFunctions);
+        out << "[INFO] * declaredFunctions: \n";
+        for (auto& it : p.declaredFunctions) {
+            out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
+        }
+        out << "[INFO] *\n";
         out << "\n";
         out << "[INFO] * allFunctions: ";
         printIterable(out, p.allFunctions);

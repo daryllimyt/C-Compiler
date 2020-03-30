@@ -32,14 +32,14 @@ class Variable : public Node {
 
 class IntegerConstant : public Node {
    private:
-    int64_t val_;
+    int val_;
 
    public:
-    IntegerConstant(const int64_t &val) {
+    IntegerConstant(const int &val) {
         type_ = "INTEGER_CONSTANT";
         val_ = val;
     }
-    const int64_t getVal() const {
+    const int getVal() const {
         return val_;
     }
 };

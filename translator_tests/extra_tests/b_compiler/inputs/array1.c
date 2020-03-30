@@ -1,6 +1,6 @@
 int sub(int i, int j, int k);
 
-int main() {
+int fmain() {
     int arr[3];
     arr[0] = 100;
     arr[1] = sub(4, 1, 2); // returns 1
