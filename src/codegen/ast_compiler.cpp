@@ -60,8 +60,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             +4  -> previous frame address in $fp
             +4  -> global address in $gp
             +(8-bytes%8) -> padding to ensure double-alignment of stack pointer, i.e. bytes is a multiple of 8 */
-            int variablebytes = bytes - 8;
-            bytes += (36 + (8 - (bytes % 8)));
+            int variablebytes = bytes - multiplier;
+            bytes += (36 + (multiplier - (bytes % multiplier)));
 
             // Frame start
             context.frameIndex = context.frameTracker.size();  // frame number based on the number of functions
@@ -100,11 +100,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
 
             context.scope++;
-            *output << "\t\tsw\t$a0, 0($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a1, 4($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a2, 8($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tsw\t$a3, 12($sp) \t\t# (fn def) Store arg regs in memory\n"
-                    << "\t\tmove\t$t9, $sp \t\t# (fn def) Store caller $sp in $t9 for argument calling\n";
+            for (int i = 0; i < 4; i++) {
+                *output << "\t\tsw\t$a" << i << ", " << multiplier * i << "($sp) \t\t# (fn def) Store arg regs in memory\n";
+            }
+
+            *output << "\t\tmove\t$t9, $sp \t\t# (fn def) Store caller $sp in $t9 for argument calling\n";
 
             // Shift stack pointer and storing registers
             functionPrologue(output, bytes);
@@ -161,14 +161,14 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             Compile(output, context, astNode->getIdentifier());
             std::string id = context.identifier;
             int argCount = 0;
-            if(!context.functionBindings.count(id)) { // Function not defined
+            if (!context.functionBindings.count(id)) {  // Function not defined
                 argCount = context.declaredFunctions[id];
 
             } else {
                 argCount = context.functionBindings[id].args.size();  // Get arg count
             }
             if (argCount < 4) argCount = 4;
-            
+
             context.functionArgs.push_back(0);  // tracks arg count
             // int varBytes = context.frameTracker[context.frameIndex].variableBytes;  // Space allocated to variables
             int functionCallOffset = (multiplier * argCount);
@@ -710,8 +710,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
-                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                        context.frameTracker[index].variableBytes += multiplier;       // Increment size of variable block in frame
+                        context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                        context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
                         // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     } else {  // True means variable in the current frame
                         // Variable in current frame, check which scope it was found in
@@ -727,8 +727,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
-                        context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                        context.frameTracker[index].variableBytes += multiplier;       // Increment size of variable block in frame
+                        context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                        context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
                         // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     }
                 } else if (type == "ARRAY") {
@@ -796,7 +796,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "\t\tnop\n";
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
-                } else if (type == "ARRAY") {                                                      // Reading from array
+                } else if (type == "ARRAY") {                                                               // Reading from array
                     int addrOffset = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
@@ -874,9 +874,9 @@ int getSize(ProgramContext &context, NodePtr astNode) {
     int bytes = 0;
     if (astNode->getType() == "VARIABLE") {
         if (astNode->getVarType() == "NORMAL" || astNode->getVarType() == "POINTER") {
-            bytes += 8;
+            bytes += multiplier;
         } else if (astNode->getVarType() == "ARRAY") {
-            bytes += 8 * evalArrayIndexOrSize(context, astNode->getStatements());
+            bytes += multiplier * evalArrayIndexOrSize(context, astNode->getStatements());
         }
     } else {
         bytes += getSize(context, astNode->getLeft());
