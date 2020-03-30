@@ -593,6 +593,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "VOID") {
             context.typeSpecifier = "VOID";
         } else if (astNode->getType() == "SIZE_OF") {
+			context.assignmentState = "NO_ASSIGN";
             Compile(output, context, astNode->getNext());
             if (context.typeSpecifier == "CHAR") {
                 *output << "\t\tli\t$t0, 1\n";
@@ -887,7 +888,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 				context.enumerations[context.allEnumerations.back()].elements.insert(id);
                 }
 			else {
-				throw std::runtime_error("Already declared");
+				throw std::runtime_error("Enumerator already declared");
 			}
 			//assignment
 			int offset = getVariableAddressOffset(context, id);
