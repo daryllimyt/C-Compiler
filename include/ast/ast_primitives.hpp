@@ -93,6 +93,21 @@ class TypeSpecifier : public Node {
     }
 };
 
+class CustomType : public Node {
+	protected:
+		std::string id_
+   	public:
+    CustomType(const std::string &id) {
+        type_ = "CUSTOM_TYPE";
+		id_ = id;
+    }
+
+	std::string getId() const {
+		return id_
+	}
+
+};
+
 class Enumeration : public Node {
    protected:
     std::string id_;

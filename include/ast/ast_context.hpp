@@ -54,8 +54,7 @@ struct VariableContext {
 struct EnumContext {
 	int frame;
 	int scope;
-	std::string typeSpecifier;
-	std::vector<std::string> elements;
+	std::unordered_set<std::string> elements;
 	int val;
 
 }
@@ -133,6 +132,7 @@ struct ProgramContext {
 	std::vector<std::string> continuePoints;
 
 	std::unordered_map<std::string, EnumContext> enumerations;
+	std::vector<std::string> allEnumerations;
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;

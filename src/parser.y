@@ -247,16 +247,17 @@ VARIABLE_DECLARATION //int a = 2, b = 5
 
 
 TYPE_SPECIFIER
-  : T_VOID     { $$ = new TypeSpecifier("VOID"); }
-	| T_CHAR     { $$ = new TypeSpecifier("CHAR"); }
-	| T_SHORT    { $$ = new TypeSpecifier("SHORT"); }
-	| T_INT      { $$ = new TypeSpecifier("INT"); }
-	| T_LONG     { $$ = new TypeSpecifier("LONG"); }
-	| T_FLOAT    { $$ = new TypeSpecifier("FLOAT"); }
-	| T_DOUBLE   { $$ = new TypeSpecifier("DOUBLE"); }
-	| T_SIGNED   { $$ = new TypeSpecifier("SIGNED"); }
-	| T_UNSIGNED { $$ = new TypeSpecifier("UNSIGNED"); }
-	| T_BOOL { $$ = new TypeSpecifier("BOOL"); }
+  	: T_VOID   		{ $$ = new TypeSpecifier("VOID"); }
+	| T_CHAR     	{ $$ = new TypeSpecifier("CHAR"); }
+	| T_SHORT   	{ $$ = new TypeSpecifier("SHORT"); }
+	| T_INT     	{ $$ = new TypeSpecifier("INT"); }
+	| T_LONG     	{ $$ = new TypeSpecifier("LONG"); }
+	| T_FLOAT    	{ $$ = new TypeSpecifier("FLOAT"); }
+	| T_DOUBLE   	{ $$ = new TypeSpecifier("DOUBLE"); }
+	| T_SIGNED   	{ $$ = new TypeSpecifier("SIGNED"); }
+	| T_UNSIGNED 	{ $$ = new TypeSpecifier("UNSIGNED"); }
+	| T_BOOL 		{ $$ = new TypeSpecifier("BOOL"); }
+	| T_IDENTIFIER 	{ $$ = new CustomType(*$1); delete $1;}
   ;
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a
