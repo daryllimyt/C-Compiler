@@ -468,7 +468,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
             if (context.valueContext.type == "INT") {
-                context.valueContext.intValue = result;
+                context.valueContext.intValue = static_cast<int>(result);
             }
         } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
@@ -484,7 +484,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
             if (context.valueContext.type == "INT") {
-                context.valueContext.intValue = result;
+                context.valueContext.intValue = static_cast<int>(result);
             }
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
@@ -797,6 +797,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     newVariable.varType = type;
                     newVariable.size = arrayBytes;
                     newVariable.scope = context.scope;
+                    newVariable.frame = context.frameIndex;
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                     context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
@@ -1059,9 +1060,7 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode, int &left, int &right) {
     *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) Expand stack for expression evaluation\n";
     Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
-    if (context.valueContext.type == "INT") {
-        right = context.valueContext.intValue;
-    }
+    right = context.valueContext.intValue;
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     } else {  // Normal variable
@@ -1069,9 +1068,7 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
     }
     context.variableAssignmentState = "NO_ASSIGN";  // Reading var
     Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
-    if (context.valueContext.type == "INT") {
-        left = context.valueContext.intValue;
-    }
+    left = context.valueContext.intValue;
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
@@ -1087,8 +1084,8 @@ int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
     if (astNode->getType() == "INTEGER_CONSTANT") {
         value = astNode->getVal();
     } else if (astNode->getType() == "VARIABLE") {
-        std::string id = astNode->getId();
-        value = context.getVariableIntValue(id);
+        // std::string id = astNode->getId();
+        // value = context.getVariableIntValue(id);
     } else if (astNode->getType() == "UNARY_EXPRESSION") {
         value = evalArrayIndexOrSize(context, astNode->getRight());  //identifier
         if (astNode->getIdentifier()->getId() == "++") {
