@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "../../include/ast.hpp"
 
 // template <class T1, class T2>
@@ -252,7 +254,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 Compile(output, context, astNode->getNext());  // Any further statements
             }
         } else if (astNode->getType() == "ASSIGNMENT_STATEMENT") {
-            // (type) id = statements = next;
+            // (type) id = statements = next
             if (!astNode->getStatements() && !astNode->getNext()) {  // Single declarator
                 if (context.variableAssignmentState == "VARIABLE_DECLARATION" || context.variableAssignmentState == "NO_ASSIGN") {
                     // temp : no assign comes from expressions
@@ -261,32 +263,59 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
                 } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Recursive assignment terminal case
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: single declataror B, recursive terminal\n";
-                    int offsetLeft = getVariableAddressOffset(context, context.identifier);  // Previous id
-                    std::string refLeft = getReferenceRegister(context, context.identifier);
+                    std::string idLeft = context.identifier;
+                    int offsetLeft = getVariableAddressOffset(context, idLeft);  // Previous id
+                    std::string refLeft = getReferenceRegister(context, idLeft);
+                    std::string typeLeft = context.variableBindings[idLeft].back().varType;  // normal/ptr/array
                     context.variableAssignmentState = "NO_ASSIGN";
-                    Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
-                    *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
+
+                    if (typeLeft == "ARRAY") {                                      // LHS array, offset was stored in $t2
+                        int arrayBase = getVariableAddressOffset(context, idLeft);  // Negative offset from $fp, first element of array
+                        std::string tempRef = getReferenceRegister(context, idLeft);
+                        std::string ref = tempRef.substr(1, 3);
+                        *output << "\t\tmove\t $t8, " << ref << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                        Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
+                        *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) Storing into array \"" << idLeft << "\" at base offset " << arrayBase << "\n";
+                    } else {                                                 // LHS Normal variable
+                        Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
+                        *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
+                    }
                 }
 
             } else {
                 if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator\n";
-                Compile(output, context, astNode->getIdentifier());  // Set LHS in context
-                std::string id = context.identifier;
-                std::pair<int, std::string> addressInfo = getOffsetAndReferenceRegister(context, astNode->getIdentifier());
-                int offset = addressInfo.first;
-                std::string ref = addressInfo.second;
+                if (context.variableAssignmentState != "VARIABLE_DECLARATION") {
+                    context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
+                }
+                std::string id = astNode->getIdentifier()->getId();
+                Compile(output, context, astNode->getIdentifier());  // Set LHS in context. If array, the scaled offset is stored in $t2
+                // std::string id = context.identifier;                             // LHS info
+                context.identifier = id;
+                int offset = getVariableAddressOffset(context, id);              // LHS info
+                std::string ref = getReferenceRegister(context, id);             // LHS info
+                std::string type = context.variableBindings[id].back().varType;  // normal/ptr/array
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
-                if (astNode->getStatements()) {  // Math or bitwise
+                // Math or bitwise
+                if (astNode->getStatements()) {  
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
-                    Compile(output, context, astNode->getStatements());        // output -> $v0 (function) / $t0 (var)
+                    Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
+                    // Result state
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
-                                << "\t\t\t# (assign) store fn result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
-                    } else {  // Normal variable
+                                << "\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                    } else if (type == "ARRAY") {                               // LHS is array
+                        std::string ref2 = ref.substr(1, 3);
+                        *output << "\t\tmove\t $t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddiu\t$t8, $t8, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                        *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) assign - Storing to array \"" << id << "\" at base offset " << offset << "\n";
+                    } else {  // LHS is normal variable or ptr
                         *output << "\t\tsw\t$t0, " << offset << ref
                                 << "\t\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                        context.variableBindings[id].back().intValue = context.valueContext.intValue;
                     }
-                    context.variableBindings[id].back().intValue = context.valueContext.intValue;
                 }
                 if (astNode->getNext()) {  // Recursive or variable
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator B, recursive\n";
@@ -316,7 +345,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
             *output << "\n"
                     << end << ":\n";
-
         } else if (astNode->getType() == "SWITCH_STATEMENT") {
             std::string label = createLabel(context, "_");
             std::string start = "switch_start" + label;
@@ -639,7 +667,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else {  // Coming from ASSIGNMENT_STATEMENT or FUNCTION_CALL
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
-                Compile(output, context, astNode->getStatements()); 
+                Compile(output, context, astNode->getStatements());
             }
         } else if (astNode->getType() == "RETURN") {
             if (astNode->getReturnValue()) {
@@ -683,7 +711,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else if (context.typeSpecifier == "BOOL") {
                 *output << "\t\tli\t$t0, 1\n";
             }
-
         } else if (astNode->getType() == "CHAR") {
             context.typeSpecifier = "CHAR";
         } else if (astNode->getType() == "SHORT") {
@@ -780,14 +807,13 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         VariableContext newVariable;
                         newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                         newVariable.varType = type;
-                        newVariable.size = 8;
+                        newVariable.size = multiplier;
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                         context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
-                        // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
-                    } else {  // True means variable in the current frame
+                    } else {                                                      // True means variable in the current frame
                         // Variable in current frame, check which scope it was found in
                         if (varInfo.second == context.scope) {
                             throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
@@ -797,13 +823,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         VariableContext newVariable;
                         newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                         newVariable.varType = type;
-                        newVariable.size = 8;
+                        newVariable.size = multiplier;
                         newVariable.scope = context.scope;
                         newVariable.frame = context.frameIndex;
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                         context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
-                        // *output << "\t\taddiu\t$sp, $sp, -8 \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                     }
                 } else if (type == "ARRAY") {
                     int index = context.frameIndex;
@@ -821,7 +846,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                     context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
-                    // *output << "\t\taddiu\t$sp, $sp, " << -arrayBytes << " \t# (var) Decrement $sp for variable \"" << id << "\"\n";
                 } else if (type == "POINTER") {
                     // int index = context.frameIndex;
                     // if (context.variableBindings.count(id) == 0) {  // Non-shadowing
@@ -871,14 +895,24 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "\t\tnop\n";
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
-                } else if (type == "ARRAY") {                                                               // Reading from array
-                    int addrOffset = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
-                    int arrayBase = getVariableAddressOffset(context, id);
-                    std::string ref = getReferenceRegister(context, id);
+                } else if (type == "ARRAY") {  // Reading from array
+                    // int addrOffset = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
+                    Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
+                    int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
+                    *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) read - scale array index offset to multiplier, save to $t2\n";
+                    int arrayBase = getVariableAddressOffset(context, id);  // Negative offset from $fp, first element of array
+                    std::string tempRef = getReferenceRegister(context, id);
+                    std::string ref = tempRef.substr(1, 3);
+                    *output << "\t\tmove\t $t8, " << ref << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
+                    *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                    *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                     // Add element index to array base
-                    *output << "\t\tlw\t$t0, " << arrayBase + addrOffset << ref
-                            << "\t# (var: array) Reading from array \"" << id << "\" at index " << addrOffset / 8 << "\n"
+                    *output << "\t\tlw\t$t0, 0($t8) \t\t# (var: array) Reading from array \"" << id << "\" at base offset " << arrayBase << "\n"
                             << "\t\tnop\n";
+                    // Reset $fp
+                    // *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) reset reference register\n";
+                    // *output << "\t\taddiu\t$t8, $t8, " << -arrayBase << "\t\t# (var: array) reset reference register\n";
+
                 } else if (type == "POINTER") {
                     // int addrOffset = getVariableAddressOffset(context, id);
                     // std::string ref = getReferenceRegister(context, id);
@@ -894,6 +928,12 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     !context.functionBindings.count(id) &&
                     !context.declaredFunctions.count(id)) {  // Varibale does not exist
                     throw std::runtime_error("[ERROR] Assignment to undeclared variable " + id + "\n");
+                }
+                if (type == "ARRAY") {
+                    context.variableAssignmentState = "NO_ASSIGN"; // Set to read mode to evaluate expression
+                    Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
+                    int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
+                    *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) assignment - scale array index offset to multiplier, save to $t2\n";
                 }
             } else if (context.variableAssignmentState == "FUNCTION_DEFINITION") {
                 if (context.functionBindings.count(id)) {
@@ -926,7 +966,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.valueContext.intValue = astNode->getVal();
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getFloat() << "\t\t\t\t# (int const)\n";
-            context.valueContext.floatValue = astNode->getVal();
+            context.valueContext.floatValue = astNode->getFloat();
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
@@ -1078,15 +1118,15 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode, int &left, int &right) {
-    *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) Expand stack for expression evaluation\n";
+    *output << "\t\taddiu\t$sp, $sp, " << -multiplier << " \t\t# (eval expr) Expand stack for expression evaluation\n";
     Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
     right = context.valueContext.intValue;
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     } else {  // Normal variable
         *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
-    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
     }
+    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
     Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
     left = context.valueContext.intValue;
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
@@ -1095,7 +1135,7 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
     }
     *output << "\t\tlw\t$t1, 0($sp) \t\t# (eval expr) load RHS from memory to $t1, LHS in $t0\n"
             << "\t\tnop\n";
-    *output << "\t\taddiu\t$sp, $sp, 8 \t\t# (eval expr) Shrinking stack after evaluation\n";
+    *output << "\t\taddiu\t$sp, $sp, " << multiplier << " \t\t# (eval expr) Shrinking stack after evaluation\n";
     context.variableAssignmentState = "NO_ASSIGN";  // Reading var
 }
 
@@ -1104,8 +1144,8 @@ int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {
     if (astNode->getType() == "INTEGER_CONSTANT") {
         value = astNode->getVal();
     } else if (astNode->getType() == "VARIABLE") {
-        // std::string id = astNode->getId();
-        // value = context.getVariableIntValue(id);
+        std::string id = astNode->getId();
+        value = context.getVariableIntValue(id);
     } else if (astNode->getType() == "UNARY_EXPRESSION") {
         value = evalArrayIndexOrSize(context, astNode->getRight());  //identifier
         if (astNode->getIdentifier()->getId() == "++") {
