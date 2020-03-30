@@ -52,7 +52,7 @@ struct VariableContext {
 };
 
 struct FunctionContext {
-    int frame;              // Frame associated to function
+    int frame;                  // Frame associated to function
     int scope;                  // Scope in which the function was defined
     std::string typeSpecifier;  // Type specifier
     std::vector<std::string> args;
@@ -74,6 +74,14 @@ struct FrameContext {
         out << "{totalBytes: " << f.totalBytes << ", varBytes: " << f.variableBytes << " }";
         return out;
     }
+};
+
+struct ValueContext {
+    int intValue;
+    double doubleValue;
+    char charValue;
+    float floatValue;
+    std::string type;
 };
 
 /* Variable assignment states (for variable nodes)
@@ -100,6 +108,7 @@ struct ProgramContext {
     std::vector<FrameContext> frameTracker;  // Tracks requred totalBytes & num of vars for ecah frame (global = 0, current = 1)
 
     // Variables
+    ValueContext valueContext;
     std::string identifier;
     std::string typeSpecifier;
     std::string typeQualifier;  // const, volatile
@@ -120,10 +129,8 @@ struct ProgramContext {
     int labelCount = 0;
     std::string endLabel = "end";
     std::vector<std::string> functionEnds;
-	std::vector<std::string> breakPoints;
-	std::vector<std::string> continuePoints;
-
-
+    std::vector<std::string> breakPoints;
+    std::vector<std::string> continuePoints;
 
     // Contextual information for Python translator
     std::unordered_set<std::string> globalVariables;

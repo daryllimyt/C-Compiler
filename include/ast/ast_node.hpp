@@ -53,7 +53,7 @@ class Node {
     virtual NodePtr getScope() const { return NULL; }
     virtual const std::string getId() const { return NULL; }
     virtual const std::string getVarType() const { return NULL; }
-    virtual const int64_t getVal() const { return NULL; }
+    virtual const int getVal() const { return NULL; }
     virtual const double getFloat() const { return NULL; }
     virtual const std::string getEllipsis() const { return NULL; }
 };

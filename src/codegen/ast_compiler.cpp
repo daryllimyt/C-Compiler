@@ -6,7 +6,7 @@ void clearRegisters(std::ostream *output);
 void functionPrologue(std::ostream *output, const int &bytes);
 void functionEpilogue(std::ostream *output, const int &bytes);
 // void updateVariableBindings(ProgramContext &context);
-void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode);
+void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode, int &left, int &right);
 int getSize(ProgramContext &context, NodePtr astNode);
 int getVariableAddressOffset(ProgramContext &context, const std::string &id);
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode);
@@ -266,6 +266,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         *output << "\t\tsw\t$t0, " << offset << ref
                                 << "\t\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
                     }
+                    context.variableBindings[id].back().intValue = context.valueContext.intValue;
                 }
                 if (astNode->getNext()) {  // Recursive or variable
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator B, recursive\n";
@@ -424,8 +425,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.breakPoints.pop_back();     //popping end
             context.continuePoints.pop_back();  //popping continue
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
-            std::string id = astNode->getLeft()->getId();        // LHS Variable ID
-            evaluateExpression(output, context, astNode);        // $t0 = LHS, $t1 = RHS
+            std::string id = astNode->getLeft()->getId();  // LHS Variable ID
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);  // $t0 = LHS, $t1 = RHS
+            result = right;
             Compile(output, context, astNode->getIdentifier());  // Evaluate result in $t0
             // x += y
             // x = x + y
@@ -433,7 +436,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             int offset = addressInfo.first;
             std::string ref = addressInfo.second;
             *output << "\t\tsw\t$t0, " << offset << ref << "\t\t\t\t# (assign expr) storing evaluated expression from $t0 to LHS variable in memory\n";
-
+            if (context.valueContext.type == "INT") {
+                context.variableBindings[id].back().intValue = result;
+            }
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
             Compile(output, context, astNode->getRight());       // Identifier - stores result in t0
             Compile(output, context, astNode->getIdentifier());  // Operator - process t0 and restore it in t0
@@ -445,90 +450,143 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             if (astNode->getId() == "*") {
                 *output << "\t\tmult\t$t0, $t1\n";
                 *output << "\t\tmflo\t$t0\n";
+                result = left * right;
             } else if (astNode->getId() == "/") {
                 *output << "\t\tdiv\t$t0, $t1\n";
                 *output << "\t\tmflo\t$t0\n";
+                result = left / right;
             } else if (astNode->getId() == "%") {
                 *output << "\t\tdiv\t$t0, $t1\n";
                 *output << "\t\tmfhi\t$t0\n";
+                result = left % right;
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
             }
         } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             if (astNode->getId() == "+") {
                 *output << "\t\tadd\t$t0, $t0, $t1 \t\t# (add node) LHS + RHS\n";
+                result = left + right;
             } else if (astNode->getId() == "-") {
                 *output << "\t\tsub\t$t0, $t0, $t1 \t\t# (add node) LHS - RHS\n";
+                result = left - right;
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             *output << "\t\tand\t$t0, $t0, $t1\n";
+            result = left & right;
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             *output << "\t\txor\t$t0, $t0, $t1\n";
+            result = left ^ right;
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             *output << "\t\tor\t$t0, $t0, $t1\n";
+            result = left | right;
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             if (astNode->getId() == "and") {
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\tsltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
                 *output << "\t\tand\t$t0, $t0, $t1\n";  //set t0 to (t0 && t1)
+                result = left && right;
             } else if (astNode->getId() == "or") {
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\tsltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
                 *output << "\t\tor\t$t0, $t0, $t1\n";   //set t0 to (t0 || t1)
+                result = left || right;
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
             *output << "\t\t"
                     << "andi\t$t0, $t0, 1\n";  // Extract bits
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             *output << "\t\tslt\t$v0, $t0, $t1\n"
                     << "\t\tslt\t$v1, $t1, $t0\n"
                     << "\t\txor\t$t0, $v0, $v1\n"
                     << "\t\tsltiu\t$t0, $t0, 1\n";
+            result = (left == right);
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "SHIFT_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             if (astNode->getId() == "<<") {
                 *output << "\t\tsll\t$t0, $t0, $t1\n";
+                result = (left << right);
             } else if (astNode->getId() == ">>") {
                 *output << "\t\tsra\t$t0, $t0, $t1\n";
+                result = (left >> right);
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
             }
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
+            }
         } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
-            evaluateExpression(output, context, astNode);
+            int left, right, result;
+            evaluateExpression(output, context, astNode, left, right);
             if (astNode->getId() == "<") {
                 *output << "\t\tslt\t$t0, $t0, $t1\n";
+                result = (left < right);
             } else if (astNode->getId() == ">") {
                 *output << "\t\tslt\t$t0, $t1, $t0\n";
+                result = (left > right);
             } else if (astNode->getId() == "<=") {
                 *output << "\t\tslt\t$t0, $t1, $t0\n"
                         << "\t\tsltiu\t$t0, $t0, 1\n";
+                result = (left <= right);
             } else if (astNode->getId() == ">=") {
                 *output << "\t\tslt\t$t0, $t0, $t1\n"
                         << "\t\tsltiu\t$t0, $t0, 1\n";
+                result = (left >= right);
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
+            }
+            if (context.valueContext.type == "INT") {
+                context.valueContext.intValue = result;
             }
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             Compile(output, context, astNode->getLeft());  //identifier
@@ -561,7 +619,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             } else {  // Coming from ASSIGNMENT_STATEMENT or FUNCTION_CALL
                 context.variableAssignmentState = "VARIABLE_DECLARATION";
                 Compile(output, context, astNode->getTypeSpecifier());
-                Compile(output, context, astNode->getStatements());
+                Compile(output, context, astNode->getStatements()); 
             }
         } else if (astNode->getType() == "RETURN") {
             if (astNode->getReturnValue()) {
@@ -651,8 +709,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "++") {
                 *output << "\t\taddi\t$t0, $t0, 1\n";
+                if (context.valueContext.type == "INT") {
+                    ++context.valueContext.intValue;
+                }
+
             } else if (astNode->getId() == "--") {
                 *output << "\t\taddi\t$t0, $t0, -1\n";
+                if (context.valueContext.type == "INT") {
+                    --context.valueContext.intValue;
+                }
             } else if (astNode->getId() == "&") {  //address
                 *output << "\t\taddi\t$t0, $0, ref\n";
                 *output << "\t\taddi\t$t0, $t0, offset\n";
@@ -660,13 +725,22 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\taddu\t$t0, $t0, $0\n";
             } else if (astNode->getId() == "-") {  //negative
                 *output << "\t\tsub\t$t0, $0, $t0\n";
+                if (context.valueContext.type == "INT") {
+                    context.valueContext.intValue = -context.valueContext.intValue;
+                }
             } else if (astNode->getId() == "~") {  //ones complement
                 *output << "\t\tli\t$t1, -1\n"
                         << "\t\txor\t$t0, $t0, $t1\n";
+                if (context.valueContext.type == "INT") {
+                    context.valueContext.intValue = ~context.valueContext.intValue;
+                }
             } else if (astNode->getId() == "!") {       //logical NOT
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\txori\t$t0, $t0, 1\n";   //inverse bits
                 *output << "\t\tandi\t$t0, $t0, 1\n";   //extract lsb
+                if (context.valueContext.type == "INT") {
+                    context.valueContext.intValue = !context.valueContext.intValue;
+                }
 
             } else {
                 throw std::runtime_error("[ERROR] Invalid operator for " + astNode->getType());
@@ -775,7 +849,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
                             << "\t\tnop\n";
 
-				 	context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
+                    context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
+                    context.valueContext.intValue = context.variableBindings[id].back().intValue;
                 } else if (type == "ARRAY") {                                                      // Reading from array
                     int addrOffset = 8 * evalArrayIndexOrSize(context, astNode->getStatements());  // Element index stored in $t0
                     int arrayBase = getVariableAddressOffset(context, id);
@@ -827,7 +902,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getVal() << "\t\t\t\t# (int const)\n";
+            context.valueContext.intValue = astNode->getVal();
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
+            *output << "\t\tli\t$t0, " << astNode->getFloat() << "\t\t\t\t# (int const)\n";
+            context.valueContext.floatValue = astNode->getVal();
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
@@ -978,16 +1056,22 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
     }
 }
 
-void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode) {
+void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode, int &left, int &right) {
     *output << "\t\taddiu\t$sp, $sp, -8 \t\t# (eval expr) Expand stack for expression evaluation\n";
-    Compile(output, context, astNode->getRight());             // identifier - RHS result are in virtual memory
+    Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
+    if (context.valueContext.type == "INT") {
+        right = context.valueContext.intValue;
+    }
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     } else {  // Normal variable
         *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
     }
-    context.variableAssignmentState = "NO_ASSIGN";             // Reading var
-    Compile(output, context, astNode->getLeft());              //expr - LHS result stored in $t0
+    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
+    Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
+    if (context.valueContext.type == "INT") {
+        left = context.valueContext.intValue;
+    }
     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
         *output << "\t\t"
                 << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
