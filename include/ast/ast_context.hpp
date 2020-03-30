@@ -117,8 +117,7 @@ struct ProgramContext {
 
     // Functions
     std::string returnType = "VOID";
-    std::vector<int> functionArgCounter;
-    std::unordered_set<std::string> functionArgs;
+    std::vector<int> functionArgs;
     std::vector<std::string> allFunctions;
     std::unordered_set<std::string> declaredFunctions;
     std::unordered_map<std::string, FunctionContext> functionBindings;
@@ -139,6 +138,7 @@ struct ProgramContext {
     std::unordered_set<std::string> globalVariables;
     std::unordered_set<std::string> allVariables;
     std::unordered_set<std::string> allFunctionsTranslator;
+    std::unordered_set<std::string> functionArgsTranslator;
 
     // Helper methods
     int getVariableIntValue(const std::string& id) {

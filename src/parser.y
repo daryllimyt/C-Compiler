@@ -87,6 +87,7 @@ FRAME
   | SCOPE FRAME                            { $$ = new Frame($1, $2); }
   | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
   | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
+<<<<<<< HEAD
   | T_ENUM T_IDENTIFIER T_L_BRACE MULTIPLE_ENUMERATORS T_R_BRACE T_SEMICOLON { $$ = new Enumeration($2, NULL, $4); }
   | T_ENUM T_IDENTIFIER T_COLON TYPE_SPECIFIER T_L_BRACE MULTIPLE_ENUMERATORS T_R_BRACE T_SEMICOLON { $$ = new Enumeration($2, $4, $6); }
 
@@ -96,6 +97,21 @@ MULTIPLE_ENUMERATORS
   : SINGLE_ENUMERATOR T_COMMA MULTIPLE_ENUMERATORS 	{ $$ = new MultipleEnumerators($1, $3); }
   | SINGLE_ENUMERATOR                    				{ $$ = new MultipleEnumerators($1, NULL); }
   ;
+=======
+  // | T_ENUM T_IDENTIFIER T_L_BRACE ENUMERATOR_LIST T_R_BRACE T_SEMICOLON { $$ = $4; }
+  ;
+
+// STRUCT_DEFINITION
+//   : T_STRUCT T_IDENTIFIER SCOPE T_SEMICOLON { $$ = new StructDefinition(*$2, $3)}
+
+// STRUCT_DECLARATION
+//   : T_IDENTIFIER T_IDENTIFIER T_SEMICOLON    { $$ = new StructObject(*$1, *$2)}
+
+// ENUMERATOR_LIST
+//   : ENUMERATOR T_COMMA ENUMERATOR { $$ = new EnumDeclarationListNode($1, $3); }
+//   | ENUMERATOR                    { $$ = new EnumDeclarationListNode($1, NULL); }
+//   ;
+>>>>>>> 3d777b4944edd2ea9dcca204432588f1c9364842
 
 SINGLE_ENUMERATOR
   : T_IDENTIFIER                                       	 { $$ = new SingleEnumerator(*$1, NULL); delete $1; }
@@ -182,7 +198,6 @@ SINGLE_CASE_STATEMENT //case x: do smth;
   ;
 
 
-// //finished here tuesday
 ITERATION_STATEMENT // while(){do smth;} || for(expr){do smth;}
   	: T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS SINGLE_STATEMENT                                             { $$ = new WhileLoop($3, $5, 0); }
  	| T_DO SINGLE_STATEMENT T_WHILE T_L_PARENTHESIS EXPRESSION T_R_PARENTHESIS T_SEMICOLON                                     { $$ = new WhileLoop($5, $2, 1); }
@@ -234,6 +249,9 @@ ASSIGNMENT_OPERATOR
  *                               Variable      Rhs(NULL)    Nextnode(NULL)
  */
 
+
+
+
 DECLARATOR //a || *a || a[1]
   : T_IDENTIFIER                                                     { $$ = new Variable(*$1, "NORMAL", NULL); delete $1; }
   | T_MULT T_IDENTIFIER                                              { $$ = new Variable(*$2, "POINTER", NULL); delete $2; }
@@ -242,6 +260,7 @@ DECLARATOR //a || *a || a[1]
 
 VARIABLE_DECLARATION //int a = 2, b = 5
   : TYPE_SPECIFIER ASSIGNMENT_STATEMENT         { $$ = new VariableDeclaration($1, $2); }
+
 
 TYPE_SPECIFIER
   : T_VOID     { $$ = new TypeSpecifier("VOID"); }
