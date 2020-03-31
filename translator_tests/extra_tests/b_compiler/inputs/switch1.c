@@ -2,9 +2,9 @@ int g(int x)
 {
     switch(x)
     {
-        case 1:
+        case 20:
             return 10;
-        case 2:
+        case 21:
             return 11;
     }
 }

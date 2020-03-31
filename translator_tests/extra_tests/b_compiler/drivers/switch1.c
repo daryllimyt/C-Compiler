@@ -4,5 +4,5 @@ int g(int x);
 int main()
 {
     int x;
-    return !( (g(1)+g(2))==21);
+    return (g(20) + g(21)-21);
 }

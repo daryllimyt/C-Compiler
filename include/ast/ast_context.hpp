@@ -184,12 +184,6 @@ struct ProgramContext {
         }
         return variableBindings[id].back().intValue;
     }
-    void setVariableIntValue(const std::string& id, const int& val) {
-        if (!variableBindings.count(id)) {
-            throw std::runtime_error("[ERROR] Unable to set intValue for undeclared variable \"" + id + "\"\n");
-        }
-        variableBindings[id].back().intValue = val;
-    }
 
     friend std::ostream& operator<<(std::ostream& out, const ProgramContext& p) {
         out << "\n[INFO] *** Program Context ***\n";
