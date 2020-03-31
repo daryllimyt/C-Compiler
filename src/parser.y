@@ -77,20 +77,22 @@ ROOT
   : FRAME       { g_root = new RootNode($1); }
 
 FRAME
-  : SCOPE                                 { $$ = $1; }
+  : SCOPE                                   { $$ = $1; }
   // | MULTIPLE_STATEMENTS                   { $$ = $1; }
-  | ENUMERATION                       { $$ = $1; }
-  | FUNCTION_DEFINITION                    { $$ = $1; }
-  | FUNCTION_DECLARATION                   { $$ = $1; }
-  | TYPE_DEF 								{ $$ = $1; }
+  | ENUMERATION                             { $$ = $1; }
+  | FUNCTION_DEFINITION                     { $$ = $1; }
+  | FUNCTION_DECLARATION                    { $$ = $1; }
+  | TYPE_DEF 								                { $$ = $1; }
   // | MULTIPLE_STATEMENTS FRAME               { $$ = new Frame($1, $2); }
+  | STRUCT_DEFINITION                       { $$ = $1; }
   | VARIABLE_DECLARATION T_SEMICOLON        { $$ = $1; }
-  | VARIABLE_DECLARATION T_SEMICOLON FRAME { $$ = new Frame($1, $3); }
-  | SCOPE FRAME                            { $$ = new Frame($1, $2); }
-  | FUNCTION_DEFINITION FRAME         { $$ = new Frame($1, $2); }
-  | FUNCTION_DECLARATION FRAME       { $$ = new Frame($1, $2); }
-  | ENUMERATION FRAME                   { $$ = new Frame($1, $2); }
-  | TYPE_DEF FRAME							{ $$ = new Frame($1, $2); }
+  | STRUCT_DEFINITION FRAME                 { $$ = new Frame($1, $2); }
+  | VARIABLE_DECLARATION T_SEMICOLON FRAME  { $$ = new Frame($1, $3); }
+  | SCOPE FRAME                             { $$ = new Frame($1, $2); }
+  | FUNCTION_DEFINITION FRAME               { $$ = new Frame($1, $2); }
+  | FUNCTION_DECLARATION FRAME              { $$ = new Frame($1, $2); }
+  | ENUMERATION FRAME                       { $$ = new Frame($1, $2); }
+  | TYPE_DEF FRAME							            { $$ = new Frame($1, $2); }
   ;
 
 FUNCTION_DECLARATION //int foo(int i, string j);
@@ -142,7 +144,8 @@ SINGLE_STATEMENT//each line inside a scope
   | ITERATION_STATEMENT   { $$ = $1; }
   | SELECTION_STATEMENT   { $$ = $1; }
   | ENUMERATION           { $$ = $1; }
-  | TYPE_DEF			  { $$ = $1; }
+  | TYPE_DEF			        { $$ = $1; }
+  | STRUCT_DEFINITION     { $$ = $1; }
   ;
 
 
@@ -270,15 +273,16 @@ TYPE_SPECIFIER
 	| T_IDENTIFIER 	{ $$ = new CustomType(*$1); delete $1;}
   ;
 
- STRUCT_DEFINITION
+STRUCT_DEFINITION
   	: T_STRUCT T_IDENTIFIER T_L_BRACE MULTIPLE_ATTRIBUTES T_R_BRACE T_SEMICOLON { $$ = new StructDefinition(*$2, $4); }
 
 MULTIPLE_ATTRIBUTES
-	: SINGLE_ATTRIBUTE MULTIPLE_ATTRIBUTES					{ $$ = new MultipleAttributes($1, $3); }
+	: SINGLE_ATTRIBUTE MULTIPLE_ATTRIBUTES					{ $$ = new MultipleAttributes($1, $2); }
 	| SINGLE_ATTRIBUTE										{ $$ = new MultipleAttributes($1, NULL); }
+  ;
 
 SINGLE_ATTRIBUTE
-	: TYPE_SPECIFIER T_IDENTIFIER T_SEMICOLON				{ $$ = new SingleAttribute(*$1, $2);}
+	: TYPE_SPECIFIER T_IDENTIFIER T_SEMICOLON				{ $$ = new SingleAttribute($1, *$2);}
 
 
 ASSIGNMENT_STATEMENT //a = 2, b = 5 || a = b || a = b = c = 9 || a

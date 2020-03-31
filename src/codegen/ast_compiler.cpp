@@ -733,15 +733,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             context.typeSpecifier = "UNSIGNED";
         } else if (astNode->getType() == "CUSTOM_TYPE") {
             std::string typeName = astNode->getId();
-            if (!context.enumerationBindings.count(typeName)) {
-                throw std::runtime_error("[ERROR] Invalid enumeration type \""+typeName+"\"");
+            if (!context.typeDefs.count(typeName) &&
+                !context.enumerationBindings.count(typeName)) {
+                throw std::runtime_error("[ERROR] Invalid custom type \"" + typeName + "\"");
             }
             context.typeSpecifier = typeName;
 
         } else if (astNode->getType() == "TYPE_DEF") {
             std::string typeName = astNode->getId();
-			context.typeDefs[typeName] = astNode->getTypeSpecifier();
-			context.allTypeDefs.push_back(typeName);
+            context.typeDefs[typeName] = astNode->getTypeSpecifier();
+            context.allTypeDefs.push_back(typeName);
         } else if (astNode->getType() == "ASSIGNMENT_OPERATOR") {
             // $t0 = LHS, $t1 = RHS
             if (astNode->getId() == "*=") {
@@ -904,8 +905,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
                 }
 
-            } else if (context.variableAssignmentState == "NO_ASSIGN") {  // Reading from existing variable
-                if (!context.variableBindings.count(id) && type != "ENUMERATOR") {            // Varibale does not exist
+            } else if (context.variableAssignmentState == "NO_ASSIGN") {            // Reading from existing variable
+                if (!context.variableBindings.count(id) && type != "ENUMERATOR") {  // Varibale does not exist
                     throw std::runtime_error("[ERROR] Attempted read from undeclaraed " + type + " \"" + id + "\"\n");
                 }
                 if (type == "NORMAL") {
@@ -915,7 +916,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             << "\t\tnop\n";
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
-                } else if (type == "ARRAY") {  // Reading from array
+                } else if (type == "ARRAY") {                              // Reading from array
                     Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
                     int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
                     *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) read - scale array index offset to multiplier, save to $t2\n";
@@ -941,7 +942,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int enumFrame = context.enumerationBindings[typeSpecifier].frame;
                     // Not current frame or global frame
                     if (enumFrame != context.frameIndex && enumFrame != 0) {
-                        throw std::runtime_error("[ERROR] Enumerator \""+id+"\" not declared in this frame");
+                        throw std::runtime_error("[ERROR] Enumerator \"" + id + "\" not declared in this frame");
                     }
                     *output << "\t\tli\t$t0, " << value << "\t\t# (var: enum) Read\n";
                 } else {
@@ -1011,19 +1012,19 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "SINGLE_ENUMERATOR") {
             std::string id = context.identifier = astNode->getId();
-            std::string typeSpecifier = context.allEnumerations.back(); // most recent enumeration
-            if (context.enumerationBindings[typeSpecifier].elements.count(id)) { 
-                throw std::runtime_error("[ERROR] Enumerator \""+id+"\" already declared in enum type \""+typeSpecifier+"\"");
+            std::string typeSpecifier = context.allEnumerations.back();  // most recent enumeration
+            if (context.enumerationBindings[typeSpecifier].elements.count(id)) {
+                throw std::runtime_error("[ERROR] Enumerator \"" + id + "\" already declared in enum type \"" + typeSpecifier + "\"");
             }
             if (astNode->getStatements()) {  // Math or bitwise, for assignment
                 // Calculate const expression
                 context.enumerationBindings[typeSpecifier].val = evalArrayIndexOrSize(context, astNode->getStatements());
                 context.enumerationBindings[typeSpecifier].elements[id] = context.enumerationBindings[typeSpecifier].val;
                 context.allEnumerators[id] = std::make_pair(context.enumerationBindings[typeSpecifier].val, typeSpecifier);
-            } else {    
+            } else {
                 context.enumerationBindings[typeSpecifier].elements[id] = context.enumerationBindings[typeSpecifier].val;
                 context.allEnumerators[id] = std::make_pair(context.enumerationBindings[typeSpecifier].val, typeSpecifier);
-                context.enumerationBindings[typeSpecifier].val++; // Increment running count
+                context.enumerationBindings[typeSpecifier].val++;  // Increment running count
             }
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
@@ -1136,7 +1137,7 @@ int getVariableAddressOffset(ProgramContext &context, const std::string &id) {
                     }
                 }
             }
-            if (!found) throw std::runtime_error("[ERROR] Variable \""+id+"\" has not been declared locally or globally\n");
+            if (!found) throw std::runtime_error("[ERROR] Variable \"" + id + "\" has not been declared locally or globally\n");
             return offset;
         }
     } catch (const std::exception &e) {
