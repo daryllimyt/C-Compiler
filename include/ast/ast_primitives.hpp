@@ -217,7 +217,7 @@ class StructDeclaration: public Node {
 
    public:
     StructDeclaration(NodePtr typeSpecifier, const std::string& id) {
-        type_ = "STRUCT_DEFINITION";
+        type_ = "STRUCT_DECLARATION";
         id_ = id;
         typeSpecifier_ = typeSpecifier;
     }

@@ -73,6 +73,14 @@ struct StructContext {
     int bytes = 0;
 	// std::unordered_map<std::string, NodePtr> attributes;
     std::unordered_map<std::string, VariableContext> attributes;
+    friend std::ostream& operator<<(std::ostream& out, const StructContext& f) {
+        out << "{frame: " << f.frame << ", scope: " << f.scope << ", bytes: " << f.bytes << ", attributes: { ";
+        for (auto& it : f.attributes) {
+            out << it.first << "->" << it.second << ", ";
+        }
+        out << "}";
+        return out;
+    }
 };
 
 
@@ -244,9 +252,19 @@ struct ProgramContext {
         out << "[INFO] * allEnumerations: ";
         printIterable(out, p.allEnumerations);
         out << "\n";
-        out << "[INFO] * allEnumerators: ";
+        out << "[INFO] * allEnumerators: \n";
         for (auto& it : p.allEnumerators) {
             out << "[INFO] | {" << it.first << "->(" << it.second.first << ", "<<it.second.second << ") }\n";
+        }
+        out << "\n";
+        out << "[INFO] structBindings: \n";
+        for (auto& it : p.structBindings) {
+            out << "[INFO] | {" << it.first << "->(" << it.second << ") }\n";
+        }
+        out << "\n";
+        out << "[INFO] declaredStructs: \n";
+        for (auto& it : p.declaredStructs) {
+            out << "[INFO] | {" << it.first << "->(" << it.second << ") }\n";
         }
         out << "\n";
         // Contextual information for Python translator

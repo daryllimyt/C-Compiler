@@ -275,14 +275,13 @@ TYPE_SPECIFIER
   ;
 
 STRUCT_DEFINITION
-  	: T_STRUCT T_IDENTIFIER T_L_BRACE MULTIPLE_ATTRIBUTES T_R_BRACE T_SEMICOLON { $$ = new StructDefinition(*$2, $4); delete $2; }
+  	: T_STRUCT T_IDENTIFIER T_L_BRACE MULTIPLE_ATTRIBUTES T_R_BRACE T_SEMICOLON { $$ = new StructDefinition(*$2, $4);}
 
 STRUCT_DECLARATION
-  	: T_STRUCT TYPE_SPECIFIER T_IDENTIFIER T_SEMICOLON { $$ = new StructDeclaration($2, *$3); delete $3; }
+  	: T_STRUCT TYPE_SPECIFIER T_IDENTIFIER T_SEMICOLON { $$ = new StructDeclaration($2, *$3);}
 
 STRUCT_ATTRIBUTE
     : T_IDENTIFIER T_DOT T_IDENTIFIER { $$ = new StructAttribute(*$1, *$3); delete $1;delete $3; }
-
 
 MULTIPLE_ATTRIBUTES
 	: SINGLE_ATTRIBUTE MULTIPLE_ATTRIBUTES					{ $$ = new MultipleAttributes($1, $2); }

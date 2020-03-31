@@ -5,7 +5,7 @@
 
 class Util {
    public:
-   static const bool hehe = true;
+   static const bool hehe = false;
     static const bool qemu = true;
     static const bool debug = hehe;
     static const bool viewStartTags = hehe;
