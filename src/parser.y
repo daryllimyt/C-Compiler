@@ -33,9 +33,9 @@ STRUCT_DECLARATION STRUCT_ATTRIBUTE
 
 
 %type <string> T_IDENTIFIER
-%type <integer_constant> T_INT_CONST
+%type <integer_constant> T_INT_CONST 
 %type <float_constant> T_FLOAT_CONST
-%type <string> T_CHAR_CONST T_STRING_CONST
+%type <string> T_STRING_CONST T_CHAR_CONST
 
 //general
 %token T_AUTO T_BREAK T_CASE T_CHAR T_CONST T_CONTINUE T_DEFAULT T_DO T_DOUBLE
@@ -301,7 +301,7 @@ PRIMARY_EXPRESSION //a || 1 || a+1
   | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
   | T_CHAR_CONST							{ $$ = new CharConstant( *$1 ); delete $1;}
   | T_FLOAT_CONST                         { $$ = new FloatConstant( $1 ); }
-  // | T_CHARACTER_CONSTANT
+  | T_CHAR_CONST                        { $$ = new CharConstant( *$1 ); }
   | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }
   | T_L_PARENTHESIS MATH_OR_BITWISE_EXPRESSION T_R_PARENTHESIS  { $$ = new ParenthesisWrapper($2); }
   | DECLARATOR WRAPPED_PARAMETERS  { $$ = new FunctionCall($1, $2); }

@@ -24,7 +24,7 @@ g:
 		sw	$s7, 44($sp)
 		move	$fp, $sp 		# $fp is at the start of the variable section
 		addiu	$sp, $sp, 0	# Move $sp to end of variable section before function call
-		li	$t0, 33906469				# (int const)
+		li	$t0, 104				# (char const)
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	g_end_0
 		nop
