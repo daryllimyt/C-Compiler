@@ -197,7 +197,7 @@ class StructDefinition : public Node {
     NodePtr statements_;
 
    public:
-    StructDefinition(std::string id, NodePtr statements) {
+    StructDefinition(const std::string& id, NodePtr statements) {
         type_ = "STRUCT_DEFINITION";
         id_ = id;
         statements_ = statements;
@@ -207,6 +207,25 @@ class StructDefinition : public Node {
     }
     NodePtr getStatements() const {
         return statements_;
+    }
+};
+
+class StructDeclaration: public Node {
+   protected:
+    std::string id_;
+    NodePtr typeSpecifier_;
+
+   public:
+    StructDeclaration(NodePtr typeSpecifier, const std::string& id) {
+        type_ = "STRUCT_DEFINITION";
+        id_ = id;
+        typeSpecifier_ = typeSpecifier;
+    }
+    const std::string getId() const {
+        return id_;
+    }
+    NodePtr getTypeSpecifier() const {
+        return typeSpecifier_;
     }
 };
 
@@ -247,5 +266,26 @@ class SingleAttribute : public Node {
         return id_;
     }
 };
+
+class StructAttribute : public Node {
+   protected:
+    std::string structName_;
+    std::string attribute_;
+
+   public:
+    StructAttribute(const std::string &structName, const std::string &attribute) {
+        type_ = "STRUCT_ATTRIBUTE";
+        structName_ = structName;
+        attribute_ = attribute;
+    }
+    const std::string getAttribute() const { // swapped these for overloads
+        return attribute_;
+    }
+    const std::string getId() const {
+        return structName_;
+    }
+};
+
+
 
 #endif

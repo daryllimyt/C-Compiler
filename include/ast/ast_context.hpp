@@ -70,8 +70,9 @@ struct EnumContext {
 struct StructContext {
 	int frame;
 	int scope;
-	std::unordered_map<std::string, NodePtr> attributes;
-
+    int bytes = 0;
+	// std::unordered_map<std::string, NodePtr> attributes;
+    std::unordered_map<std::string, VariableContext> attributes;
 };
 
 
@@ -166,8 +167,11 @@ struct ProgramContext {
 	std::vector<std::string> allTypeDefs;
 
 	//structs
-	std::unordered_map<std::string, StructContext> structs;
-	std::vector<std::string> allStructs;
+    std::string attribute = "";
+	std::unordered_map<std::string, StructContext> structBindings; // Mapping structs to attributes structType: structcontext
+	std::unordered_map<std::string, std::string> declaredStructs; // Mapping struct objects to contexts structId:structtype
+	std::vector<std::string> allStructTypes; // Tracks all struct names
+
 
 
     // Contextual information for Python translator

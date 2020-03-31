@@ -55,7 +55,7 @@ class Node {
     virtual const std::string getVarType() const { return NULL; }
     virtual const int getVal() const { return NULL; }
     virtual const double getFloat() const { return NULL; }
-    virtual const std::string getEllipsis() const { return NULL; }
+    virtual const std::string getAttribute() const { return NULL; }
 };
 
 class RootNode : public Node {

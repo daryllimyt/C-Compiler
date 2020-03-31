@@ -263,11 +263,16 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         throw std::runtime_error("Enumerator not declared");
                     }
                     std::string idLeft = context.identifier;
+                    std::string typeLeft;
+                    std::string attributeId = context.attribute;
+                    if (context.identifier == "STRUCT_ATTRIBUTE") {  // Struct
+                        typeLeft = "STRUCT_ATTRIBUTE";
+                    } else {
+                        typeLeft = context.variableBindings[idLeft].back().varType;  // normal/ptr/array
+                    }
                     int offsetLeft = getVariableAddressOffset(context, idLeft);  // Previous id
                     std::string refLeft = getReferenceRegister(context, idLeft);
-                    std::string typeLeft = context.variableBindings[idLeft].back().varType;  // normal/ptr/array
                     context.variableAssignmentState = "NO_ASSIGN";
-
                     if (typeLeft == "ARRAY") {                                      // LHS array, offset was stored in $t2
                         int arrayBase = getVariableAddressOffset(context, idLeft);  // Negative offset from $fp, first element of array
                         std::string tempRef = getReferenceRegister(context, idLeft);
@@ -277,6 +282,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                         Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                         *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) Storing into array \"" << idLeft << "\" at base offset " << arrayBase << "\n";
+                    } else if (typeLeft == "STRUCT_ATTRIBUTE") {
+                        Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
+                        std::string structType = context.declaredStructs[idLeft];
+                        int attributeOffset = context.structBindings[structType].attributes[attributeId].addressOffset;
+                        offsetLeft += attributeOffset;
+                        *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (struct: attribute) Writing to struct \"" << idLeft
+                                << "\" , attribute \"" << attributeId << "\" of struct type \"" << structType << "\"\n"
+                                << "\t\tnop\n";
+
                     } else {                                                 // LHS Normal variable
                         Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                         *output << "\t\tsw\t$t0, " << offsetLeft << refLeft << "\t\t\t# (assign) store recursive assign\n";
@@ -288,23 +302,40 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 if (context.variableAssignmentState != "VARIABLE_DECLARATION") {
                     context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 }
-                std::string id = astNode->getIdentifier()->getId();
-                Compile(output, context, astNode->getIdentifier());  // Set LHS in context. If array, the scaled offset is stored in $t2
-                context.identifier = id;
-                int offset = getVariableAddressOffset(context, id);              // LHS info
-                std::string ref = getReferenceRegister(context, id);             // LHS info
-                std::string type = context.variableBindings[id].back().varType;  // normal/ptr/array
+                std::string id, type, attributeId;
+                if (astNode->getIdentifier()->getType() == "STRUCT_ATTRIBUTE") {  // Struct
+                    Compile(output, context, astNode->getIdentifier());           // Set struct in context
+                    id = context.identifier;                                      // Struct Id
+                    attributeId = context.attribute;
+                    type = "STRUCT_ATTRIBUTE";
+                } else {
+                    id = astNode->getIdentifier()->getId();
+                    Compile(output, context, astNode->getIdentifier());  // Set LHS in context. If array, the scaled offset is stored in $t2
+                    context.identifier = id;                             // for arrays potentially overwritten
+                    type = context.variableBindings[id].back().varType;  // normal/ptr/array
+                }
+
                 context.variableAssignmentState = "ASSIGNMENT_STATEMENT";
                 if (astNode->getStatements()) {  // Math or bitwise
                     if (context.enumerationBindings.count(context.typeSpecifier)) {
                         throw std::runtime_error("enumerationBindings cannot be assigned directly");
                     }
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
-                    Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
+                    int offset = getVariableAddressOffset(context, id);   // LHS info
+                    std::string ref = getReferenceRegister(context, id);  // LHS info
+                    Compile(output, context, astNode->getStatements());   // output -> $v0 (function) / $t0 (var)
                     // Result state
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
                                 << "\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                    } else if (type == "STRUCT_ATTRIBUTE") {
+                        std::string structType = context.declaredStructs[id];
+                        int attributeOffset = context.structBindings[structType].attributes[attributeId].addressOffset;
+                        offset += attributeOffset;
+                        *output << "\t\tsw\t$t0, " << offset << ref << "\t\t\t# (struct: attribute) Writing to struct \"" << id
+                                << "\" , attribute \"" << attributeId << "\" of struct type \"" << structType << "\"\n"
+                                << "\t\tnop\n";
+
                     } else if (type == "ARRAY") {  // LHS is array
                         std::string ref2 = ref.substr(1, 3);
                         *output << "\t\tmove\t $t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
@@ -736,7 +767,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string typeName = astNode->getId();
             if (!context.typeDefs.count(typeName) &&
                 !context.enumerationBindings.count(typeName) &&
-				!context.structs.count(typeName)) {
+                !context.structBindings.count(typeName)) {
                 throw std::runtime_error("[ERROR] Invalid custom type \"" + typeName + "\"");
             }
             context.typeSpecifier = typeName;
@@ -816,10 +847,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string type = astNode->getVarType();  // Normal, array, pointer
             if (context.allEnumerators.count(id)) {
                 type = "ENUMERATOR";
-            } else if ( context.structs.count(id)){
-				type = "STRUCT";
-			}
-
+            }
             if (Util::debug) std::cerr << "[DEBUG] VAR_NODE id: " << id << ". type: " << type << ", state: " << context.variableAssignmentState << "\n";
             if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
                 if (type == "NORMAL") {
@@ -870,56 +898,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                     context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
-                } else if (type == "STRUCT") {
-                    int index = context.frameIndex;
-                    if (context.scope == 0) {
-                        index = 0;  // For global variables
-                    }
-                    int structBytes = multiplier * context.structs[id].attributes.size();
-                    VariableContext newVariable;
-                    // Array base offset is at the bottom of the array block in memory
-                    newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
-                    newVariable.varType = type;
-                    newVariable.size = structBytes;
-                    newVariable.scope = context.scope;
-                    newVariable.frame = context.frameIndex;
-                    newVariable.typeSpecifier = context.typeSpecifier;
-                    context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
-                    context.frameTracker[index].variableBytes += structBytes;  // Increment number of variables in frame
                 } else if (type == "POINTER") {
-                    // int index = context.frameIndex;
-                    // if (context.variableBindings.count(id) == 0) {  // Non-shadowing
-                    //     if (context.scope == 0) {
-                    //         index = 0;  // For global variables
-                    //     }
-                    //     context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
-                    //     // context.frameTracker[index].addVariable(id);  // Track variable id
-                    //     VariableContext newVariable;
-                    //     newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
-                    //     newVariable.varType = type;
-                    //     newVariable.size = 8;
-                    //     newVariable.scope = context.scope;
-                    //     newVariable.frame = context.frameIndex;
-                    //     newVariable.typeSpecifier = context.typeSpecifier;
-                    //     context.variableBindings[id].push_back(newVariable);  // Append context to associated variable in map
-
-                    // } else {                                                        // shadowing
-                    //     int lastScope = context.variableBindings[id].back().scope;  // check if variable has been declared in this scope
-                    //     int lastFrame = context.variableBindings[id].back().frame;  // check if variable has been declared in this frame
-                    //     if (lastScope == context.scope && lastFrame == context.frameIndex) {
-                    //         throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
-                    //     }
-                    //     context.frameTracker[index].variableBytes += 8;  // Increment size of variable block in frame
-                    //     // context.frameTracker[index].addVariable(id);  // Track variable id
-                    //     VariableContext newVariable;
-                    //     newVariable.addressOffset = context.frameTracker[index].totalBytes - context.frameTracker[index].variableBytes;  // Get next available memory address after vars
-                    //     newVariable.varType = type;
-                    //     newVariable.size = 8;
-                    //     newVariable.scope = context.scope;
-                    //     newVariable.frame = context.frameIndex;
-                    //     newVariable.typeSpecifier = context.typeSpecifier;
-                    //     context.variableBindings[id].push_back(newVariable);  // Append context to associated variiable in map
-                    // }
                 } else {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
                 }
@@ -932,8 +911,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int addrOffset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
-                                << "\t\tnop\n";
-
+                            << "\t\tnop\n";
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
                 } else if (type == "ARRAY") {                              // Reading from array
@@ -1009,7 +987,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getVal() << "\t\t\t\t# (int const)\n";
-            if(Util::debug) std::cerr << "[DEBUG] INTEGER_CONSTANT: " << astNode->getVal() << "\n";
+            if (Util::debug) std::cerr << "[DEBUG] INTEGER_CONSTANT: " << astNode->getVal() << "\n";
             context.valueContext.intValue = astNode->getVal();
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getFloat() << "\t\t\t\t# (int const)\n";
@@ -1047,33 +1025,89 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.allEnumerators[id] = std::make_pair(context.enumerationBindings[typeSpecifier].val, typeSpecifier);
                 context.enumerationBindings[typeSpecifier].val++;  // Increment running count
             }
+        } else if (astNode->getType() == "STRUCT_DECLARATION") {
+            Compile(output, context, astNode->getTypeSpecifier());  // sets typename in context.typespec
+            std::string structId = astNode->getId();                // Stuct id
+            std::string structType = context.typeSpecifier;         // Struct type
+            int index = context.frameIndex;
+            if (context.scope == 0) {
+                index = 0;  // For global variables
+            }
+            int structBytes = context.structBindings[structType].bytes;
+            VariableContext newVariable;
+            // Array base offset is at the bottom of the array block in memory
+            newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+            newVariable.varType = "STRUCT";
+            newVariable.size = structBytes;
+            newVariable.scope = context.scope;
+            newVariable.frame = context.frameIndex;
+            newVariable.typeSpecifier = structType;
+            context.declaredStructs[structId] = structType;
+            context.variableBindings[structId].push_back(newVariable);  // Add struct variable to pool of variables
+            context.frameTracker[index].variableBytes += structBytes;   // Increment number of variables in frame
+
         } else if (astNode->getType() == "STRUCT_DEFINITION") {
+            std::string structType = astNode->getId();  // This is the base type
+            StructContext newStruct;
+            newStruct.frame = context.frameIndex;
+            newStruct.scope = context.scope;
+            newStruct.bytes = 0;
+            context.typeSpecifier = structType;
+            context.structBindings[structType] = newStruct;
+            context.allStructTypes.push_back(structType);
+            context.virtualRegisters = 0;  // Used to allocate offsets for stuct attributes
+            Compile(output, context, astNode->getStatements());
+            context.virtualRegisters = 0;                          // Reset
+        } else if (astNode->getType() == "MULTIPLE_ATTRIBUTES") {  // For definition
+            Compile(output, context, astNode->getStatements());
+            if (astNode->getNext()) {
+                Compile(output, context, astNode->getNext());
+            }
+        } else if (astNode->getType() == "SINGLE_ATTRIBUTE") {  // For definition
+            // Treat this like variables
 
-	        std::string id = astNode->getId();
-	        StructContext newStruct;
-	        newStruct.frame = context.frameIndex;
-	        newStruct.scope = context.scope;
-	        context.structs[id] = newStruct;
-	        context.allStructs.push_back(id);
-	        Compile(output, context, astNode->getStatements());
+            std::string attributeId = astNode->getId();
+            std::string structType = context.typeSpecifier;
 
-        } else if (astNode->getType() == "MULTIPLE_ATTRIBUTES") {
+            // if (!context.structBindings[structName].attributes.count(id)) {  // if not in
+            //     context.structBindings[structName].attributes[id] = astNode->getTypeSpecifier();
+            // } else {
+            //     throw std::runtime_error("[ERROR] Attribute \"" + id + "\" already declared.");
+            // }
+            VariableContext newAttribute;
+            newAttribute.addressOffset = -context.structBindings[structType].bytes;  // Get next available memory address after vars
+            newAttribute.varType = "STRUCT_ATTRIBUTE";
+            newAttribute.size = multiplier;
+            newAttribute.scope = context.scope;
+            newAttribute.frame = context.frameIndex;
+            newAttribute.typeSpecifier = structType;
+            // Add attribute to bindings
+            context.structBindings[structType].attributes[attributeId] = newAttribute;
+            context.structBindings[structType].bytes += newAttribute.size;
+        } else if (astNode->getType() == "STRUCT_ATTRIBUTE") {  // Equivalent of variable node
+            // structName.id
+            std::string attributeId = astNode->getAttribute();  // vartype returns the attribute id
+            std::string structId = astNode->getId();            // id returns struct id
+            if (!context.declaredStructs.count(structId)) {     // Not bound
+                throw std::runtime_error("[ERROR] Variable not bound as struct");
+            }
+            std::string structType = context.declaredStructs[structId];
+            if (context.variableAssignmentState == "NO_ASSIGN") {  // Reading from attribute
+                // Check if struct is defined
+                std::string ref = getReferenceRegister(context, structId);
+                // Get address offset of the struct
+                int structBase = getVariableAddressOffset(context, structId);  // Negative offset from $fp, first element of array
+                // Get address offset of the attribute
+                int attributeOffset = context.structBindings[structType].attributes[attributeId].addressOffset;
+                int offset = structBase + attributeOffset;
+                *output << "\t\tlw\t$t0, " << offset << ref << "\t\t\t# (struct: attribute) Reading from struct \"" << structId
+                        << "\" , attribute \"" << attributeId << "\" of struct type \"" << structType << "\"\n"
+                        << "\t\tnop\n";
 
-	        Compile(output, context, astNode->getStatements());
-
-			if(astNode->getNext()){
-				Compile(output, context, astNode->getNext());
-			}
-
-        } else if (astNode->getType() == "SINGLE_ATTRIBUTE") {
-
-			std::string id = astNode->getId();
-
-			if(!context.structs[context.allStructs.back()].attributes.count(id)){
-				context.structs[context.allStructs.back()].attributes[id] = astNode->getTypeSpecifier();
-			} else {
-				throw std::runtime_error("[ERROR] Attribute \"" + id + "\" already declared.");
-			}
+            } else if (context.variableAssignmentState == "ASSIGNMENT_STATEMENT") {  // Writing to
+                context.identifier = structId;
+                context.attribute = attributeId;
+            }
 
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
