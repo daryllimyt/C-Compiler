@@ -8,7 +8,6 @@
 #include <iostream>
 
 
-// Avoid error "error: `fileno' was not declared in this scope"
 extern "C" int fileno(FILE *stream);
 int line_number = 1; // for debugging
 
