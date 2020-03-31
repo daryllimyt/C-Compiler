@@ -734,7 +734,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "CUSTOM_TYPE") {
             std::string typeName = astNode->getId();
             if (!context.typeDefs.count(typeName) &&
-                !context.enumerationBindings.count(typeName)) {
+                !context.enumerationBindings.count(typeName) &&
+				!context.structs.count(typeName)) {
                 throw std::runtime_error("[ERROR] Invalid custom type \"" + typeName + "\"");
             }
             context.typeSpecifier = typeName;
@@ -814,7 +815,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             std::string type = astNode->getVarType();  // Normal, array, pointer
             if (context.allEnumerators.count(id)) {
                 type = "ENUMERATOR";
-            }
+            } else if ( context.structs.count(id)){
+				type = "STRUCT";
+			}
 
             if (Util::debug) std::cerr << "[DEBUG] VAR_NODE id: " << id << ". type: " << type << ", state: " << context.variableAssignmentState << "\n";
             if (context.variableAssignmentState == "VARIABLE_DECLARATION") {  // Declaring new variable
@@ -867,6 +870,22 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                     context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
+                } else if (type == "STRUCT") {
+                    int index = context.frameIndex;
+                    if (context.scope == 0) {
+                        index = 0;  // For global variables
+                    }
+                    int structBytes = multiplier * context.structs[id].attributes.size();
+                    VariableContext newVariable;
+                    // Array base offset is at the bottom of the array block in memory
+                    newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                    newVariable.varType = type;
+                    newVariable.size = structBytes;
+                    newVariable.scope = context.scope;
+                    newVariable.frame = context.frameIndex;
+                    newVariable.typeSpecifier = context.typeSpecifier;
+                    context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
+                    context.frameTracker[index].variableBytes += structBytes;  // Increment number of variables in frame
                 } else if (type == "POINTER") {
                     // int index = context.frameIndex;
                     // if (context.variableBindings.count(id) == 0) {  // Non-shadowing
@@ -1027,6 +1046,32 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 context.enumerationBindings[typeSpecifier].val++;  // Increment running count
             }
         } else if (astNode->getType() == "STRUCT_DEFINITION") {
+
+	        std::string id = astNode->getId();
+	        StructContext newStruct;
+	        newStruct.frame = context.frameIndex;
+	        newStruct.scope = context.scope;
+	        context.structs[id] = newStruct;
+	        context.allStructs.push_back(id);
+	        Compile(output, context, astNode->getStatements());
+
+        } else if (astNode->getType() == "MULTIPLE_ATTRIBUTES") {
+
+	        Compile(output, context, astNode->getStatements());
+
+			if(astNode->getNext()){
+				Compile(output, context, astNode->getNext());
+			}
+
+        } else if (astNode->getType() == "SINGLE_ATTRIBUTE") {
+
+			std::string id = astNode->getId();
+
+			if(!context.structs[context.allStructs.back()].attributes.count(id)){
+				context.structs[context.allStructs.back()].attributes[id] = astNode->getTypeSpecifier();
+			} else {
+				throw std::runtime_error("[ERROR] Attribute \"" + id + "\" already declared.");
+			}
 
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");

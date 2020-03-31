@@ -166,7 +166,7 @@ struct ProgramContext {
 	std::vector<std::string> allTypeDefs;
 
 	//structs
-	std::unordered_map<std::string, Context> structs;
+	std::unordered_map<std::string, StructContext> structs;
 	std::vector<std::string> allStructs;
 
 
