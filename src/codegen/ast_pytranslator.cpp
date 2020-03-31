@@ -120,9 +120,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                 }
             }
         } else if (astNode->getType() == "WHILE_LOOP") {
-			if(astNode->getVal() == 1){ // its a do while loop so do one extra iteration before checking conditions
-				PyTranslate(output, context, astNode->getNext());  //scope
-			}
+            if (astNode->getVal() == 1) {                          // its a do while loop so do one extra iteration before checking conditions
+                PyTranslate(output, context, astNode->getNext());  //scope
+            }
             context.variableAssignmentState = "WHILE_LOOP";
             *output << "while ";
             PyTranslate(output, context, astNode->getCondition());  //condition
@@ -155,6 +155,9 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
             PyTranslate(output, context, astNode->getRight());
 
         } else if (astNode->getType() == "UNARY_EXPRESSION") {
+            if (!astNode->getRight()->getVal()) {
+                context.identifier = astNode->getRight()->getId();
+            } 
             PyTranslate(output, context, astNode->getIdentifier());
             PyTranslate(output, context, astNode->getRight());
 
@@ -173,7 +176,11 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
 
         } else if (astNode->getType() == "POSTFIX_EXPRESSION") {
             PyTranslate(output, context, astNode->getLeft());  //identifier
-            *output << astNode->getId();                       //operator
+            if (astNode->getId() == "++") {
+                *output << "+=1\n";  //operator
+            } else if (astNode->getId() == "--") {
+                *output << "-=1\n";  //operator
+            }
 
         } else if (astNode->getType() == "SCOPE") {
             // If not directly from either of the below states
@@ -193,8 +200,8 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
         } else if (astNode->getType() == "VARIABLE_DECLARATION") {
             std::string prevState = context.variableAssignmentState;
             context.variableAssignmentState = "VARIABLE_DECLARATION";
-            PyTranslate(output, context, astNode->getStatements()); // Assignment statement
-            if (prevState == "GLOBAL") {  // If not within a function definition
+            PyTranslate(output, context, astNode->getStatements());  // Assignment statement
+            if (prevState == "GLOBAL") {                             // If not within a function definition
                 *output << "\n";
             }
 
@@ -223,6 +230,10 @@ int32_t PyTranslate(std::ostream *output, ProgramContext &context, NodePtr astNo
                    astNode->getType() == "UNARY_OPERATOR") {
             if (astNode->getId() == "!") {
                 *output << " not ";
+            } else if (astNode->getId() == "++") {
+                *output << context.identifier << "=1+";
+            } else if (astNode->getId() == "--") {
+                *output << context.identifier << "=-1+";
             } else {
                 *output << " " << astNode->getId() << " ";
             }

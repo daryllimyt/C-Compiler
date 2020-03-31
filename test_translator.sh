@@ -23,6 +23,7 @@ else
     # - CRLF
 fi
 
+make all
 
 PASSED=0
 CHECKED=0
@@ -41,7 +42,6 @@ if [[ ! -f bin/c_compiler ]] ; then
     >&2 echo "[WARNING] Cannot find compiler at path ${compiler}. Only checking C reference against python reference."
     have_compiler=1
 fi
-
 input_dir="translator_tests/extra_tests/translator/inputs"
 out_dir="translator_tests/extra_tests/translator/outputs"
 ref_dir="translator_tests/extra_tests/translator/reference"
