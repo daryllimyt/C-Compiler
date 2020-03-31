@@ -59,6 +59,14 @@ struct EnumContext {
 
 };
 
+struct StructContext {
+	int frame;
+	int scope;
+	std::unordered_map<std::string, NodePtr> attributes;
+
+};
+
+
 
 struct FunctionContext {
     int frame;                  // Frame associated to function
@@ -148,6 +156,10 @@ struct ProgramContext {
 	//typedefs
 	std::unordered_map<std::string, NodePtr> typeDefs;
 	std::vector<std::string> allTypeDefs;
+
+	//structs
+	std::unordered_map<std::string, Context> structs;
+	std::vector<std::string> allStructs;
 
 
     // Contextual information for Python translator

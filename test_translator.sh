@@ -50,24 +50,24 @@ mkdir -p ${out_dir}
 
 for i in ${input_dir}/*.c ; do
     base=$(echo $i | sed -E -e "s|${input_dir}/([^.]+)[.]c|\1|g");
-    
+
     echo "============================"
     echo "          TEST $base        "
     echo "============================"
 
     # Compile the reference C version
     gcc $i -o $out_dir/$base
-    
+
     # Run the reference C version
     $out_dir/$base
     REF_C_OUT=$?
-    
+
     # Run the reference python version
     python3 ${ref_dir}/$base.py
     REF_P_OUT=$?
-    
+
     if [[ ${have_compiler} -eq 0 ]] ; then
-        
+
         # Create the DUT python version by invoking the compiler with translation flags
         $compiler --translate $i -o ${out_dir}/$base-got.py
 
@@ -75,7 +75,7 @@ for i in ${input_dir}/*.c ; do
         python3 ${out_dir}/$base-got.py # CHANGED THIS LINE FROM "python" to "python3" to work in Vagrant VM
         GOT_P_OUT=$?
     fi
-    
+
     if [[ $REF_C_OUT -ne $REF_P_OUT ]] ; then
         echo "[TEST] $base, REF_FAIL, Expected ${REF_C_OUT}, got ${REF_P_OUT}"
 
@@ -110,4 +110,4 @@ echo "[INFO] Failed cases:"
 for case in "${FAILARRAY[*]}"
 do
    echo $FAILARRAY[${case}]
-done 
+done

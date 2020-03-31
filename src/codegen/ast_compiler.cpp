@@ -1045,6 +1045,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 *output << "\t\tsw\t$t0, " << offset << ref
                         << "\t\t# (assign) store var result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\n";
             }
+        } else if (astNode->getType() == "STRUCT_DEFINITION") {
+
         } else {
             throw std::runtime_error("[ERROR] Unknown astNode of type " + astNode->getType() + "\n");
         }
