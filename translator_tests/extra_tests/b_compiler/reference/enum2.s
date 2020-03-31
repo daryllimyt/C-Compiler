@@ -1,8 +1,4 @@
 .text
-		li	$t0, 13				# (int const)
-		sw	$t0, 0($gp)		# (assign) store var result in NORMAL variable "vv
-		li	$t0, 10				# (int const)
-		sw	$t0, -4($gp)		# (assign) store var result in NORMAL variable "yy
 
 .set noreorder
 .text
@@ -21,11 +17,9 @@ g:
 		move	$fp, $sp 		# $fp is at the start of the variable section
 		addiu	$sp, $sp, -8	# Move $sp to end of variable section before function call
 		addiu	$sp, $sp, -4 		# (eval expr) Expand stack for expression evaluation
-		lw	$t0, -4($gp)			# (var: normal) Reading from variable "yy"
-		nop
+		li	$t0, 10		# (var: enum) Read
 		sw	$t0, 0($sp) 		# (eval expr) store RHS in memory
-		lw	$t0, 0($gp)			# (var: normal) Reading from variable "vv"
-		nop
+		li	$t0, 13		# (var: enum) Read
 		lw	$t1, 0($sp) 		# (eval expr) load RHS from memory to $t1, LHS in $t0
 		nop
 		addiu	$sp, $sp, 4 		# (eval expr) Shrinking stack after evaluation
