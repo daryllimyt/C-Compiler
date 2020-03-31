@@ -299,7 +299,6 @@ MATH_OR_BITWISE_EXPRESSION
 PRIMARY_EXPRESSION //a || 1 || a+1
   : DECLARATOR                                { $$ = $1; }
   | T_INT_CONST                          { $$ = new IntegerConstant( $1 ); }
-  | T_CHAR_CONST							{ $$ = new CharConstant( *$1 ); delete $1;}
   | T_FLOAT_CONST                         { $$ = new FloatConstant( $1 ); }
   | T_CHAR_CONST                        { $$ = new CharConstant( *$1 ); }
   | T_STRING_CONST                       { $$ = new StringLiteral(*$1); }

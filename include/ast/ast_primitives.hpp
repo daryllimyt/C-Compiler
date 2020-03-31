@@ -44,20 +44,6 @@ class IntegerConstant : public Node {
     }
 };
 
-class CharConstant : public Node {
-   private:
-    int val_;
-
-   public:
-    CharConstant(const std::string &val) {
-        type_ = "CHAR_CONSTANT";
-        val_ = std::atoi(&val[0]);
-    }
-    const int getVal() const {
-        return val_;
-    }
-};
-
 class FloatConstant : public Node {
    private:
     double val_;
