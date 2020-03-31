@@ -145,7 +145,7 @@ struct ProgramContext {
     ValueContext valueContext;
     std::string identifier;
     std::string typeSpecifier;
-    std::string typeQualifier;  // const, volatile
+    std::string varType;  // normal, pointer, struct, array
     std::string variableAssignmentState = "NO_ASSIGN";
     std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
 
@@ -215,7 +215,7 @@ struct ProgramContext {
         out << "[INFO] * virtualRegisters: " << p.virtualRegisters << "\n";
         out << "[INFO] * identifier: " << p.identifier << "\n";
         out << "[INFO] * typeSpecifier: " << p.typeSpecifier << "\n";
-        out << "[INFO] * typeQualifier: " << p.typeQualifier << "\n";  // const, volatile
+        out << "[INFO] * varType: " << p.varType << "\n";  // const, volatile
         out << "[INFO] * variableAssignmentState: " << p.variableAssignmentState << "\n";
         out << "[INFO] * variableBindings:\n";
         for (auto& it : p.variableBindings) {
