@@ -269,13 +269,18 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         typeLeft = "STRUCT_ATTRIBUTE";
                     } else {
                         typeLeft = context.variableBindings[idLeft].back().varType;  // normal/ptr/array
-                        // typeLeft = context.varType;
+                        if (typeLeft == "POINTER" && context.varType == "NORMAL") {  // This case only occurs when reading a pointer like a normal variable
+                            typeLeft = "NORMAL";                                     // Hard set to normal if is a pointer
+                        }
                     }
 
                     int offsetLeft = getVariableAddressOffset(context, idLeft);  // Previous id
                     std::string refLeft = getReferenceRegister(context, idLeft);
                     context.variableAssignmentState = "NO_ASSIGN";
-                    if (context.pointerDeclaration) typeLeft = "NORMAL";
+                    if (context.pointerDeclaration) {
+                        typeLeft = "NORMAL";
+                        context.pointerDeclaration = false;
+                    }
                     if (typeLeft == "ARRAY") {                                      // LHS array, offset was stored in $t2
                         int arrayBase = getVariableAddressOffset(context, idLeft);  // Negative offset from $fp, first element of array
                         std::string tempRef = getReferenceRegister(context, idLeft);
@@ -321,13 +326,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     type = "STRUCT_ATTRIBUTE";
                 } else {
                     id = astNode->getIdentifier()->getId();
-                    Compile(output, context, astNode->getIdentifier());  // Set LHS in context. If array, the scaled offset is stored in $t2
-                    context.identifier = id;                             // for arrays potentially overwritten
-                    type = context.variableBindings[id].back().varType;  // normal/ptr/array
+                    Compile(output, context, astNode->getIdentifier());      // Set LHS in context. If array, the scaled offset is stored in $t2
+                    context.identifier = id;                                 // for arrays potentially overwritten
+                    type = context.variableBindings[id].back().varType;      // normal/ptr/array. This will read
+                    if (type == "POINTER" && context.varType == "NORMAL") {  // This case only occurs when reading a pointer like a normal variable
+                        type = "NORMAL";                                     // Hard set to normal if is a pointer
+                    }
                     if (context.variableAssignmentState == "POINTER_DECLARATION") {
                         context.pointerDeclaration = true;  // pointer declaration mode, overwrite the type
                     }
-                    // type = context.varType;
                 }
 
                 // RHS
@@ -339,9 +346,11 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     if (Util::debug) std::cerr << "[DEBUG] ASSIGNMENT_STATEMENT: non-single declarator A, math or bitwise\n";
                     int offset = getVariableAddressOffset(context, id);   // LHS info
                     std::string ref = getReferenceRegister(context, id);  // LHS info
-                    Compile(output, context, astNode->getStatements());   // output -> $v0 (function) / $t0 (var)
+                    bool pointerDec = context.pointerDeclaration;         // LHS pointer dec, save in crease RHS overwrites
+                    context.pointerDeclaration = false;
+                    Compile(output, context, astNode->getStatements());  // output -> $v0 (function) / $t0 (var)
                     // Result state
-                    if (context.pointerDeclaration) type = "NORMAL";
+                    if (pointerDec) type = "NORMAL";
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
                         *output << "\t\tsw\t$v0, " << offset << ref
                                 << "\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
@@ -530,7 +539,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ASSIGNMENT_EXPRESSION") {
             std::string id = astNode->getLeft()->getId();  // LHS Variable ID
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);  // $t0 = LHS, $t1 = RHS
+            context.exprHasPointer = false;
             result = right;
             Compile(output, context, astNode->getIdentifier());  // Evaluate result in $t0
             // x += y
@@ -560,7 +571,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "MULTIPLICATIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             if (astNode->getId() == "*") {
                 *output << "\t\tmult\t$t0, $t1\n";
                 *output << "\t\tmflo\t$t0\n";
@@ -582,7 +595,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "ADDITIVE_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             if (astNode->getId() == "+") {
                 *output << "\t\tadd\t$t0, $t0, $t1 \t\t# (add node) LHS + RHS\n";
                 result = left + right;
@@ -598,7 +613,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "BITWISE_AND_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             *output << "\t\tand\t$t0, $t0, $t1\n";
             result = left & right;
             if (context.valueContext.type == "INT") {
@@ -607,7 +624,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "BITWISE_XOR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             *output << "\t\txor\t$t0, $t0, $t1\n";
             result = left ^ right;
             if (context.valueContext.type == "INT") {
@@ -616,7 +635,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "BITWISE_OR_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             *output << "\t\tor\t$t0, $t0, $t1\n";
             result = left | right;
             if (context.valueContext.type == "INT") {
@@ -625,7 +646,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "BOOLEAN_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             if (astNode->getId() == "and") {
                 *output << "\t\tsltu\t$t0, $0, $t0\n";  //set t0 to 1 if t0 > 0
                 *output << "\t\tsltu\t$t1, $0, $t1\n";  //set t1 to 1 if t1 > 0
@@ -648,7 +671,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "EQUALITY_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             *output << "\t\tslt\t$v0, $t0, $t1\n"
                     << "\t\tslt\t$v1, $t1, $t0\n"
                     << "\t\txor\t$t0, $v0, $v1\n"
@@ -676,7 +701,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "RELATIONAL_EXPRESSION") {
             context.variableAssignmentState = "NO_ASSIGN";
             int left, right, result;
+            context.exprHasPointer = false;
             evaluateExpression(output, context, astNode, left, right);
+            context.exprHasPointer = false;
             if (astNode->getId() == "<") {
                 *output << "\t\tslt\t$t0, $t0, $t1\n";
                 result = (left < right);
@@ -894,7 +921,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         newVariable.typeSpecifier = context.typeSpecifier;
                         context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
                         context.frameTracker[index].variableBytes += multiplier;  // Increment size of variable block in frame
-                        if (type == "POINTER") context.variableAssignmentState = "POINTER_DECLARATION";
+                        if (type == "POINTER") {
+                            context.variableAssignmentState = "POINTER_DECLARATION";
+                        }
                     } else {  // True means variable in the current frame
                         // Variable in current frame, check which scope it was found in
                         if (varInfo.second == context.scope) {
@@ -1285,25 +1314,61 @@ std::string getReferenceRegister(ProgramContext &context, const std::string &id)
 }
 
 void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr astNode, int &left, int &right) {
-    *output << "\t\taddiu\t$sp, $sp, " << -multiplier << " \t\t# (eval expr) Expand stack for expression evaluation\n";
-    Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
-    right = context.valueContext.intValue;
-    if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
-    } else {  // Normal variable
-        *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
+    try {
+        *output << "\t\taddiu\t$sp, $sp, " << -multiplier << " \t\t# (eval expr) Expand stack for expression evaluation\n";
+        // Check if either one is a pointer, if both are pointers throw error
+        bool leftIsPtr, rightIsPtr;
+        leftIsPtr = rightIsPtr = false;
+        if (astNode->getRight()->getType() == "VARIABLE") {
+                std::string rightId = astNode->getRight()->getId();
+                if (context.variableBindings.count(rightId) && context.variableBindings[rightId].back().varType == "POINTER") {
+                    rightIsPtr = true;
+                }
+        }
+        if (astNode->getLeft()->getType() == "VARIABLE") {
+                std::string leftId = astNode->getLeft()->getId();
+                if (context.variableBindings.count(leftId) && context.variableBindings[leftId].back().varType == "POINTER") {
+                    leftIsPtr = true;
+                }
+        }
+
+        if (rightIsPtr && leftIsPtr) {
+            throw std::runtime_error("[ERROR] Evaluate expr: Invalid operands to binary + (have 'int *' and 'int *')");
+        } else if (rightIsPtr || leftIsPtr) {
+            context.exprHasPointer = true;
+        }
+        Compile(output, context, astNode->getRight());  // identifier - RHS result are in virtual memory
+        right = context.valueContext.intValue;
+
+        if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+            if (!rightIsPtr && context.exprHasPointer) {
+                *output << "\t\tsll\t$v0, $v0, 2 \t\t# (eval expr) RHS is not a pointer, scale RHS by 4 bytes\n";
+            }
+            *output << "\t\tsw\t$v0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
+        } else {  // Normal variable
+            if (!rightIsPtr && context.exprHasPointer) {
+                *output << "\t\tsll\t$t0, $t0, 2 \t\t# (eval expr) RHS is not a pointer, scale RHS by 4 bytes\n";
+            }
+            *output << "\t\tsw\t$t0, 0($sp) \t\t# (eval expr) store RHS in memory\n";
+        }
+        context.variableAssignmentState = "NO_ASSIGN";  // Reading var
+        Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
+        left = context.valueContext.intValue;
+        if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
+            *output << "\t\t"
+                    << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
+        }
+        if (!leftIsPtr && context.exprHasPointer) {
+            *output << "\t\tsll\t$t0, $t0, 2 \t\t# (eval expr) LHS is not a pointer, scale LHS by 4 bytes\n";
+        }
+        *output << "\t\tlw\t$t1, 0($sp) \t\t# (eval expr) load RHS from memory to $t1, LHS in $t0\n"
+                << "\t\tnop\n";
+        *output << "\t\taddiu\t$sp, $sp, " << multiplier << " \t\t# (eval expr) Shrinking stack after evaluation\n";
+        context.variableAssignmentState = "NO_ASSIGN";  // Reading var
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        Util::abort();
     }
-    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
-    Compile(output, context, astNode->getLeft());   //expr - LHS result stored in $t0
-    left = context.valueContext.intValue;
-    if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-        *output << "\t\t"
-                << "move\t$t0, $v0 \t\t# (eval expr) LHS from fn call\n";
-    }
-    *output << "\t\tlw\t$t1, 0($sp) \t\t# (eval expr) load RHS from memory to $t1, LHS in $t0\n"
-            << "\t\tnop\n";
-    *output << "\t\taddiu\t$sp, $sp, " << multiplier << " \t\t# (eval expr) Shrinking stack after evaluation\n";
-    context.variableAssignmentState = "NO_ASSIGN";  // Reading var
 }
 
 int evalArrayIndexOrSize(ProgramContext &context, NodePtr astNode) {

@@ -148,7 +148,7 @@ WHITESPACE 	[ \t\v]+
 
 {FLOAT_CONSTANT} 	{yylval.float_constant = std::atof(yytext); return T_FLOAT_CONST; }
 
-{CHAR_CONSTANT} 	{ char x = *yytext; yylval.integer_constant = char(x); return T_INT_CONST; }
+{CHAR_CONSTANT} 	{yylval.integer_constant = *((int*)(&yytext)); return T_INT_CONST; }
 {STRING_CONSTANT} {yylval.string = new std::string(yytext); return T_STRING_CONST; }
 
 

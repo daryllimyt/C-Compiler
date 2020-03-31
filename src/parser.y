@@ -216,8 +216,8 @@ EXPRESSION
 
 
 ASSIGNMENT_OPERATOR
-  : T_EQ_ASSIGN         { $$ = new AssignmentOperator("="); }
-  | T_MUL_ASSIGN        { $$ = new AssignmentOperator("*="); }
+  // : T_EQ_ASSIGN         { $$ = new AssignmentOperator("="); }
+  : T_MUL_ASSIGN        { $$ = new AssignmentOperator("*="); }
   | T_DIV_ASSIGN        { $$ = new AssignmentOperator("/="); }
   | T_MOD_ASSIGN        { $$ = new AssignmentOperator("%="); }
   | T_ADD_ASSIGN        { $$ = new AssignmentOperator("+="); }

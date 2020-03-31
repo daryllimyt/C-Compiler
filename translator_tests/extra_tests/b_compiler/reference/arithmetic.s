@@ -30,6 +30,7 @@ f:
 		addiu	$sp, $sp, -16	# Move $sp to end of variable section before function call
 		addiu	$sp, $sp, -4 		# (eval expr) Expand stack for expression evaluation
 		li	$t0, 1				# (int const)
+		sll	$t0, $t0, 2 		# (eval expr) RHS is not a pointer, scale RHS by 4 bytes
 		sw	$t0, 0($sp) 		# (eval expr) store RHS in memory
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "p"
 		nop

@@ -2,9 +2,9 @@
 
 .set noreorder
 .text
-.globl g
-g:
-		.ent g
+.globl f
+f:
+		.ent f
 		sw	$a0, 0($sp) 		# (fn def) Store arg regs in memory
 		sw	$a1, 4($sp) 		# (fn def) Store arg regs in memory
 		sw	$a2, 8($sp) 		# (fn def) Store arg regs in memory
@@ -23,21 +23,21 @@ g:
 		sw	$s6, 40($sp)
 		sw	$s7, 44($sp)
 		move	$fp, $sp 		# $fp is at the start of the variable section
-		addiu	$sp, $sp, -4	# Move $sp to end of variable section before function call
-		addiu	$sp, $sp, -4 		# (eval expr) Expand stack for expression evaluation
-		li	$t0, 1				# (int const)
-		sw	$t0, 0($sp) 		# (eval expr) store RHS in memory
-		li	$t0, 0		# (var: enum) Read
-		lw	$t1, 0($sp) 		# (eval expr) load RHS from memory to $t1, LHS in $t0
+		addiu	$sp, $sp, -20	# Move $sp to end of variable section before function call
+		addiu	$t0, $fp, 0		# (unary) get address & in $t0
+		sw	$t0, -4($fp)			# (assign) store var result in NORMAL variable "y"
+		li	$t0, 64				# (int const)
+		lw	$t3, -4($fp)		# (var: pointer) Assign - Reading from pointer "y"
 		nop
-		addiu	$sp, $sp, 4 		# (eval expr) Shrinking stack after evaluation
-		add	$t0, $t0, $t1 		# (add node) LHS + RHS
+		sw	$t0, 0($t3) 			# (var: pointer) Assign - store var result in full address of pointer variable "y"
+		lw	$t0, 0($fp)			# (var: normal) Reading from variable "x"
+		nop
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
-		j	g_end_0
+		j	f_end_0
 		nop
 
-g_end_0:
-		addiu	$sp, $sp, 4	# Move $sp to end of function arg section after function call
+f_end_0:
+		addiu	$sp, $sp, 20	# Move $sp to end of function arg section after function call
 		move	$sp, $fp 		# Restore sp to start of variable section
 		lw	$fp, 4($sp) 		# (fn def)
 		lw	$ra, 8($sp) 		# (fn def)
@@ -55,6 +55,6 @@ g_end_0:
 		nop
 		jr	$ra
 		nop
-		.end g
+		.end f
 
 end:

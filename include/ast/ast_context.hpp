@@ -147,6 +147,7 @@ struct ProgramContext {
     std::string typeSpecifier;
     std::string varType;  // normal, pointer, struct, array
     bool pointerDeclaration = false;
+    bool exprHasPointer = false;
     std::string variableAssignmentState = "NO_ASSIGN";
     std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
 
@@ -213,6 +214,7 @@ struct ProgramContext {
         out << "\n";
 
         // // Variables
+        out << "[INFO] * pointerDeclaration: " << p.pointerDeclaration << "\n";
         out << "[INFO] * virtualRegisters: " << p.virtualRegisters << "\n";
         out << "[INFO] * identifier: " << p.identifier << "\n";
         out << "[INFO] * typeSpecifier: " << p.typeSpecifier << "\n";

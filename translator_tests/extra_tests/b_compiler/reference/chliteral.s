@@ -1,51 +1,49 @@
 .text
 
+.set noreorder
+.text
 .globl g
 g:
 		.ent g
-		.frame $sp, 76, $ra
-		.set noreorder
-		.set reorder
-		addiu	$sp, $sp, -76		# (fn def: frame start) Move sp to end of new frame
-		sw	$fp, 0($sp) 		# (fn def) Store addr of old fp on stack
-		add	$fp, $sp, $0 		# (fn def) Move fp to new sp
-		sw	$ra, 4($sp) 		# (fn def) Store ra on stack
-		sw	$s0, 8($sp) 		# (fn def) Store save regs $s0-$s7 on stack
-		sw	$s1, 12($sp)
-		sw	$s2, 16($sp)
-		sw	$s3, 20($sp)
-		sw	$s4, 24($sp)
-		sw	$s5, 28($sp)
-		sw	$s6, 32($sp)
-		sw	$s7, 36($sp)
-		sw	$a0, 40($sp) 		# (fn def) Store prev fn args $a0-$a3 on stack
-		sw	$a1, 44($sp)
-		sw	$a2, 48($sp)
-		sw	$a3, 52($sp)
-		sw	$gp, 56($sp) 		# Store value of $gp on stack
-		nop
-		li	$t0, 39				# (int const)
+		sw	$a0, 0($sp) 		# (fn def) Store arg regs in memory
+		sw	$a1, 4($sp) 		# (fn def) Store arg regs in memory
+		sw	$a2, 8($sp) 		# (fn def) Store arg regs in memory
+		sw	$a3, 12($sp) 		# (fn def) Store arg regs in memory
+		move	$t9, $sp 		# (fn def) Store caller $sp in $t9 for argument calling
+		addiu	$sp, $sp, -48		# (fn def: frame start) Expand stack for saved registers
+		sw	$fp, 4($sp) 		# (fn def)
+		sw	$ra, 8($sp) 		# (fn def)
+		sw	$gp, 12($sp) 		# (fn def) Store value of $gp on stack
+		sw	$s0, 16($sp) 		# (fn def) Store save regs $s0-$s7 on stack
+		sw	$s1, 20($sp)
+		sw	$s2, 24($sp)
+		sw	$s3, 28($sp)
+		sw	$s4, 32($sp)
+		sw	$s5, 36($sp)
+		sw	$s6, 40($sp)
+		sw	$s7, 44($sp)
+		move	$fp, $sp 		# $fp is at the start of the variable section
+		addiu	$sp, $sp, 0	# Move $sp to end of variable section before function call
+		li	$t0, 33906469				# (int const)
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	g_end_0
 		nop
 
 g_end_0:
-		lw	$s0, 8($fp) 		# (fn def) Load saved regs into $s0-$s7
-		lw	$s1, 12($fp)
-		lw	$s2, 16($fp)
-		lw	$s3, 20($fp)
-		lw	$s4, 24($fp)
-		lw	$s5, 28($fp)
-		lw	$s6, 32($fp)
-		lw	$s7, 36($fp)
-		lw	$a0, 40($fp)
-		lw	$a1, 44($fp) 		# (fn def) Load prev fn args into $a0-$a3
-		lw	$a2, 48($fp)
-		lw	$a3, 52($fp)
-		lw	$ra, 4($fp) 		# (fn def) Load return address into $ra
-		lw	$fp, 0($fp) 		# (fn def) Load prev fp into $fp
-		nop
-		addiu	$sp, $sp, 76		# (fn def: frame end) Move sp to end of previous frame
+		addiu	$sp, $sp, 0	# Move $sp to end of function arg section after function call
+		move	$sp, $fp 		# Restore sp to start of variable section
+		lw	$fp, 4($sp) 		# (fn def)
+		lw	$ra, 8($sp) 		# (fn def)
+		lw	$gp, 12($sp) 		# (fn def) Store value of $gp on stack
+		lw	$s0, 16($sp) 		# (fn def) Store save regs $s0-$s7 on stack
+		lw	$s1, 20($sp)
+		lw	$s2, 24($sp)
+		lw	$s3, 28($sp)
+		lw	$s4, 32($sp)
+		lw	$s5, 36($sp)
+		lw	$s6, 40($sp)
+		lw	$s7, 44($sp)
+		addiu	$sp, $sp, 48		# (fn def: frame end) Shrink stack back to previous frame
 		beq	$ra, $0, end
 		nop
 		jr	$ra
