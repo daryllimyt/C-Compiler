@@ -1,4 +1,4 @@
-int x[8];
+int x = 1;
 
 int f()
 {

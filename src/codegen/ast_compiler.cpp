@@ -386,8 +386,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             *output << "\t\tslt\t$t2, $s0, $t0\n";
             *output << "\t\tor\t$t0, $t1, $t2\n";   //t0 == 1 if t0 != s0
             *output << "\t\tand\t$t0, $t0, $s1\n";  //branch if t0 == s1 == 1
-            *output << "\t\tbgtz\t$t0, " << end
-                    << "\t\t# (case) branching past case if expr not same\n";
+            *output << "\t\tbgtz\t$t0, " << end << "\t\t# (case) branching past case if expr not same\n"
+                    << "\t\tnop\n";
             *output << "\t\tmove\t$s1, $0\n";
             if (astNode->getStatements()) {
                 Compile(output, context, astNode->getStatements());
@@ -410,6 +410,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     << "\t\tnop\n";
             *output << "\n"
                     << end << ":\n";
+            *output << "\t\tj\t" << start << "\n";
         } else if (astNode->getType() == "WHILE_LOOP") {
             std::string label = createLabel(context, "_");
             std::string start = "while_start" + label;
@@ -840,7 +841,6 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                             throw std::runtime_error("[ERROR] Variable \"" + id + "\" is already declared in this scope: " + std::to_string(context.scope) + "\n");
                         }
 
-                        // context.frameTracker[index].addVariable(id);  // Track variable id
                         VariableContext newVariable;
                         newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
                         newVariable.varType = type;
@@ -913,7 +913,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int addrOffset = getVariableAddressOffset(context, id);
                     std::string ref = getReferenceRegister(context, id);
                     *output << "\t\tlw\t$t0, " << addrOffset << ref << "\t\t\t# (var: normal) Reading from variable \"" << id << "\"\n"
-                            << "\t\tnop\n";
+                                << "\t\tnop\n";
+
 
                     context.typeSpecifier = context.variableBindings[id].back().typeSpecifier;
                 } else if (type == "ARRAY") {                              // Reading from array
@@ -989,6 +990,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
             }
         } else if (astNode->getType() == "INTEGER_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getVal() << "\t\t\t\t# (int const)\n";
+            if(Util::debug) std::cerr << "[DEBUG] INTEGER_CONSTANT: " << astNode->getVal() << "\n";
             context.valueContext.intValue = astNode->getVal();
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getFloat() << "\t\t\t\t# (int const)\n";
@@ -1343,41 +1345,34 @@ void clearRegisters(std::ostream *output) {
 
 void functionPrologue(std::ostream *output, const int &bytes) {
     // Store address of previous frame on stack at 0($sp)
-    // *output << "\t\tmove\t$t8, $sp \t\t# Save old $sp to restore in $fp later\n";
-    *output << "\t\taddiu\t$sp, $sp, " << -16 << "\t\t# (fn def: frame start) Expand stack for saved registers\n";
+    *output << "\t\taddiu\t$sp, $sp, " << -48 << "\t\t# (fn def: frame start) Expand stack for saved registers\n";
     *output << "\t\tsw\t$fp, 4($sp) \t\t# (fn def)\n";
     *output << "\t\tsw\t$ra, 8($sp) \t\t# (fn def)\n";
     *output << "\t\tsw\t$gp, 12($sp) \t\t# (fn def) Store value of $gp on stack\n";
-    // if (Util::qemu) *output << "\t\t.cprestore 12\n";
-
-    // *output << "\t\tsw\t$s0, 0($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
-    // *output << "\t\tsw\t$s1, 4($sp)\n";
-    // *output << "\t\tsw\t$s2, 8($sp)\n";
-    // *output << "\t\tsw\t$s3, 12($sp)\n";
-    // *output << "\t\tsw\t$s4, 16($sp)\n";
-    // *output << "\t\tsw\t$s5, 20($sp)\n";
-    // *output << "\t\tsw\t$s6, 24($sp)\n";
-    // *output << "\t\tsw\t$s7, 28($sp)\n";
-    // *output << "\t\tsw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
-    // *output << "\t\tsw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
+    *output << "\t\tsw\t$s0, 16($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    *output << "\t\tsw\t$s1, 20($sp)\n";
+    *output << "\t\tsw\t$s2, 24($sp)\n";
+    *output << "\t\tsw\t$s3, 28($sp)\n";
+    *output << "\t\tsw\t$s4, 32($sp)\n";
+    *output << "\t\tsw\t$s5, 36($sp)\n";
+    *output << "\t\tsw\t$s6, 40($sp)\n";
+    *output << "\t\tsw\t$s7, 44($sp)\n";
     *output << "\t\tmove\t$fp, $sp \t\t# $fp is at the start of the variable section\n";
     // $sp now points to arg slots
 }
 
 void functionEpilogue(std::ostream *output, const int &bytes) {
-    // *output << "\t\tlw\t$s0, 0($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
-    // *output << "\t\tlw\t$s1, 4($sp)\n";
-    // *output << "\t\tlw\t$s2, 8($sp)\n";
-    // *output << "\t\tlw\t$s3, 12($sp)\n";
-    // *output << "\t\tlw\t$s4, 16($sp)\n";
-    // *output << "\t\tlw\t$s5, 20($sp)\n";
-    // *output << "\t\tlw\t$s6, 24($sp)\n";
-    // *output << "\t\tlw\t$s7, 28($sp)\n";
-    // *output << "\t\tlw\t$ra, 32($sp) \t\t# (fn def) Store ra on stack\n";
-    // *output << "\t\tlw\t$fp, 40($sp) \t\t# (fn def) Store addr of old fp on stack\n";
     *output << "\t\tmove\t$sp, $fp \t\t# Restore sp to start of variable section\n";
     *output << "\t\tlw\t$fp, 4($sp) \t\t# (fn def)\n";
     *output << "\t\tlw\t$ra, 8($sp) \t\t# (fn def)\n";
     *output << "\t\tlw\t$gp, 12($sp) \t\t# (fn def) Store value of $gp on stack\n";
-    *output << "\t\taddiu\t$sp, $sp, " << 16 << "\t\t# (fn def: frame end) Shrink stack back to previous frame\n";
+    *output << "\t\tlw\t$s0, 16($sp) \t\t# (fn def) Store save regs $s0-$s7 on stack\n";
+    *output << "\t\tlw\t$s1, 20($sp)\n";
+    *output << "\t\tlw\t$s2, 24($sp)\n";
+    *output << "\t\tlw\t$s3, 28($sp)\n";
+    *output << "\t\tlw\t$s4, 32($sp)\n";
+    *output << "\t\tlw\t$s5, 36($sp)\n";
+    *output << "\t\tlw\t$s6, 40($sp)\n";
+    *output << "\t\tlw\t$s7, 44($sp)\n";
+    *output << "\t\taddiu\t$sp, $sp, " << 48 << "\t\t# (fn def: frame end) Shrink stack back to previous frame\n";
 }
