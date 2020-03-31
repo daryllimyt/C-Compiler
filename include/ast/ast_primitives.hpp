@@ -9,7 +9,7 @@
 class Variable : public Node {
    private:
     std::string id_;
-    std::string varType_; // Normal, point64_ter, array
+    std::string varType_;  // Normal, point64_ter, array
     NodePtr expression_;
 
    public:
@@ -89,70 +89,68 @@ class StringLiteral : public Node {
 class TypeSpecifier : public Node {
    public:
     TypeSpecifier(const std::string &type) {
-        type_ = type; // void, char, short, int64_t ...
+        type_ = type;  // void, char, short, int64_t ...
     }
 };
 
 class CustomType : public Node {
-	protected:
-		std::string id_;
-   	public:
+   protected:
+    std::string id_;
+
+   public:
     CustomType(const std::string &id) {
         type_ = "CUSTOM_TYPE";
-		id_ = id;
+        id_ = id;
     }
 
-	const std::string getId() const {
-		return id_;
-	}
-
-
+    const std::string getId() const {
+        return id_;
+    }
 };
 
 class TypeDef : public Node {
-	protected:
-		std::string id_;
-		NodePtr parent_;
-   	public:
+   protected:
+    std::string id_;
+    NodePtr parent_;
+
+   public:
     TypeDef(const std::string &id, NodePtr parent) {
         type_ = "TYPE_DEF";
-		id_ = id;
-		parent_ = parent;
+        id_ = id;
+        parent_ = parent;
     }
 
-	const std::string getId() const {
-		return id_;
-	}
+    const std::string getId() const {
+        return id_;
+    }
 
-	NodePtr getTypeSpecifier() const{
-		return parent_;
-	}
-
+    NodePtr getTypeSpecifier() const {
+        return parent_;
+    }
 };
 
 class Enumeration : public Node {
    protected:
     std::string id_;
-	NodePtr typeSpecifier_;
+    NodePtr typeSpecifier_;
     NodePtr statements_;
 
    public:
     Enumeration(std::string id, NodePtr typeSpecifier, NodePtr statements) {
         type_ = "ENUMERATION";
-		id_ = id;
-		typeSpecifier_ = typeSpecifier;
+        id_ = id;
+        typeSpecifier_ = typeSpecifier;
         statements_ = statements;
     }
     const std::string getId() const {
         return id_;
     }
-	NodePtr getTypeSpecifier(){
-		return typeSpecifier_;
-	}
+    NodePtr getTypeSpecifier() {
+        return typeSpecifier_;
+    }
     NodePtr getStatements() const {
-		return statements_;
-	}
-
+        return statements_;
+    }
 };
 
 class MultipleEnumerators : public Node {
@@ -163,16 +161,15 @@ class MultipleEnumerators : public Node {
    public:
     MultipleEnumerators(NodePtr statement, NodePtr next) {
         type_ = "MULTIPLE_ENUMERATORS";
-		statement_ = statement;
+        statement_ = statement;
         next_ = next;
     }
     NodePtr getStatements() const {
         return statement_;
     }
     NodePtr getNext() const {
-		return next_;
-	}
-
+        return next_;
+    }
 };
 
 class SingleEnumerator : public Node {
@@ -183,37 +180,34 @@ class SingleEnumerator : public Node {
    public:
     SingleEnumerator(std::string id, NodePtr expr) {
         type_ = "SINGLE_ENUMERATOR";
-		id_ = id;
+        id_ = id;
         expr_ = expr;
     }
     const std::string getId() const {
         return id_;
     }
     NodePtr getStatements() const {
-		return expr_;
-	}
-
+        return expr_;
+    }
 };
 
 class StructDefinition : public Node {
    protected:
-
     std::string id_;
     NodePtr statements_;
 
    public:
     StructDefinition(std::string id, NodePtr statements) {
         type_ = "STRUCT_DEFINITION";
-		id_ = id;
+        id_ = id;
         statements_ = statements;
     }
     const std::string getId() const {
         return id_;
     }
     NodePtr getStatements() const {
-		return statements_;
-	}
-
+        return statements_;
+    }
 };
 
 class MultipleAttributes : public Node {
@@ -225,37 +219,33 @@ class MultipleAttributes : public Node {
     MultipleAttributes(NodePtr statements, NodePtr next) {
         type_ = "MULTIPLE_ATTRIBUTES";
         statements_ = statements;
-		next_ = next;
+        next_ = next;
     }
     NodePtr getStatements() const {
-		return statements_;
-	}
-	NodePtr getNext() const {
-		return next_;
-	}
-
+        return statements_;
+    }
+    NodePtr getNext() const {
+        return next_;
+    }
 };
 
 class SingleAttribute : public Node {
    protected:
-
-	NodePtr typeSpec_
+    NodePtr typeSpec_;
     std::string id_;
 
-
    public:
-    SingleAttribute(NodePtr typeSpec, NodePtr id) {
+    SingleAttribute(NodePtr typeSpec, const std::string &id) {
         type_ = "SINGLE_ATTRIBUTE";
         typeSpec_ = typeSpec;
-		id_ = id;
+        id_ = id;
     }
     NodePtr getTypeSpecifier() const {
-		return typeSpec_;
-	}
-	NodePtr getId() const {
-		return id_;
-	}
-
+        return typeSpec_;
+    }
+    const std::string getId() const {
+        return id_;
+    }
 };
 
 #endif

@@ -16,14 +16,9 @@ g:
 		sw	$gp, 12($sp) 		# (fn def) Store value of $gp on stack
 		move	$fp, $sp 		# $fp is at the start of the variable section
 		addiu	$sp, $sp, -8	# Move $sp to end of variable section before function call
-		addiu	$sp, $sp, -4 		# (eval expr) Expand stack for expression evaluation
-		li	$t0, 10		# (var: enum) Read
-		sw	$t0, 0($sp) 		# (eval expr) store RHS in memory
-		li	$t0, 13		# (var: enum) Read
-		lw	$t1, 0($sp) 		# (eval expr) load RHS from memory to $t1, LHS in $t0
-		nop
-		addiu	$sp, $sp, 4 		# (eval expr) Shrinking stack after evaluation
-		add	$t0, $t0, $t1 		# (add node) LHS + RHS
+		li	$t0, 13				# (int const)
+		sw	$t0, 0($fp)			# (assign) store var result in NORMAL variable "x"
+		li	$t0, 13				# (int const)
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	g_end_0
 		nop
