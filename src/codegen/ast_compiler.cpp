@@ -281,15 +281,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         typeLeft = "NORMAL";
                         context.pointerDeclaration = false;
                     }
-                    if (typeLeft == "ARRAY") {                                      // LHS array, offset was stored in $t2
+                    if (typeLeft == "ARRAY") {                                      // LHS array, offset was stored in $s6
                         int arrayBase = getVariableAddressOffset(context, idLeft);  // Negative offset from $fp, first element of array
                         std::string tempRef = getReferenceRegister(context, idLeft);
                         std::string ref = tempRef.substr(1, 3);
-                        *output << "\t\tmove\t $t8, " << ref << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddi\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
-                        *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                        *output << "\t\tmove\t $s7, " << ref << "\t\t# (var: array) read - use $s7 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddi\t$s7, $s7, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\taddu\t$s7, $s7, $s6\t\t# (var: array) Move refreg to index offset from array base\n";
                         Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
-                        *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) Storing into array \"" << idLeft << "\" at base offset " << arrayBase << "\n";
+                        *output << "\t\tsw\t$t0, 0($s7) \t\t# (var: array) Storing into array \"" << idLeft << "\" at base offset " << arrayBase << "\n";
                     } else if (typeLeft == "STRUCT_ATTRIBUTE") {
                         Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                         std::string structType = context.declaredStructs[idLeft];
@@ -307,7 +307,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         Compile(output, context, astNode->getIdentifier());
                         *output << "\t\tlw\t$t3, " << offsetLeft << refLeft << "\t\t# (var: pointer) Assign - Reading from pointer \"" << idLeft << "\"\n"
                                 << "\t\tnop\n";
-                        // *output << "\t\tadd\t$t2, $t2, " << ref2 << "\t\t# (var: pointer) Assign - Creating full address of dereference\n";
+                        // *output << "\t\tadd\t$s6, $s6, " << ref2 << "\t\t# (var: pointer) Assign - Creating full address of dereference\n";
                         *output << "\t\tsw\t$t0, 0($t3) \t\t\t# (var: pointer) Assign - store var result in full address of pointer variable \"" << idLeft << "\"\n";
                     }
                 }
@@ -326,7 +326,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     type = "STRUCT_ATTRIBUTE";
                 } else {
                     id = astNode->getIdentifier()->getId();
-                    Compile(output, context, astNode->getIdentifier());      // Set LHS in context. If array, the scaled offset is stored in $t2
+                    Compile(output, context, astNode->getIdentifier());      // Set LHS in context. If array, the scaled offset is stored in $s6
                     context.identifier = id;                                 // for arrays potentially overwritten
                     type = context.variableBindings[id].back().varType;      // normal/ptr/array. This will read
                     if (type == "POINTER" && context.varType == "NORMAL") {  // This case only occurs when reading a pointer like a normal variable
@@ -352,9 +352,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     // Result state
                     if (pointerDec) type = "NORMAL";
                     if (context.variableAssignmentState == "FUNCTION_CALL") {  // From function call
-                        *output << "\t\tsw\t$v0, " << offset << ref
-                                << "\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
-                    } else if (type == "STRUCT_ATTRIBUTE") {
+                        *output << "\t\tmove\t$t0, $v0\t\t\t# (assign) store function result in " << context.variableBindings[id].back().varType << " variable \"" << id << "\"\n";
+                    }
+                    if (type == "STRUCT_ATTRIBUTE") {
                         std::string structType = context.declaredStructs[id];
                         int attributeOffset = context.structBindings[structType].attributes[attributeId].addressOffset;
                         offset += attributeOffset;
@@ -364,10 +364,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
 
                     } else if (type == "ARRAY") {  // LHS is array
                         std::string ref2 = ref.substr(1, 3);
-                        *output << "\t\tmove\t $t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddi\t$t8, $t8, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
-                        *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
-                        *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) assign - Storing to array \"" << id << "\" at base offset " << offset << "\n";
+                        *output << "\t\tmove\t$s7, " << ref2 << "\t\t# (var: array) read - use $s7 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddi\t$s7, $s7, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\taddu\t$s7, $s7, $s6\t\t# (var: array) Move refreg to index offset from array base\n";
+                        *output << "\t\tsw\t$t0, 0($s7) \t\t# (var: array) assign - Storing to array \"" << id << "\" at base offset " << offset << "\n";
                     } else if (type == "NORMAL") {  // LHS is normal variable or ptr
                         *output << "\t\tsw\t$t0, " << offset << ref
                                 << "\t\t\t# (assign) store var result in " << type << " variable \"" << id << "\"\n";
@@ -376,7 +376,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         std::string ref2 = ref.substr(1, 3);  // No brackets
                         *output << "\t\tlw\t$t3, " << offset << ref << "\t\t# (var: pointer) Assign - Reading from pointer \"" << id << "\"\n"
                                 << "\t\tnop\n";
-                        // *output << "\t\tadd\t$t2, $t2, " << ref2 << "\t\t# (var: pointer) Assign - Creating full address of dereference\n";
+                        // *output << "\t\tadd\t$s6, $s6, " << ref2 << "\t\t# (var: pointer) Assign - Creating full address of dereference\n";
                         *output << "\t\tsw\t$t0, 0($t3) \t\t\t# (var: pointer) Assign - store var result in full address of pointer variable \"" << id << "\"\n";
                     }
                 }
@@ -975,20 +975,20 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                 } else if (type == "ARRAY") {                              // Reading from array
                     Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
                     int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
-                    *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) read - scale array index offset to multiplier, save to $t2\n";
+                    *output << "\t\tsll\t$s6, $t0, " << shiftFactor << "\t\t# (var: array) read - scale array index offset to multiplier, save to $s6\n";
                     int arrayBase = getVariableAddressOffset(context, id);  // Negative offset from $fp, first element of array
                     std::string ref1 = getReferenceRegister(context, id);
                     std::string ref2 = ref1.substr(1, 3);
                     if (context.variableBindings.count(id) && context.variableBindings[id].back().varType == "POINTER") {
                         // Array pointer
-                        *output << "\t\tlw\t$t8, " << arrayBase << ref1 << "\t\t# (var: pointer to array) Reading from array pointer \"" << id << "\"\n"
+                        *output << "\t\tlw\t$s7, " << arrayBase << ref1 << "\t\t# (var: pointer to array) Reading from array pointer \"" << id << "\"\n"
                                 << "\t\tnop\n";
                     } else {
-                        *output << "\t\tmove\t$t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddi\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\tmove\t$s7, " << ref2 << "\t\t# (var: array) read - use $s7 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddi\t$s7, $s7, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
                     }
-                    *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
-                    *output << "\t\tlw\t$t0, 0($t8) \t\t# (var: array) Reading from array \"" << id << "\" at base offset " << arrayBase << "\n"
+                    *output << "\t\taddu\t$s7, $s7, $s6\t\t# (var: array) Move refreg to index offset from array base\n";
+                    *output << "\t\tlw\t$t0, 0($s7) \t\t# (var: array) Reading from array \"" << id << "\" at base offset " << arrayBase << "\n"
                             << "\t\tnop\n";
 
                 } else if (type == "POINTER") {
@@ -997,7 +997,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     std::string ref2 = ref1.substr(1, 3);                  // No brackets
                     *output << "\t\tlw\t$t3, " << addrOffset << ref1 << "\t\t# (var: pointer) Reading from pointer \"" << id << "\"\n"
                             << "\t\tnop\n";
-                    // *output << "\t\tadd\t$t2, $t2, " << ref2 << "\t\t# (var: pointer) Creating full address of dereference\n";
+                    // *output << "\t\tadd\t$s6, $s6, " << ref2 << "\t\t# (var: pointer) Creating full address of dereference\n";
                     *output << "\t\tlw\t$t0, 0($t3) \t\t# (var: pointer) Reading from full address of dereference\n"
                             << "\t\tnop\n";
 
@@ -1026,7 +1026,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     context.variableAssignmentState = "NO_ASSIGN";         // Set to read mode to evaluate expression
                     Compile(output, context, astNode->getStatements());    // Statement evaluated in $t0, positive number
                     int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
-                    *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) assignment - scale array index offset to multiplier, save to $t2\n";
+                    *output << "\t\tsll\t$s6, $t0, " << shiftFactor << "\t\t# (var: array) assignment - scale array index offset to multiplier, save to $s6\n";
                 } else if (type == "POINTER") {
                     // Check for illegal assignment?
                 }
