@@ -195,5 +195,67 @@ class SingleEnumerator : public Node {
 
 };
 
+class StructDefinition : public Node {
+   protected:
+
+    std::string id_;
+    NodePtr statements_;
+
+   public:
+    StructDefinition(std::string id, NodePtr statements) {
+        type_ = "STRUCT_DEFINITION";
+		id_ = id;
+        statements_ = statements;
+    }
+    const std::string getId() const {
+        return id_;
+    }
+    NodePtr getStatements() const {
+		return statements_;
+	}
+
+};
+
+class MultipleAttributes : public Node {
+   protected:
+    NodePtr statements_;
+    NodePtr next_;
+
+   public:
+    MultipleAttributes(NodePtr statements, NodePtr next) {
+        type_ = "MULTIPLE_ATTRIBUTES";
+        statements_ = statements;
+		next_ = next;
+    }
+    NodePtr getStatements() const {
+		return statements_;
+	}
+	NodePtr getNext() const {
+		return next_;
+	}
+
+};
+
+class SingleAttribute : public Node {
+   protected:
+
+	NodePtr typeSpec_
+    std::string id_;
+
+
+   public:
+    SingleAttribute(NodePtr typeSpec, NodePtr id) {
+        type_ = "SINGLE_ATTRIBUTE";
+        typeSpec_ = typeSpec;
+		id_ = id;
+    }
+    NodePtr getTypeSpecifier() const {
+		return typeSpec_;
+	}
+	NodePtr getId() const {
+		return id_;
+	}
+
+};
 
 #endif
