@@ -948,7 +948,7 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int arrayBytes = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());
                     VariableContext newVariable;
                     // Array base offset is at the bottom of the array block in memory
-                    newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                    newVariable.addressOffset = -context.frameTracker[index].variableBytes-arrayBytes;  // Get next available memory address after vars
                     newVariable.varType = type;
                     newVariable.size = arrayBytes;
                     newVariable.scope = context.scope;
@@ -976,13 +976,20 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int shiftFactor = static_cast<int>(log2(multiplier));  // Get number of shifts
                     *output << "\t\tsll\t$t2, $t0, " << shiftFactor << "\t\t# (var: array) read - scale array index offset to multiplier, save to $t2\n";
                     int arrayBase = getVariableAddressOffset(context, id);  // Negative offset from $fp, first element of array
-                    std::string tempRef = getReferenceRegister(context, id);
-                    std::string ref = tempRef.substr(1, 3);
-                    *output << "\t\tmove\t $t8, " << ref << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                    *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                    std::string ref1 = getReferenceRegister(context, id);
+                    std::string ref2 = ref1.substr(1, 3);
+                    if (context.variableBindings.count(id) && context.variableBindings[id].back().varType == "POINTER") {
+                        // Array pointer
+                        *output << "\t\tlw\t$t8, " << arrayBase << ref1 << "\t\t# (var: pointer to array) Reading from array pointer \"" << id << "\"\n"
+                                << "\t\tnop\n";
+                    } else {
+                        *output << "\t\tmove\t$t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
+                        *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                    }
                     *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                     *output << "\t\tlw\t$t0, 0($t8) \t\t# (var: array) Reading from array \"" << id << "\" at base offset " << arrayBase << "\n"
                             << "\t\tnop\n";
+
                 } else if (type == "POINTER") {
                     int addrOffset = getVariableAddressOffset(context, id);
                     std::string ref1 = getReferenceRegister(context, id);  // Brakcets
@@ -1320,16 +1327,16 @@ void evaluateExpression(std::ostream *output, ProgramContext &context, NodePtr a
         bool leftIsPtr, rightIsPtr;
         leftIsPtr = rightIsPtr = false;
         if (astNode->getRight()->getType() == "VARIABLE") {
-                std::string rightId = astNode->getRight()->getId();
-                if (context.variableBindings.count(rightId) && context.variableBindings[rightId].back().varType == "POINTER") {
-                    rightIsPtr = true;
-                }
+            std::string rightId = astNode->getRight()->getId();
+            if (context.variableBindings.count(rightId) && context.variableBindings[rightId].back().varType == "POINTER") {
+                rightIsPtr = true;
+            }
         }
         if (astNode->getLeft()->getType() == "VARIABLE") {
-                std::string leftId = astNode->getLeft()->getId();
-                if (context.variableBindings.count(leftId) && context.variableBindings[leftId].back().varType == "POINTER") {
-                    leftIsPtr = true;
-                }
+            std::string leftId = astNode->getLeft()->getId();
+            if (context.variableBindings.count(leftId) && context.variableBindings[leftId].back().varType == "POINTER") {
+                leftIsPtr = true;
+            }
         }
 
         if (rightIsPtr && leftIsPtr) {
