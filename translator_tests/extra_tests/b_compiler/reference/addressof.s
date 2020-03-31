@@ -23,31 +23,16 @@ f:
 		sw	$s6, 40($sp)
 		sw	$s7, 44($sp)
 		move	$fp, $sp 		# $fp is at the start of the variable section
-		addiu	$sp, $sp, -4		# Move $sp to end of function arg section for local variables
-		lw	$t0, 0($t9) 			# (fn args) Load fn call args from arg slots to $t0
-		nop
-		sw	$t0, 0($fp)			# (fn args) Store fn call args from $t0 to memory
-		addiu	$sp, $sp, -16	# Move $sp to end of variable section before function call
-		addiu	$sp, $sp, -4 		# (eval expr) Expand stack for expression evaluation
-		li	$t0, 1				# (int const)
-		sw	$t0, 0($sp) 		# (eval expr) store RHS in memory
-		lw	$t0, 0($fp)			# (var: normal) Reading from variable "p"
-		nop
-		lw	$t1, 0($sp) 		# (eval expr) load RHS from memory to $t1, LHS in $t0
-		nop
-		addiu	$sp, $sp, 4 		# (eval expr) Shrinking stack after evaluation
-		add	$t0, $t0, $t1 		# (add node) LHS + RHS
-		sw	$t0, 0($fp)			# (assign) store var result in NORMAL variable "p"
-		lw	$t3, 0($fp)		# (var: pointer) Reading from pointer "p"
-		nop
-		lw	$t0, 0($t3) 		# (var: pointer) Reading from full address of dereference
-		nop
+		addiu	$sp, $sp, -12	# Move $sp to end of variable section before function call
+		addiu	$t0, $fp, 0		# (unary) get address & in $t0
+		sw	$t0, -4($fp)			# (assign) store var result in NORMAL variable "y"
+		li	$t0, 13				# (int const)
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	f_end_0
 		nop
 
 f_end_0:
-		addiu	$sp, $sp, 20	# Move $sp to end of function arg section after function call
+		addiu	$sp, $sp, 12	# Move $sp to end of function arg section after function call
 		move	$sp, $fp 		# Restore sp to start of variable section
 		lw	$fp, 4($sp) 		# (fn def)
 		lw	$ra, 8($sp) 		# (fn def)

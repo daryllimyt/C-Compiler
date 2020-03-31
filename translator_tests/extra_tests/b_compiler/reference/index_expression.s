@@ -49,9 +49,12 @@ for_start_1:
 		addiu	$sp, $sp, 4 		# (eval expr) Shrinking stack after evaluation
 		sub	$t0, $t0, $t1 		# (add node) LHS - RHS
 		sll	$t2, $t0, 2		# (var: array) assignment - scale array index offset to multiplier, save to $t2
+		move	 $t8, $fp		# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays
+		addiu	$t8, $t8, -4		# (var: array) Move refreg to array base address
+		subu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "i"
 		nop
-		sw	$t0, -4($fp)			# (assign) store recursive assign
+		sw	$t0, 0($t8) 		# (var: array) Storing into array "x" at base offset -4
 
 for_continue_1:
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "i"

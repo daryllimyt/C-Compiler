@@ -4,5 +4,5 @@ int f();
 int main()
 {
     int x;
-    return !(f()==13);
+    return (f()-13);
 }

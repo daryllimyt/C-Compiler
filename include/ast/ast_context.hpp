@@ -146,6 +146,7 @@ struct ProgramContext {
     std::string identifier;
     std::string typeSpecifier;
     std::string varType;  // normal, pointer, struct, array
+    bool pointerDeclaration = false;
     std::string variableAssignmentState = "NO_ASSIGN";
     std::unordered_map<std::string, std::vector<VariableContext>> variableBindings;  // Can be bound to different
 

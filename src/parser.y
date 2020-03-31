@@ -322,7 +322,7 @@ UNARY_EXPRESSION //++a
 UNARY_OPERATOR
   : T_INC_OP    { $$ = new UnaryOperator("++"); }
   | T_DEC_OP    { $$ = new UnaryOperator("--"); }
-  | T_AND_OP    { $$ = new UnaryOperator("&"); }
+  | T_AND    { $$ = new UnaryOperator("&"); }
   | T_PLUS      { $$ = new UnaryOperator("+"); }
   | T_MINUS     { $$ = new UnaryOperator("-"); }
   | T_INVERT       { $$ = new UnaryOperator("~"); }
