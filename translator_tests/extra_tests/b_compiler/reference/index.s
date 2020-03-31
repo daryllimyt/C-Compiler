@@ -32,7 +32,7 @@ f:
 		sll	$t2, $t0, 2		# (var: array) read - scale array index offset to multiplier, save to $t2
 		lw	$t8, 0($fp)		# (var: pointer to array) Reading from array pointer "p"
 		nop
-		add	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
+		addu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
 		lw	$t0, 0($t8) 		# (var: array) Reading from array "p" at base offset 0
 		nop
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call

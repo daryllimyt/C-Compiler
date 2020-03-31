@@ -286,8 +286,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                         std::string tempRef = getReferenceRegister(context, idLeft);
                         std::string ref = tempRef.substr(1, 3);
                         *output << "\t\tmove\t $t8, " << ref << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
-                        *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                        *output << "\t\taddi\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                         Compile(output, context, astNode->getIdentifier());  // Value of RHS loaded into $t0
                         *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) Storing into array \"" << idLeft << "\" at base offset " << arrayBase << "\n";
                     } else if (typeLeft == "STRUCT_ATTRIBUTE") {
@@ -365,8 +365,8 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     } else if (type == "ARRAY") {  // LHS is array
                         std::string ref2 = ref.substr(1, 3);
                         *output << "\t\tmove\t $t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddiu\t$t8, $t8, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
-                        *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                        *output << "\t\taddi\t$t8, $t8, " << offset << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                         *output << "\t\tsw\t$t0, 0($t8) \t\t# (var: array) assign - Storing to array \"" << id << "\" at base offset " << offset << "\n";
                     } else if (type == "NORMAL") {  // LHS is normal variable or ptr
                         *output << "\t\tsw\t$t0, " << offset << ref
@@ -948,14 +948,15 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                     int arrayBytes = multiplier * evalArrayIndexOrSize(context, astNode->getStatements());
                     VariableContext newVariable;
                     // Array base offset is at the bottom of the array block in memory
-                    newVariable.addressOffset = -context.frameTracker[index].variableBytes-arrayBytes;  // Get next available memory address after vars
+                    context.frameTracker[index].variableBytes += (arrayBytes+multiplier);  // Increment number of variables in frame
+                    newVariable.addressOffset = -context.frameTracker[index].variableBytes;  // Get next available memory address after vars
+                    context.frameTracker[index].variableBytes += multiplier;
                     newVariable.varType = type;
                     newVariable.size = arrayBytes;
                     newVariable.scope = context.scope;
                     newVariable.frame = context.frameIndex;
                     newVariable.typeSpecifier = context.typeSpecifier;
                     context.variableBindings[id].push_back(newVariable);      // Append context to associated variiable in map
-                    context.frameTracker[index].variableBytes += arrayBytes;  // Increment number of variables in frame
                 } else {
                     throw std::runtime_error("[ERROR] Unknown variable type of " + type);
                 }
@@ -984,9 +985,9 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
                                 << "\t\tnop\n";
                     } else {
                         *output << "\t\tmove\t$t8, " << ref2 << "\t\t# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays\n";
-                        *output << "\t\taddiu\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
+                        *output << "\t\taddi\t$t8, $t8, " << arrayBase << "\t\t# (var: array) Move refreg to array base address\n";
                     }
-                    *output << "\t\tsubu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
+                    *output << "\t\taddu\t$t8, $t8, $t2\t\t# (var: array) Move refreg to index offset from array base\n";
                     *output << "\t\tlw\t$t0, 0($t8) \t\t# (var: array) Reading from array \"" << id << "\" at base offset " << arrayBase << "\n"
                             << "\t\tnop\n";
 
@@ -1062,6 +1063,10 @@ void Compile(std::ostream *output, ProgramContext &context, NodePtr astNode) {
         } else if (astNode->getType() == "FLOAT_CONSTANT") {
             *output << "\t\tli\t$t0, " << astNode->getFloat() << "\t\t\t\t# (int const)\n";
             context.valueContext.floatValue = astNode->getFloat();
+        } else if (astNode->getType() == "CHAR_CONSTANT") {
+            *output << "\t\tli\t$t0, " << astNode->getVal() << "\t\t\t\t# (char const)\n";
+            if (Util::debug) std::cerr << "[DEBUG] CHAR_CONSTANT: " << astNode->getVal() << "\n";
+            context.valueContext.intValue = astNode->getVal();
         } else if (astNode->getType() == "STRING_LITERAL") {
         } else if (astNode->getType() == "ENUMERATION") {
             std::string enumId = astNode->getId();
@@ -1249,7 +1254,7 @@ std::pair<int, std::string> getOffsetAndReferenceRegister(ProgramContext &contex
     if (context.variableBindings[id].back().varType == "NORMAL") {
         offset = getVariableAddressOffset(context, id);
     } else if (context.variableBindings[id].back().varType == "ARRAY") {
-        int addrOffset = 8 * evalArrayIndexOrSize(context, identifierNode->getStatements());
+        int addrOffset = multiplier * evalArrayIndexOrSize(context, identifierNode->getStatements());
         int arrayBase = getVariableAddressOffset(context, id);
         offset = arrayBase + addrOffset;
     } else if (context.variableBindings[id].back().varType == "POINTER") {
@@ -1517,7 +1522,7 @@ void clearRegisters(std::ostream *output) {
     *output << "\t\taddiu\t$t5, $0, 0\n";
     *output << "\t\taddiu\t$t6, $0, 0\n";
     *output << "\t\taddiu\t$t7, $0, 0\n";
-    *output << "\t\taddiu\t$t8, $0, 0\n";
+    *output << "\t\taddi\t$t8, $0, 0\n";
     *output << "\t\taddiu\t$s0, $0, 0\n";
     *output << "\t\taddiu\t$s1, $0, 0\n";
     *output << "\t\taddiu\t$s2, $0, 0\n";

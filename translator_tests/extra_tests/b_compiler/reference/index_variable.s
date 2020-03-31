@@ -43,11 +43,11 @@ for_start_1:
 		nop
 		sll	$t2, $t0, 2		# (var: array) assignment - scale array index offset to multiplier, save to $t2
 		move	 $t8, $fp		# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays
-		addiu	$t8, $t8, -4		# (var: array) Move refreg to array base address
-		subu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
+		addi	$t8, $t8, -40		# (var: array) Move refreg to array base address
+		addu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "i"
 		nop
-		sw	$t0, 0($t8) 		# (var: array) Storing into array "x" at base offset -4
+		sw	$t0, 0($t8) 		# (var: array) Storing into array "x" at base offset -40
 
 for_continue_1:
 		lw	$t0, 0($fp)			# (var: normal) Reading from variable "i"
@@ -64,10 +64,10 @@ for_continue_1:
 for_end_1:
 		li	$t0, 4				# (int const)
 		sll	$t2, $t0, 2		# (var: array) read - scale array index offset to multiplier, save to $t2
-		move	 $t8, $fp		# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays
-		addiu	$t8, $t8, -4		# (var: array) Move refreg to array base address
-		subu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
-		lw	$t0, 0($t8) 		# (var: array) Reading from array "x" at base offset -4
+		move	$t8, $fp		# (var: array) read - use $t8 as refreg to access array so $fp/$gp stays
+		addi	$t8, $t8, -40		# (var: array) Move refreg to array base address
+		addu	$t8, $t8, $t2		# (var: array) Move refreg to index offset from array base
+		lw	$t0, 0($t8) 		# (var: array) Reading from array "x" at base offset -40
 		nop
 		move	$v0, $t0 		# (return node) load $t0 to $v0 if not function call
 		j	f_end_0

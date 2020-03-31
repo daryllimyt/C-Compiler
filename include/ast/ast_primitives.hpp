@@ -58,19 +58,22 @@ class FloatConstant : public Node {
     }
 };
 
-// class CharConstant : public Node {
-//    private:
-//     char val_;
+class CharConstant : public Node {
+   private:
+    int val_;
 
-//    public:
-//     CharConstant(const char &val) {
-//         type_ = "INTEGER_CONSTANT";
-//         val_ = val;
-//     }
-//     const char getVal() const {
-//         return val_;
-//     }
-// };
+   public:
+    CharConstant(std::string val) {
+        type_ = "CHAR_CONSTANT";
+        std::string temp = val.substr(1,1);
+        char temp2[1];
+        strcpy(temp2, temp.c_str());
+        val_ = temp2[0];
+    }
+    const int getVal() const {
+        return val_;
+    }
+};
 
 class StringLiteral : public Node {
    private:
