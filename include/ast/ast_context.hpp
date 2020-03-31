@@ -52,10 +52,18 @@ struct VariableContext {
 };
 
 struct EnumContext {
-	int frame;
-	int scope;
+	int frame = 0;
+	int scope = 0;
+	int val = 0;
 	std::unordered_map<std::string, int> elements;
-	int val;
+    friend std::ostream& operator<<(std::ostream& out, const EnumContext& f) {
+        out << "{frame: " << f.frame << ", scope: " << f.scope << ", val: " << f.val << ", elements: { ";
+        for (auto& it : f.elements) {
+            out << it.first << "->" << it.second << ", ";
+        }
+        out << "}";
+        return out;
+    }
 
 };
 
@@ -141,9 +149,9 @@ struct ProgramContext {
 	std::vector<std::string> breakPoints;
 	std::vector<std::string> continuePoints;
 
-	//enumerations
-	std::unordered_map<std::string, EnumContext> enumerations;
+	std::unordered_map<std::string, EnumContext> enumerationBindings;
 	std::vector<std::string> allEnumerations;
+	std::unordered_map<std::string, std::pair<int, std::string>> allEnumerators;
 
 	//typedefs
 	std::unordered_map<std::string, NodePtr> typeDefs;
@@ -218,7 +226,19 @@ struct ProgramContext {
             out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
         }
         out << "[INFO] *\n";
-
+        out << "[INFO] * enumerationBindings:\n";
+        for (auto& it : p.enumerationBindings) {
+            out << "[INFO] | {" << it.first << "->" << it.second << "}\n";
+        }
+        out << "[INFO] *\n";
+        out << "[INFO] * allEnumerations: ";
+        printIterable(out, p.allEnumerations);
+        out << "\n";
+        out << "[INFO] * allEnumerators: ";
+        for (auto& it : p.allEnumerators) {
+            out << "[INFO] | {" << it.first << "->(" << it.second.first << ", "<<it.second.second << ") }\n";
+        }
+        out << "\n";
         // Contextual information for Python translator
         out << "[INFO] * globalVariables: ";
         printIterable(out, p.globalVariables);

@@ -77,8 +77,8 @@ ROOT
   : FRAME       { g_root = new RootNode($1); }
 
 FRAME
-  // : MULTIPLE_STATEMENTS                   { $$ = $1; }
   : SCOPE                                 { $$ = $1; }
+  // | MULTIPLE_STATEMENTS                   { $$ = $1; }
   | ENUMERATION                       { $$ = $1; }
   | FUNCTION_DEFINITION                    { $$ = $1; }
   | FUNCTION_DECLARATION                   { $$ = $1; }
